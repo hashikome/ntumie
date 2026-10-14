@@ -150,3 +150,4 @@ Current implementation guidance lives in the linked design documents.
 - [0065 — Account state loaded with the session user](0065-account-state-in-session-user.md): one query fewer per signed-in request; session cookie cache stays off.
 
 - [0066 — Edge-cached public pages for signed-out visitors](0066-edge-cached-public-pages.md): origin-decided public caching with a Cloudflare cookie bypass.
+- [0067 — Cobalt visual system](0067-cobalt-visual-system.md): one cobalt hue per theme with separate fill and link roles, pill controls and orange only for annotation; partially supersedes 0063.

@@ -9,6 +9,14 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Lock the Track W3 visual system (ADR-0067; partially supersedes ADR-0063's
+  color clause): one cobalt hue per theme with separate fill and link roles, a
+  cobalt band on brand surfaces, orange only for annotation, pill controls,
+  40 px controls (44 px touch) and a 14 px text floor. `DESIGN.md` holds the
+  tokens and fresh light/dark contrast evidence; `globals.css` migrates with the
+  W3 implementation (tracked as tech debt). Also tracks a recovery-code download
+  as follow-up debt.
+
 - Show the applied, server-normalised audit filters after a background filter
   submission (the form remounts per applied filter set) and make audit browser
   journeys wait for the filtered result rather than the typed fields.

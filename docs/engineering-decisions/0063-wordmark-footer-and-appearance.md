@@ -6,6 +6,8 @@ Date: 2026-10-13
 Partially superseded by [ADR-0064](0064-client-navigation-and-interactive-forms.md):
 client navigation and asynchronous forms replace mandatory native-first/JS-free
 interaction and full-document reloads. Other decisions remain binding.
+Partially superseded by [ADR-0067](0067-cobalt-visual-system.md): color tokens
+follow the cobalt visual system; the font and wordmark decisions remain binding.
 
 ## Context
 
