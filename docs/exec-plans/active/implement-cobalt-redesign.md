@@ -42,7 +42,13 @@ communities (opt-in), and private-collection allowances (monetization).
 - [x] (2026-10-14 21:30Z) Approved the Round 2 boards and the three Start a
   collection product changes (owner, 14 October 2026); recorded in `PRODUCT.md`
   §6.1 with this plan.
-- [ ] M1 Tokens and shared primitives.
+- [ ] M1 Tokens and shared primitives (completed 2026-10-14: `@theme` from
+  DESIGN.md with legacy `--text-row`/`--radius-tag` aliases, blue text moved to
+  `link`, pill buttons at 40 px with 32 px text buttons and 44 px coarse,
+  fields with 12 px radius and focus glow, shared elevation (the 80rem shell waits for M3/M4),
+  header with Discover, About, Sign in and Start a collection (to `/capture`
+  until M5); remaining: segmented filter, radio cards and Component-states
+  coverage, applied as each screen is rebuilt).
 - [x] (2026-10-14 22:40Z) Designed Discover (browse, search results, no
   results), the hub homepage for visitors and owners (Your home tabs, Saved,
   Subscriptions, no hub) and the person profile, in final state.
@@ -64,6 +70,18 @@ communities (opt-in), and private-collection allowances (monetization).
   [N] free private collections left" has no data source.
   Evidence: `docs/design-docs/monetization.md` "Billing, entitlements and
   private quotas are not yet implemented."
+- Observation: the browser test "reader polish keeps tags, hierarchy and touch
+  controls usable without JavaScript too" fails before any redesign change: at
+  390 px with touch, `.comment-compose > summary` is "not visible" when tapped.
+  Fix it with the reader rebuild in M4.
+  Evidence: fails identically on commit `f893576` with the M1 web changes
+  stashed (`bun tooling/verify-browser.ts --test-name-pattern 'reader polish keeps'`).
+- Observation: M1's first full browser run found four regressions, all fixed:
+  the 80rem shell broke the landing/footer alignment test (shell width moved to
+  the screen milestones), pill buttons overflowed at 200% zoom (labels now wrap
+  except in the header), and the contrast test still expected `primary` as
+  text (now checks `link` on canvas and `on-primary` on `primary`).
+  Evidence: 107/114 pass, then 4/5 of the failing five pass after the fixes.
 - Observation: comments accept 2,000 characters in three places: the API DTOs,
   the web form and a database CHECK.
   Evidence: `apps/api/src/modules/comments/dto/comment.dto.ts` `@MaxLength(2000)`;

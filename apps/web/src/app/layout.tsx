@@ -70,6 +70,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
                   </a>
                   <div className="primary-nav">
                     <a href="/discover">Discover</a>
+                    <a href="/about">About</a>
                     <SessionNav session={session} />
                   </div>
                 </nav>

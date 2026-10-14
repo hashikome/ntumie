@@ -4,8 +4,12 @@ export function SessionNav({ session }: { session: SessionView | null }) {
   if (!session)
     return (
       <div className="session-nav">
-        <a className="button nav-button" href="/sign-in">
+        <a className="nav-link" href="/sign-in">
           Sign in
+        </a>
+        {/* The first-link flow becomes Start a collection in the cobalt redesign (M5). */}
+        <a className="button primary nav-button nav-start" href="/capture">
+          Start a collection
         </a>
       </div>
     );

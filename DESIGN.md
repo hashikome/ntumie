@@ -57,10 +57,9 @@ use `ntumie`. See [ADR-0060](docs/engineering-decisions/0060-ntumie-repository-a
 
 > **Status (14 October 2026).** The tokens below are the locked Track W3
 > redesign ([ADR-0067](docs/engineering-decisions/0067-cobalt-visual-system.md)).
-> `apps/web/src/app/globals.css` still installs the 2026-10-07 palette until the
-> W3 implementation migrates it; until then this document is ahead of the code
-> (see the tech-debt tracker). Component and screen descriptions further down
-> describe what ships today.
+> `apps/web/src/app/globals.css` installs these tokens (M1 of the W3 plan); the
+> screens are rebuilt to the Round 2 designs in later milestones, so component
+> and screen descriptions further down still describe the current layouts.
 
 ## Overview
 

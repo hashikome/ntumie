@@ -1997,7 +1997,9 @@ describe("explore to resource: production browser journey", () => {
             return [
               ["--color-ink", "--color-canvas"],
               ["--color-muted", "--color-surface"],
-              ["--color-primary", "--color-canvas"],
+              // ADR-0067: blue text uses link; primary is a fill under on-primary text.
+              ["--color-link", "--color-canvas"],
+              ["--color-on-primary", "--color-primary"],
             ].map(([fg, bg]) => {
               const a = luminance(fg),
                 b = luminance(bg);
