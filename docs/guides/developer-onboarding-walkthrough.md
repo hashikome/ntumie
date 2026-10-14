@@ -12,7 +12,7 @@ answer in your own words before continuing. Reading the whole file in one go
 is the failure mode this structure exists to prevent. Every file is a
 clickable link.
 
-**Pin:** verified against commit `57c934da89d2945b8947321a0be27bd13ac478e3`. This is enforced, not honor
+**Pin:** verified against commit `7ef73ba21279169445b69d65366b1c7be5a2a1ab`. This is enforced, not honor
 system: `check:guide-pin` (part of `bun run verify`) fails when any file this
 guide links changes after the pinned commit. To clear it, reread the affected
 sessions, fix any drift, and move the pin to the latest commit — in a
@@ -106,7 +106,9 @@ Read, in this order:
    can create accounts; registered passkeys also sign in. Enrolled protection applies to
    email/Google fallback. Hubs have one owner and never transfer, while
    collections can. People have usernames and optional hubs; signup can explicitly
-   create a named hub, or the first successful ownership operation creates one.
+   create a named hub, or the first successful ownership operation creates one
+   ([ADR-0069](../engineering-decisions/0069-hubs-come-with-the-first-collection.md),
+   approved for the cobalt redesign, makes the first collection the only way).
 2. [ARCHITECTURE.md](../../ARCHITECTURE.md) — the domain model, codemap,
    runtime and architectural invariants.
 3. [tenancy-and-access.md](../design-docs/tenancy-and-access.md) — the access
