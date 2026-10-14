@@ -11,7 +11,7 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 - Add the redesign's backend contracts: notes on links (280 characters,
   editable and clearable), questions tied to a section and an attached item,
-  comments limited to 1,000 characters, a remembered published/private choice
+  a remembered published/private choice
   for new collections (exposed on the session), and trigger-maintained hub
   collection counts. Hubs are now public only while they have a published
   collection (owners still see theirs), profile bylines follow the same rule, and
@@ -23,7 +23,7 @@ summary of what changed after completed work has been promoted out of `ref/`.
   always new); partner hub credit (ADR-0068, narrows ADR-0017); hubs come with
   the first collection, stay hidden while empty and are public only with a
   published collection (ADR-0069, partially supersedes ADR-0044/0018); comments
-  limited to 1,000 characters for new edits; opt-in public profile tabs.
+  stay at 2,000 characters; opt-in public profile tabs.
 
 - Lock the Track W3 visual system (ADR-0067; partially supersedes ADR-0063's
   color clause): one cobalt hue per theme with separate fill and link roles, a

@@ -541,7 +541,7 @@ Purpose: questions and answers next to the resources. Status: Built.
   replies, readable by anyone who can read the collection.
 - A question can name the section it is about and attach one item (from that
   item's Discuss action); replies inherit their question's. Comments are up to
-  1,000 characters. *(API built in the cobalt redesign M2; web in M4.)*
+  2,000 characters. *(API built in the cobalt redesign M2; web in M4.)*
 - Anyone signed in who can read it can comment and reply, so help never waits
   on the contributors; signed-out readers are invited to sign in.
 - Contributors' replies are badged **Contributor**; they can mark one reply per

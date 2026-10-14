@@ -118,7 +118,7 @@ describe("cobalt redesign contracts", () => {
     await patch(section.id, { version: section.version, note: "Not for sections" }).expect(400);
   });
 
-  it("ties questions to a section and an item, keeps replies unscoped, and caps bodies at 1,000", async () => {
+  it("ties questions to a section and an item, keeps replies unscoped, and caps bodies at 2,000", async () => {
     const id = (await capture(owner, { links: [{ url: link() }, { url: link() }] }).expect(201))
       .body.data.collectionId as string;
     const [first, second] = await items(id, owner);
@@ -150,8 +150,8 @@ describe("cobalt redesign contracts", () => {
       .body.data as CommentView;
     expect(reply.section).toBeNull();
 
-    await post({ body: "x".repeat(1001) }).expect(400);
-    await post({ body: "x".repeat(1000) }).expect(201);
+    await post({ body: "x".repeat(2001) }).expect(400);
+    await post({ body: "x".repeat(2000) }).expect(201);
   });
 
   it("keeps a hub public only while it has a published collection, and hides its byline otherwise", async () => {

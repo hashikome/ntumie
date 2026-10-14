@@ -52,7 +52,7 @@ export interface CreateCommentRequest {
 }
 
 /** Longest comment body accepted for new and edited comments. */
-export const maxCommentLength = 1000;
+export const maxCommentLength = 2000;
 
 export interface UpdateCommentRequest {
   body: string;

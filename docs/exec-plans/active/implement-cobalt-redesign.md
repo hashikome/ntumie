@@ -55,7 +55,7 @@ communities (opt-in), and private-collection allowances (monetization).
 - [ ] M3b Discover, hub homepage and person profile with today's data.
 - [x] (2026-10-15) M2 Backend contracts: link notes (create, edit, clear;
   links only; 280), comment `sectionId`/`itemId` with scope refs on reads and a
-  1,000-character limit (DB CHECK stays 2,000), `newCollectionPublished` on the
+  2,000-character limit (matching the DB CHECK), `newCollectionPublished` on the
   account and session (capture defaults to it and remembers explicit choices),
   trigger-maintained hub `collection_count`/`published_collection_count`, public
   hub pages and profile bylines only with a published collection (owner
@@ -121,14 +121,12 @@ communities (opt-in), and private-collection allowances (monetization).
   Rationale: owner direction (14 October 2026): design once for the target and
   avoid redesign rounds; shipping partial controls would still mislead.
   Date/Author: 2026-10-14 / owner, recorded by Claude
-- Decision: Lower the comment limit to 1,000 characters for new and edited
-  comments (API DTOs and web `maxLength`); the composer counter shows "/ 1000".
-  Keep the database CHECK at 2,000 so existing longer comments stay valid and
-  readable; editing one of those requires shortening it to 1,000.
-  Rationale: owner preference (14 October 2026); a questions-and-answers thread
-  reads better with shorter posts, and tightening the CHECK would fail on
-  existing rows.
-  Date/Author: 2026-10-14 / owner, recorded by Claude
+- Decision: Comments stay at 2,000 characters for new and edited comments, the
+  same as the database CHECK; the composer shows its counter only past about 80%.
+  Rationale: owner choice (15 October 2026) after comparing uses: answers in the
+  question-and-answer thread need room for a few steps or a short snippet, and
+  there is no separate answer field. Supersedes the 14 October choice of 1,000.
+  Date/Author: 2026-10-15 / owner, recorded by Claude
 - Decision: Person profiles get opt-in tabs for Saved collections,
   Subscriptions and Communities joined, each off by default and switched in
   Settings → Profile; Contributions always show. Your home adds a Communities tab
@@ -255,9 +253,9 @@ records note changes. Update `PRODUCT.md` §6.4 status. (b) Section-tied
 comments: an optional `sectionId` on top-level comments (replies inherit their
 parent's), validated to belong to the same collection; an optional `itemId`
 attachment, validated likewise. Filtering "Answered" uses the existing answer
-mark. Lower `CreateCommentDto` and `UpdateCommentDto` `body` to
-`@MaxLength(1000)` and the web `maxLength` to match, with an API e2e case for
-1,001 characters; leave the database CHECK unchanged. (c) Remembered visibility: store the last explicit new-collection
+mark. `CreateCommentDto` and `UpdateCommentDto` use the shared `maxCommentLength`
+(2,000) and the web `maxLength` matches, with an API e2e case for 2,001
+characters. (c) Remembered visibility: store the last explicit new-collection
 visibility choice on the account; the save dialog and Start a collection
 default to it, falling back to Published. (d) Named first collection: Start a
 collection sends `destination: new` with a name for every account; a blank name
