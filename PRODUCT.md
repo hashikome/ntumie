@@ -229,7 +229,10 @@ YouTube — with its own **name**, optional **description** and **@handle**
 or start a collection; someone who only reads or contributes by invitation
 needs none. Collection bookmarks belong to the person and require no hub. Imports
 require an existing hub and owner authority; they never create a hub. The account
-menu always offers Hub, with explicit creation when absent. The hub owns every collection in it and its subscribers, and is the
+menu always offers Hub, with explicit creation when absent. *(Changing, approved 14 October 2026,
+[ADR-0069](docs/engineering-decisions/0069-hubs-come-with-the-first-collection.md):
+no empty hubs. A hub is created only with the first collection; sign-up and Create hub
+stop creating one, and those places invite starting a collection instead.)* The hub owns every collection in it and its subscribers, and is the
 face wherever those appear: its page reads "Hub name" over "@handle", or
 "@handle by Owner Name" when the owner shows their name. People act as
 themselves — commenting, contributing, invited by email — and appear by their
@@ -321,6 +324,13 @@ Existing collections retain their publication and sharing settings.
   no profile, title or handle setup comes first. Ordinary **Sign in** never silently
   creates an account. Explicit account creation offers an optional named hub, off
   by default; otherwise ownership can create it later (ADR-0044).
+- **Start a collection** *(approved 14 October 2026; replaces Save your first link
+  in the [cobalt redesign plan](docs/exec-plans/active/implement-cobalt-redesign.md))*:
+  the visitor names one idea (a blank name falls back to the dated default),
+  pastes one first link with an optional note, and chooses who can see it
+  (Published by default). Email and code follow as above. Starting always
+  creates a new collection, for new and existing accounts alike, and lands in it
+  with what to do next.
 - **Save a link (signed in):** always in the header. One or two links per save;
   each address turns blue when it is a valid public link and red when it isn't,
   and shows the page's title once found. Tags are optional, behind **Add
@@ -600,7 +610,8 @@ self-service account lifecycle, public Gravatar avatars and passwordless securit
   is disclosed only after proof. A missing account requires explicit Create account;
   sign-in offers Use a different email, signup offers Already have an account? Sign in.
   Verified email proof is reused without another code. Creation offers optional
-  **Start with a hub**, unchecked by default, requiring a hub name when selected.
+  **Start with a hub**, unchecked by default, requiring a hub name when selected
+  *(removed by ADR-0069 with the cobalt redesign; a hub comes with the first collection)*.
   The backend creates account and hub atomically and assigns a common initial
   username/handle available in both namespaces; both remain editable under their policies. After entering an
   email, an existing user can use a registered passkey without email or TOTP

@@ -10,6 +10,9 @@ entry and implicit ordinary email creation policy, adds a shared verified creati
 screen and permits an optional named hub during signup. Other decisions remain
 accepted unless already marked superseded.
 
+[ADR-0069](0069-hubs-come-with-the-first-collection.md) removes explicit hub creation:
+a hub is created only with the person's first collection.
+
 ## Context
 
 Every account was a hub: the hub's handle was the person's identity, so

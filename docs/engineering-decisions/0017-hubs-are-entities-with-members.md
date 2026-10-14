@@ -3,6 +3,10 @@
 **Status:** rejected  
 **Date:** 2026-10-08
 
+Narrowed by [ADR-0068](0068-partner-hub-credit.md): one hub may credit another
+as a partner on a collection (display only, no access). Memberships, shared
+ownership and hub transfer remain rejected.
+
 ## Context
 
 Account handover by email change was found to hand over the person, not just

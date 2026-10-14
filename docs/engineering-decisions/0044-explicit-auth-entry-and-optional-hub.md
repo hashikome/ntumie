@@ -6,6 +6,10 @@
 and ADR-0039 creation presentation. Their credential, identity, same-email linking
 and invitation boundaries remain accepted.
 
+Partially superseded by [ADR-0069](0069-hubs-come-with-the-first-collection.md):
+account creation no longer offers Start with a hub; a hub comes only with a first
+collection. The explicit entry decisions remain binding.
+
 ## Context
 
 A single sign-in-or-create journey becomes ambiguous with Google: selecting the
