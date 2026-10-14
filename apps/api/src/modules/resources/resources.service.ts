@@ -51,8 +51,9 @@ export class ResourcesService {
           linkedCollectionId,
           dto.tags ?? [],
           dto.position,
+          dto.note,
         )
-      : await this.insertExternal(collection, user, url, dto.tags ?? [], dto.position);
+      : await this.insertExternal(collection, user, url, dto.tags ?? [], dto.position, dto.note);
     return this.resourceView(saved, await this.context([saved], user));
   }
 
@@ -74,6 +75,7 @@ export class ResourcesService {
     linkedCollectionId: string,
     tags: string[],
     position: number,
+    note?: string,
   ) {
     const saved = await this.prisma.resource.create({
       data: {
@@ -81,6 +83,7 @@ export class ResourcesService {
         kind: ResourceKind.COLLECTION_LINK,
         linkedCollectionId,
         position,
+        note: noteValue(note),
         tags: await itemTags(this.prisma, tags),
         addedByUserId: user.userId,
       },
@@ -95,11 +98,12 @@ export class ResourcesService {
     url: string,
     tags: string[],
     position: number,
+    note?: string,
   ) {
     const target = await this.referenceTarget(collection, user, url);
     return target
-      ? this.insertReference(collection, user, target, tags, position)
-      : this.insertExternal(collection, user, url, tags, position);
+      ? this.insertReference(collection, user, target, tags, position, note)
+      : this.insertExternal(collection, user, url, tags, position, note);
   }
 
   // Inserts a canonical, non-duplicate link into a collection the caller has
@@ -111,12 +115,14 @@ export class ResourcesService {
     url: string,
     tags: string[],
     position: number,
+    note?: string,
   ) {
     const saved = await this.prisma.resource.create({
       data: {
         collectionId: collection.id,
         kind: ResourceKind.EXTERNAL_LINK,
         url,
+        note: noteValue(note),
         tags: await itemTags(this.prisma, tags),
         position,
         addedByUserId: user.userId,
@@ -296,6 +302,9 @@ export class ResourcesService {
 
     if (dto.description !== undefined && resource.kind !== ResourceKind.HEADING)
       throw appError("bad_request");
+    // Notes describe links; sections carry their own description instead.
+    if (dto.note !== undefined && resource.kind === ResourceKind.HEADING)
+      throw appError("bad_request");
 
     let position = resource.position;
     if (dto.position !== undefined && dto.position !== resource.position) {
@@ -313,6 +322,7 @@ export class ResourcesService {
         ...(dto.description !== undefined
           ? { sectionDescription: dto.description.trim() || null }
           : {}),
+        ...(dto.note !== undefined ? { note: noteValue(dto.note) } : {}),
         version: { increment: 1 },
       },
     });
@@ -590,6 +600,7 @@ export class ResourcesService {
           : null,
       siteName: link ? meta.siteName : null,
       addedBy: (resource.addedByUserId && context.people.get(resource.addedByUserId)) || null,
+      note: resource.kind === ResourceKind.HEADING ? null : resource.note,
       tags: context.tags.get(resource.id) ?? [],
       position: resource.position,
       version: Number(resource.version),
@@ -613,4 +624,9 @@ function linkUrls(items: Resource[]) {
         item.kind === ResourceKind.EXTERNAL_LINK && item.url && !localCollectionAddress(item.url),
     )
     .map((item) => item.url as string);
+}
+
+// A blank note clears it; notes are trimmed and never stored empty.
+function noteValue(note: string | undefined) {
+  return note?.trim() || null;
 }

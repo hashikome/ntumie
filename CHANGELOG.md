@@ -9,6 +9,14 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Add the redesign's backend contracts: notes on links (280 characters,
+  editable and clearable), questions tied to a section and an attached item,
+  comments limited to 1,000 characters, a remembered published/private choice
+  for new collections (exposed on the session), and trigger-maintained hub
+  collection counts. Hubs are now public only while they have a published
+  collection (owners still see theirs), profile bylines follow the same rule, and
+  imports create the missing hub (ADR-0069).
+
 - Plan the cobalt redesign (Track W3): ExecPlan `implement-cobalt-redesign`
   with approved Round 2 designs for every journey. Record decisions: Start a
   collection replaces Save your first link (named collection, one first link,

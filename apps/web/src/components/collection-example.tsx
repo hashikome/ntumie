@@ -33,6 +33,7 @@ export function CollectionExample({ selectedItemId }: { selectedItemId?: string 
     linkedCollectionId: null,
     siteName: null,
     addedBy: ada,
+    note: null,
     version: 1,
     createdAt: updatedAt,
     updatedAt,

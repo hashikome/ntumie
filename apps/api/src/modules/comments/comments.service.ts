@@ -1,6 +1,13 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import type { AuditAction, CommentAuthor, CommentThreads, CommentView } from "@ntumie/types";
+import type {
+  AuditAction,
+  CommentAuthor,
+  CommentScopeRef,
+  CommentThreads,
+  CommentView,
+} from "@ntumie/types";
 import { recordAudit } from "src/common/audit";
+import { ResourceKind } from "src/common/enums/resource-kind.enum";
 import { appError } from "src/common/errors/app-exception";
 import type { AuthUser } from "src/common/interfaces/auth-user.interface";
 import { decodeCursor, encodeCursor } from "src/common/utils/cursor.util";
@@ -112,18 +119,19 @@ export class CommentsService {
       ...page,
       ...[...replyPages.values()].flatMap((p) => p.rows),
     ]);
+    const scopes = await this.scopes(page);
     const shown = (row: CollectionComment) =>
       row.state === "visible" || (row.state === "hidden" && moderator);
     const comments = page.flatMap((question) => {
       const replyPage = replyPages.get(question.id) ?? { rows: [], nextCursor: null };
       const answers = replyPage.rows.map((reply) =>
-        this.view(reply, [], authors, viewer, moderator),
+        this.view(reply, [], authors, viewer, moderator, scopes),
       );
       // A removed question stays only as a placeholder for its replies.
       if (!shown(question) && !answers.length) return [];
       return [
         {
-          ...this.view(question, answers, authors, viewer, moderator),
+          ...this.view(question, answers, authors, viewer, moderator, scopes),
           repliesNextCursor: replyPage.nextCursor,
         },
       ];
@@ -164,7 +172,8 @@ export class CommentsService {
     // Explicit aliases keep the raw result identical to Prisma's comment rows.
     const replies = await this.prisma.$queryRaw<CollectionComment[]>(Prisma.sql`
       SELECT id, collection_id AS "collectionId", author_user_id AS "authorUserId",
-        parent_id AS "parentId", body, state, accepted, hidden_by_user_id AS "hiddenByUserId",
+        parent_id AS "parentId", section_id AS "sectionId", item_id AS "itemId",
+        body, state, accepted, hidden_by_user_id AS "hiddenByUserId",
         version, edited_at AS "editedAt", created_at AS "createdAt", updated_at AS "updatedAt"
       FROM (
         SELECT *, ROW_NUMBER() OVER (PARTITION BY parent_id ORDER BY created_at, id) AS rank
@@ -212,11 +221,15 @@ export class CommentsService {
     authors: Map<string, CommentAuthor>,
     viewer: AuthUser | null,
     moderator: boolean,
+    scopes: Map<string, CommentScopeRef> = new Map(),
   ): CommentView {
     const readable = row.state === "visible" || (row.state === "hidden" && moderator);
     return {
       id: row.id,
       parentId: row.parentId,
+      // Scope stays visible on removed questions so their replies keep context.
+      section: (row.sectionId && scopes.get(row.sectionId)) || null,
+      item: (row.itemId && scopes.get(row.itemId)) || null,
       body: readable ? row.body : null,
       state: row.state as CommentView["state"],
       accepted: row.accepted,
@@ -229,6 +242,43 @@ export class CommentsService {
       replies,
       repliesNextCursor: null,
     };
+  }
+
+  // Titles for the sections and items questions are about: a section's text,
+  // or a link's page title. References show no title (their target may be unreadable).
+  private async scopes(rows: CollectionComment[]) {
+    const ids = [...new Set(rows.flatMap((row) => [row.sectionId, row.itemId]))].filter(
+      (id): id is string => Boolean(id),
+    );
+    const refs = new Map<string, CommentScopeRef>();
+    if (!ids.length) return refs;
+    const resources = await this.prisma.resource.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, kind: true, url: true, titleOverride: true },
+    });
+    const urls = resources.flatMap((resource) =>
+      resource.kind === ResourceKind.EXTERNAL_LINK && resource.url ? [resource.url] : [],
+    );
+    const titles = new Map(
+      (urls.length
+        ? await this.prisma.linkMetadata.findMany({
+            where: { url: { in: urls } },
+            select: { url: true, title: true },
+          })
+        : []
+      ).map((meta) => [meta.url, meta.title]),
+    );
+    for (const resource of resources)
+      refs.set(resource.id, {
+        id: resource.id,
+        title:
+          resource.kind === ResourceKind.HEADING
+            ? resource.titleOverride
+            : resource.kind === ResourceKind.EXTERNAL_LINK && resource.url
+              ? (titles.get(resource.url) ?? null)
+              : null,
+      });
+    return refs;
   }
 
   // Authors are people, whether or not they have a hub.
@@ -282,7 +332,14 @@ export class CommentsService {
     viewer: AuthUser,
     moderator: boolean,
   ) {
-    return this.view(row, [], await this.authors(collection, [row]), viewer, moderator);
+    return this.view(
+      row,
+      [],
+      await this.authors(collection, [row]),
+      viewer,
+      moderator,
+      await this.scopes([row]),
+    );
   }
 
   async create(
@@ -297,6 +354,22 @@ export class CommentsService {
     if (held) throw appError("collection_held");
     const body = dto.body.trim();
     if (!body) throw appError("bad_request");
+    // Only questions name a section or attach an item; replies inherit theirs.
+    if (dto.parentId && (dto.sectionId || dto.itemId)) throw appError("bad_request");
+    if (dto.sectionId || dto.itemId) {
+      const targets = await this.prisma.resource.findMany({
+        where: {
+          collectionId: collection.id,
+          id: { in: [dto.sectionId, dto.itemId].filter((id): id is string => Boolean(id)) },
+        },
+        select: { id: true, kind: true },
+      });
+      const kind = (id?: string) => targets.find((target) => target.id === id)?.kind;
+      if (dto.sectionId && kind(dto.sectionId) !== ResourceKind.HEADING)
+        throw appError("bad_request");
+      if (dto.itemId && (!kind(dto.itemId) || kind(dto.itemId) === ResourceKind.HEADING))
+        throw appError("bad_request");
+    }
     if (dto.parentId) {
       const parent = await this.prisma.collectionComment.findUnique({
         where: { id: dto.parentId },
@@ -314,6 +387,8 @@ export class CommentsService {
         collectionId: collection.id,
         authorUserId: user.userId,
         parentId: dto.parentId ?? null,
+        sectionId: dto.sectionId ?? null,
+        itemId: dto.itemId ?? null,
         body,
       },
     });

@@ -21,6 +21,8 @@ export interface Resource {
   siteName: string | null;
   /** Who added the item; null when unknown (added before attribution). */
   addedBy: import("./envelope.js").PersonRef | null;
+  /** A contributor's context for a link (why it is here); null for sections. */
+  note: string | null;
   tags: string[];
   position: number;
   version: number;
@@ -32,6 +34,7 @@ export interface Resource {
 export interface CreateExternalResourceRequest {
   url: string;
   tags?: string[];
+  note?: string;
   position: number;
 }
 
@@ -42,7 +45,12 @@ export interface UpdateResourceRequest {
   position?: number;
   /** Optional authored context, only for sections; empty string clears it. */
   description?: string;
+  /** A link's note (at most maxNoteLength); empty string clears it. */
+  note?: string;
 }
+
+/** Longest note on a link. */
+export const maxNoteLength = 280;
 
 export interface ReorderResourcesRequest {
   items: Array<{ resourceId: string; position: number; version: number }>;

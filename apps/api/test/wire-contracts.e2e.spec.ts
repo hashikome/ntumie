@@ -102,6 +102,7 @@ const resourceShape = {
   siteName: nullableString,
   addedBy: (v: unknown) =>
     v === null || (typeof v === "object" && v !== null && "userId" in v && "username" in v),
+  note: nullableString,
   tags: strings,
   position: number,
   version: number,

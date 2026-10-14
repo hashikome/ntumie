@@ -26,7 +26,7 @@ export class CaptureService {
   async save(user: AuthUser, dto: CaptureDto): Promise<CaptureResult> {
     // Validate and canonicalise every link; repeats within one save collapse.
     // Titles are never input: they are resolved from the page after saving.
-    const links: { url: string; tags: string[] }[] = [];
+    const links: { url: string; tags: string[]; note?: string }[] = [];
     for (const link of dto.links) {
       const parsed = new URL(link.url);
       if (
@@ -38,7 +38,11 @@ export class CaptureService {
         throw appError("bad_request");
       const url = canonicalizeUrl(parsed.href);
       if (links.some((entry) => entry.url === url)) continue;
-      links.push({ url, tags: normalizeTags(link.tags) });
+      links.push({
+        url,
+        tags: normalizeTags(link.tags),
+        ...(link.note?.trim() ? { note: link.note.trim() } : {}),
+      });
     }
     if (!["first", "new"].includes(dto.destination) && !isUUID(dto.destination))
       throw appError("bad_request");
@@ -118,10 +122,22 @@ export class CaptureService {
     }
     if (!id) {
       if (!hub) throw appError("bad_request");
+      // An explicit choice is remembered for the next new collection; without
+      // one, the last remembered choice applies, else published.
+      const remembered = await this.prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { newCollectionPublished: true },
+      });
+      const published = dto.published ?? remembered?.newCollectionPublished ?? true;
       const collection = await this.collections.create(user, {
         title: name ?? (await this.defaultTitle(hub.id)),
-        published: dto.published ?? true,
+        published,
       });
+      if (dto.published !== undefined && dto.published !== remembered?.newCollectionPublished)
+        await this.prisma.user.update({
+          where: { id: user.userId },
+          data: { newCollectionPublished: dto.published },
+        });
       id = collection.id;
       if (dto.destination === "first" && hub)
         await this.prisma.hub.update({
@@ -150,7 +166,14 @@ export class CaptureService {
       });
       const saved =
         existing ??
-        (await this.resources.insertLink(collection, user, link.url, link.tags, position++));
+        (await this.resources.insertLink(
+          collection,
+          user,
+          link.url,
+          link.tags,
+          position++,
+          link.note,
+        ));
       if (!resourceIds.includes(saved.id)) resourceIds.push(saved.id);
     }
     await this.prisma.captureReceipt.create({

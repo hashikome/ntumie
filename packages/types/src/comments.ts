@@ -5,9 +5,19 @@ export interface CommentAuthor extends PersonRef {
   role: "owner" | "contributor" | null;
 }
 
+/** A section or item a comment is about; title null when it has none yet. */
+export interface CommentScopeRef {
+  id: string;
+  title: string | null;
+}
+
 export interface CommentView {
   id: string;
   parentId: string | null;
+  /** Section the question is about; replies inherit their parent's. */
+  section: CommentScopeRef | null;
+  /** Item attached from its Discuss action; replies inherit their parent's. */
+  item: CommentScopeRef | null;
   // Null for hidden (to non-moderators) or deleted comments kept for their replies.
   body: string | null;
   state: "visible" | "hidden" | "deleted";
@@ -35,7 +45,14 @@ export interface CommentThreads {
 export interface CreateCommentRequest {
   body: string;
   parentId?: string;
+  /** Top-level only: a section heading in this collection. */
+  sectionId?: string;
+  /** Top-level only: a link item in this collection. */
+  itemId?: string;
 }
+
+/** Longest comment body accepted for new and edited comments. */
+export const maxCommentLength = 1000;
 
 export interface UpdateCommentRequest {
   body: string;

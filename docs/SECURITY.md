@@ -126,8 +126,8 @@ one public origin. Next never proxies API paths (ADR-0036).
   checks on imports). Multipart import parsing enforces a 10 MiB file limit,
   one file, two fields and three parts before acquiring the shared authority
   lock. The authenticated session is rechecked under that lock after parsing.
-- Imports require an existing owned hub. Private drafts bind to the account and
-  hub; only owner-managed collections may be targets. No service-role bypass.
+- Imports run in the importer's own hub, created hidden when missing (ADR-0069).
+  Private drafts bind to the account and hub; only owner-managed collections may be targets. No service-role bypass.
   Invalid addresses remain repairable rows; malformed file structure rejects the
   upload. Draft edits and commits require a revision. The API rechecks destinations
   and writes content, receipts and audit evidence in one authority transaction.

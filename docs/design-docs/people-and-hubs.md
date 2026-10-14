@@ -106,8 +106,9 @@ followed. See [hub home and subscriptions](hub-home-and-following.md).
 - The account-creation hook assigns usernames and optionally creates the requested named
   hub in the same transaction (ADR-0044). Explicit hub creation, first-link
   saves, collection creation and incoming transfers create a missing hub under the
-  authority transaction; failed first-link saves leave none. Imports require an
-  existing hub and owner management authority; bookmarks require no hub.
+  authority transaction; failed first-link saves leave none. Imports need owner
+  management authority and create the missing hub when a draft starts
+  (ADR-0069; hidden until a collection is committed); bookmarks require no hub.
 - Person references in the API are `PersonRef { userId, username }`; hub
   references carry their own id, name and handle. Public hub pages include the
   owner reference; public person profiles expose only available published

@@ -8,6 +8,7 @@ import { PrismaService } from "../../database/prisma.service";
 import type { ImportFolder } from "../../generated/prisma/client";
 import { CollectionsService } from "../collections/collections.service";
 import { CollectionPolicyService } from "../hubs/collection-policy.service";
+import { ensurePersonalHub } from "../hubs/hub-onboarding";
 import { requestLinkMetadata } from "../resources/link-metadata";
 import { ResourcesService } from "../resources/resources.service";
 import {
@@ -36,8 +37,9 @@ export class ImportsService {
   ) {}
 
   async create(user: AuthUser, dto: CreateImportDto, file?: { buffer: Buffer; size: number }) {
-    const hub = await this.prisma.hub.findUnique({ where: { ownerUserId: user.userId } });
-    if (!hub) throw appError("hub_unavailable");
+    // ADR-0069: a hub comes with the person's first collection, imports
+    // included. It stays hidden until a collection lands in it.
+    const hub = await ensurePersonalHub(this.prisma, user.userId);
     if (
       (await this.prisma.importDraft.count({
         where: { userId: user.userId, closed: false, expiresAt: { gt: new Date() } },

@@ -469,22 +469,23 @@ export class CollectionsService {
     return this.listPublishedCollections(query, {});
   }
 
-  async getHubPage(hubId: string, query: CursorQueryDto) {
+  async getHubPage(hubId: string, query: CursorQueryDto, viewer: AuthUser | null = null) {
     const hub = await this.prisma.hub.findUnique({ where: { id: hubId } });
-    return this.buildHubPage(hub, query);
+    return this.buildHubPage(hub, query, viewer);
   }
 
   // Handle resolution for /@handle pages. The handle is the handy way in; the
   // payload carries the immutable hubId, which is what clients keep. Handle
   // semantics stay in the hubs module.
-  async getHubPageByHandle(handle: string, query: CursorQueryDto) {
+  async getHubPageByHandle(handle: string, query: CursorQueryDto, viewer: AuthUser | null = null) {
     const hub = await this.hubs.getHubByHandle(handle);
-    return this.buildHubPage(hub, query);
+    return this.buildHubPage(hub, query, viewer);
   }
 
   private async buildHubPage(
     hub: Hub | null,
     query: CursorQueryDto,
+    viewer: AuthUser | null,
   ): Promise<HubPage & { meta: CursorMeta }> {
     const visible =
       hub &&
@@ -502,6 +503,10 @@ export class CollectionsService {
         where: { hubId: hub.id, published: true, ...availableCollections() },
       }),
     ]);
+    // ADR-0069: a hub is public only while it has a published collection; until
+    // then only its owner can open it, and everyone else gets not found.
+    if (!publishedCollectionCount && viewer?.userId !== visible.owner.id)
+      throw new NotFoundException("Hub not found");
     return {
       hub: {
         id: hub.id,

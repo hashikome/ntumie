@@ -46,6 +46,8 @@ export interface SessionView {
   name: string;
   operator: boolean;
   admin: boolean;
+  /** Default visibility for the next new collection: the last explicit choice, else published. */
+  newCollectionPublished: boolean;
 }
 export interface OperatorAccount {
   id: string;

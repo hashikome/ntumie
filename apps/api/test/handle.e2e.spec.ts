@@ -80,7 +80,11 @@ describe("Hub handles (e2e)", () => {
       data: { handleChangedAt: new Date(Date.now() - 30 * 86400000 - 60000) },
     });
     await patch({ handle: `${handle}-new` }).expect(200);
-    const hub = await request(app.getHttpServer()).get(`/api/v1/hubs/${original.id}`).expect(200);
+    // A hub with no published collection is visible only to its owner (ADR-0069).
+    const hub = await request(app.getHttpServer())
+      .get(`/api/v1/hubs/${original.id}`)
+      .auth(token, { type: "bearer" })
+      .expect(200);
     expect(hub.body.data.hub).toMatchObject({
       id: original.id,
       handle: `${handle}-new`,

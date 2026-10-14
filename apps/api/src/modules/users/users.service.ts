@@ -30,7 +30,15 @@ export class UsersService {
         username: true,
         name: true,
         bio: true,
-        hub: { select: { id: true, name: true, handle: true, showOwner: true } },
+        hub: {
+          select: {
+            id: true,
+            name: true,
+            handle: true,
+            showOwner: true,
+            publishedCollectionCount: true,
+          },
+        },
       },
     });
     if (!person) throw appError("not_found");

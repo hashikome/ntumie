@@ -1,4 +1,4 @@
-import type { CaptureLink, CaptureRequest } from "@ntumie/types";
+import { type CaptureLink, type CaptureRequest, maxNoteLength } from "@ntumie/types";
 import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
@@ -34,6 +34,11 @@ export class CaptureLinkDto implements CaptureLink {
   @IsString({ each: true })
   @MaxLength(80, { each: true })
   tags?: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(maxNoteLength)
+  note?: string;
 }
 
 export class CaptureDto implements CaptureRequest {

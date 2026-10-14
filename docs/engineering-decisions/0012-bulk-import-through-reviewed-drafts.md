@@ -59,7 +59,9 @@ Imports are owner management under the clarified
 This replaces contributor import access: the destination policy must require
 management authority, including when committing reviewed drafts. Imports require
 an existing personal hub and never create one implicitly; the future import
-page guides explicit creation. Ordinary contributions and account-owned
+page guides explicit creation. *(Superseded by
+[ADR-0069](0069-hubs-come-with-the-first-collection.md): an import creates the
+missing hub, hidden until a collection is committed.)* Ordinary contributions and account-owned
 collection bookmarks remain available without a hub.
 
 ## CSV creation contract amendment — 2026-10-10

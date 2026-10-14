@@ -23,6 +23,7 @@ export class SessionController {
         operatorGrant: { select: { userId: true } },
         adminGrant: { select: { userId: true } },
         hub: { select: { id: true } },
+        newCollectionPublished: true,
       },
     });
     return apiOk({
@@ -33,6 +34,7 @@ export class SessionController {
       username: user.username,
       operator: !!user.operatorGrant || !!user.adminGrant,
       admin: !!user.adminGrant,
+      newCollectionPublished: user.newCollectionPublished ?? true,
       unreadNotifications: user.emailVerified
         ? await this.prisma.serviceInvitation.count({
             where: {

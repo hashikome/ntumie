@@ -1,4 +1,4 @@
-import type { CommentThreads, CommentView } from "@ntumie/types";
+import { type CommentThreads, type CommentView, maxCommentLength } from "@ntumie/types";
 import type { ReactNode } from "react";
 import { AppForm } from "./app-form";
 import { CommentFocus } from "./comment-focus";
@@ -60,7 +60,7 @@ function Composer({
         id={field}
         name="body"
         required
-        maxLength={2000}
+        maxLength={maxCommentLength}
         rows={parentId ? 2 : 3}
         placeholder={placeholder}
       />
@@ -145,7 +145,7 @@ function Comment({
                 id={`comment-edit-${comment.id}`}
                 name="body"
                 required
-                maxLength={2000}
+                maxLength={maxCommentLength}
                 rows={3}
                 defaultValue={comment.body ?? ""}
               />

@@ -53,8 +53,16 @@ communities (opt-in), and private-collection allowances (monetization).
   results), the hub homepage for visitors and owners (Your home tabs, Saved,
   Subscriptions, no hub) and the person profile, in final state.
 - [ ] M3b Discover, hub homepage and person profile with today's data.
-- [ ] M2 Backend contracts for notes, section-tied comments, remembered
-  visibility and named first collections.
+- [x] (2026-10-15) M2 Backend contracts: link notes (create, edit, clear;
+  links only; 280), comment `sectionId`/`itemId` with scope refs on reads and a
+  1,000-character limit (DB CHECK stays 2,000), `newCollectionPublished` on the
+  account and session (capture defaults to it and remembers explicit choices),
+  trigger-maintained hub `collection_count`/`published_collection_count`, public
+  hub pages and profile bylines only with a published collection (owner
+  excepted), and imports creating the missing hub. Migrations
+  `20261014220000_redesign_notes_comment_scope_hub_counts` and
+  `20261014221000_hub_updated_at_ignores_counts`; spec
+  `apps/api/test/redesign-contracts.e2e.spec.ts`.
 - [ ] M3 Home and About.
 - [ ] M4 Collection reader (desktop and phone).
 - [ ] M5 Start a collection, sign in and sign up.
@@ -147,6 +155,23 @@ communities (opt-in), and private-collection allowances (monetization).
   has at least one published collection; otherwise only its owner sees it.
   Rationale: owner direction (14 October 2026): hubs exist to keep collections.
   Date/Author: 2026-10-14 / owner, recorded by Claude
+- Decision: Hub counts are maintained by a database trigger on collections
+  (insert, delete, hub or publication change), and hub `updated_at` ignores
+  count-only updates through a dedicated `set_hub_updated_at` trigger.
+  Rationale: every write path (capture, create, import, transfer, deletion)
+  stays correct without each remembering to update the hub; counts are derived
+  data, not hub edits.
+  Date/Author: 2026-10-15 / Claude
+- Decision: The public hub page is not found unless the hub has an available
+  published collection, except for its signed-in owner; imports create the hub
+  when a draft is created (hidden until a collection is committed).
+  Rationale: ADR-0069; a draft is tied to a hub, and a hidden empty hub is
+  reused by the person's next collection.
+  Date/Author: 2026-10-15 / Claude
+- Decision: Local migration history was not reset; the new migrations applied
+  with `migrate deploy`, keeping local data (the old checksum mismatch remains in
+  the tech-debt tracker).
+  Date/Author: 2026-10-15 / Claude
 - Decision: Implement phase 1 before designing the remaining surfaces. Discover,
   the hub homepage (visitor and owner) and the person profile were designed in
   final state on 14 October 2026 and join phase 1.

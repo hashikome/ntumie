@@ -1,6 +1,8 @@
 export interface CaptureLink {
   url: string;
   tags?: string[];
+  /** Why this link is here (at most maxNoteLength). */
+  note?: string;
 }
 export interface CaptureRequest {
   operationId: string;
@@ -8,8 +10,9 @@ export interface CaptureRequest {
   /** "first", "new", or the id of a collection to save into. */
   destination: string;
   links: CaptureLink[];
-  /** Name for a collection created by this save ("new" or a first capture). */
+  /** Name for a collection created by this save ("new" or a first capture); blank uses the dated default. */
   collectionTitle?: string;
+  /** Visibility of a collection created by this save; remembered for the next one. */
   published?: boolean;
 }
 export interface CaptureResult {

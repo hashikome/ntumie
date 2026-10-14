@@ -1,4 +1,4 @@
-import type { UpdateResourceRequest } from "@ntumie/types";
+import { maxNoteLength, type UpdateResourceRequest } from "@ntumie/types";
 import {
   ArrayMaxSize,
   IsArray,
@@ -18,6 +18,12 @@ export class UpdateResourceDto implements UpdateResourceRequest {
   @IsString()
   @MaxLength(500)
   description?: string;
+
+  // A link's note; an empty string clears it.
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsString()
+  @MaxLength(maxNoteLength)
+  note?: string;
 
   @IsOptional()
   @IsArray()

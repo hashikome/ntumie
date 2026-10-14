@@ -371,15 +371,19 @@ describe("reviewed imports", () => {
       await db.resource.count({ where: { collectionId: first.destinations[0].collectionId } }),
     ).toBe(101);
   }, 30000);
-  it("requires an existing hub and hides drafts and rows from other accounts", async () => {
+  it("creates the missing hub for an import and hides drafts and rows from other accounts", async () => {
     const other = await person(false);
+    // ADR-0069: the hub comes with the person's first collection, imports
+    // included; it stays hidden until a collection is committed into it.
     await api()
       .post("/api/v1/imports")
       .auth(other.token, { type: "bearer" })
       .field("sourceKind", "text")
       .attach("file", Buffer.from(url()), "links.txt")
-      .expect(400);
-    expect(await db.hub.count({ where: { ownerUserId: other.id } })).toBe(0);
+      .expect(201);
+    expect(await db.hub.findUnique({ where: { ownerUserId: other.id } })).toMatchObject({
+      collectionCount: 0,
+    });
     const d = await draft([url()]);
     const [row] = await rows(d.id);
     await api().get(`/api/v1/imports/${d.id}`).auth(other.token, { type: "bearer" }).expect(404);

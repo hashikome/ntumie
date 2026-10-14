@@ -228,7 +228,8 @@ YouTube — with its own **name**, optional **description** and **@handle**
 (ADR-0018). A person has at most one hub, created explicitly or when they first save a link
 or start a collection; someone who only reads or contributes by invitation
 needs none. Collection bookmarks belong to the person and require no hub. Imports
-require an existing hub and owner authority; they never create a hub. The account
+need owner authority and, like any first collection, create the missing hub
+(ADR-0069; the hub stays hidden until a collection is committed into it). The account
 menu always offers Hub, with explicit creation when absent. *(Changing, approved 14 October 2026,
 [ADR-0069](docs/engineering-decisions/0069-hubs-come-with-the-first-collection.md):
 no empty hubs. A hub is created only with the first collection; sign-up and Create hub
@@ -436,7 +437,8 @@ details, attribution, section authoring and reordering Built.
 
 Purpose: tell similar links apart and give them context, without leaving the
 collection. Status: link metadata Built (the worker looks it up; the web shows
-titles and item details); preview cards and notes Planned.
+titles and item details); notes API built (cobalt redesign M2: create, edit and
+clear, links only, up to 280 characters), web display planned; preview cards Planned.
 
 - **Link metadata:** each link stores its title, description and site name,
   looked up in the background. Text only: no images or icons are fetched or
@@ -537,6 +539,9 @@ Purpose: questions and answers next to the resources. Status: Built.
 
 - Every collection can carry a discussion: questions or notes with one level of
   replies, readable by anyone who can read the collection.
+- A question can name the section it is about and attach one item (from that
+  item's Discuss action); replies inherit their question's. Comments are up to
+  1,000 characters. *(API built in the cobalt redesign M2; web in M4.)*
 - Anyone signed in who can read it can comment and reply, so help never waits
   on the contributors; signed-out readers are invited to sign in.
 - Contributors' replies are badged **Contributor**; they can mark one reply per

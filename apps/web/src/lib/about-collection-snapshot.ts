@@ -37,6 +37,7 @@ const common = {
   linkedCollectionId: null,
   siteName: null,
   addedBy: curator,
+  note: null,
   version: 1,
   createdAt,
   updatedAt,

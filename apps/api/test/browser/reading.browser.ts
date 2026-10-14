@@ -1271,9 +1271,12 @@ describe("explore to resource: production browser journey", () => {
         await browserExpect(
           page.getByRole("link", { name: longTitle, exact: true }),
         ).toHaveAttribute("href", `/c/${sourceId}`);
+        // ADR-0069: a hub with no published collection is not public: visitors
+        // get the ordinary not-found page; only its owner still sees it.
         await ready(page, `/@${emptyHandle}?view=public`);
-        await browserExpect(page.locator(".hub-collections-heading .meta")).toHaveText("0");
-        await browserExpect(page.getByText("No published collections here yet.")).toBeVisible();
+        await browserExpect(page.locator("h1")).toHaveText(
+          session === otherCookie ? "Other reader" : "This hub isn't available.",
+        );
         await browserExpect(page.locator(".collection-row")).toHaveCount(0);
         await browserExpect(page.locator("body")).not.toContainText("Other private");
         if (!session) {
@@ -1281,9 +1284,6 @@ describe("explore to resource: production browser journey", () => {
             await page.emulateMedia({ colorScheme });
             for (const width of [390, 1280]) {
               await page.setViewportSize({ width, height: 900 });
-              const heading = await page.locator(".hub-collections-heading").boundingBox();
-              const empty = await page.locator(".empty").boundingBox();
-              expect(heading && empty && empty.y - heading.y - heading.height < 48).toBeTruthy();
               expect(
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
               ).toBe(true);
@@ -3303,6 +3303,10 @@ describe("account shell and appearance", () => {
         });
         if (!user.hub) throw new Error("Expected hub");
         const hub = user.hub;
+        // ADR-0069: the hub and its owner byline are public only with a published collection.
+        await prisma.collection.create({
+          data: { hubId: hub.id, title: "A published shelf", published: true },
+        });
         const toggle = page.getByRole("switch", {
           name: "Show owner",
           exact: true,
@@ -5121,9 +5125,10 @@ it("edits a hubless person's username and profile without creating a hub", async
       const hub = await prisma.hub.findUniqueOrThrow({ where: { ownerUserId: person.id } });
       expect(await prisma.collection.count({ where: { hubId: hub.id } })).toBe(0);
       await ready(page, `/${username}`);
+      // ADR-0069: an empty hub is hidden, so the profile shows no hub byline yet.
       await browserExpect(
         page.locator("main").getByRole("link", { name: new RegExp(hub.name) }),
-      ).toHaveCount(1);
+      ).toHaveCount(0);
       await browserExpect(
         page.getByRole("button", { name: "Create hub", exact: true }),
       ).toHaveCount(0);

@@ -39,9 +39,11 @@ export class PeopleController {
           name: person.name.trim() || null,
           bio: person.bio,
         },
-        hub: person.hub?.showOwner
-          ? { id: person.hub.id, name: person.hub.name, handle: person.hub.handle }
-          : null,
+        // ADR-0069: a hub with no published collection is not public, so no byline.
+        hub:
+          person.hub?.showOwner && person.hub.publishedCollectionCount > 0
+            ? { id: person.hub.id, name: person.hub.name, handle: person.hub.handle }
+            : null,
         collections: result.items,
       } satisfies PersonProfile,
       result.meta,

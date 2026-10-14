@@ -1,4 +1,4 @@
-import type { CreateExternalResourceRequest } from "@ntumie/types";
+import { type CreateExternalResourceRequest, maxNoteLength } from "@ntumie/types";
 import {
   ArrayMaxSize,
   IsArray,
@@ -29,6 +29,11 @@ export class CreateExternalResourceDto implements CreateExternalResourceRequest 
   @IsString({ each: true })
   @MaxLength(80, { each: true })
   tags?: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(maxNoteLength)
+  note?: string;
 
   @IsInt()
   @Min(0)

@@ -21,19 +21,27 @@ export class HubsController {
 
   // Handle → hub-page resolution (backs the web's /@handle URLs). Literal
   // segment, so it is declared before the :hubId parameter route.
+  @UseGuards(OptionalAuthGuard)
   @Get("by-handle/:handle")
-  async getHubPageByHandle(@Param("handle") handle: string, @Query() query: CursorQueryDto) {
-    const data = await this.collectionsService.getHubPageByHandle(handle, query);
+  async getHubPageByHandle(
+    @Param("handle") handle: string,
+    @CurrentUser() user: AuthUser | null,
+    @Query() query: CursorQueryDto,
+  ) {
+    const data = await this.collectionsService.getHubPageByHandle(handle, query, user);
     return apiOk({ hub: data.hub, collections: data.collections }, data.meta);
   }
 
-  // Public hub page: display info + published collections.
+  // Public hub page: display info + published collections. Hidden from
+  // everyone but its owner until it has a published collection (ADR-0069).
+  @UseGuards(OptionalAuthGuard)
   @Get(":hubId")
   async getHubPage(
     @Param("hubId", new ParseUUIDPipe()) hubId: string,
+    @CurrentUser() user: AuthUser | null,
     @Query() query: CursorQueryDto,
   ) {
-    const data = await this.collectionsService.getHubPage(hubId, query);
+    const data = await this.collectionsService.getHubPage(hubId, query, user);
     return apiOk({ hub: data.hub, collections: data.collections }, data.meta);
   }
 
