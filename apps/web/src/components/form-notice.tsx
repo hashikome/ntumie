@@ -1,6 +1,14 @@
 import { Toast } from "./toast";
 
 const messages: Record<string, string> = {
+  "save-removed": "Removed from your saved collections.",
+  "soon-search": "Search is on the way. Thanks for trying it; it helps us decide what comes next.",
+  "soon-subscriptions":
+    "Subscriptions are on the way. Thanks for trying; it helps us decide what comes next.",
+  "soon-communities":
+    "Communities are on the way. Thanks for trying; it helps us decide what comes next.",
+  "soon-partners":
+    "Partner hubs are on the way. Thanks for trying; it helps us decide what comes next.",
   "import-saved": "Ready links saved. Review any links still waiting below.",
   "import-queued": "Import queued. You can review another collection while it finishes.",
   "import-invalid":
@@ -70,6 +78,11 @@ const messages: Record<string, string> = {
 // Transient confirmations become a top toast; anything the reader must act on
 // stays inline beside the form, in an info, warning or error tone.
 const toasts = new Set([
+  "save-removed",
+  "soon-search",
+  "soon-subscriptions",
+  "soon-communities",
+  "soon-partners",
   "link-saved",
   "links-saved",
   "collection-saved",
@@ -110,7 +123,7 @@ export function FormNotice({ code, wait }: { code?: string; wait?: string }) {
       <Toast
         key={`${code}:${text}`}
         message={text}
-        tone={code === "sent" || code === "resent" ? "info" : "success"}
+        tone={code === "sent" || code === "resent" || code.startsWith("soon-") ? "info" : "success"}
       />
     );
   const tone = info.has(code) ? " info" : errors.has(code) ? " error" : "";

@@ -12,6 +12,7 @@ import { ExportsModule } from "./modules/exports/exports.module";
 import { HealthModule } from "./modules/health/health.module";
 import { HubsModule } from "./modules/hubs/hubs.module";
 import { ImportsModule } from "./modules/imports/imports.module";
+import { InterestModule } from "./modules/interest/interest.module";
 import { OperationsModule } from "./modules/operations/operations.module";
 import { RecoveryModule } from "./modules/recovery/recovery.controller";
 import { ResourcesModule } from "./modules/resources/resources.module";
@@ -36,6 +37,7 @@ import { UsersModule } from "./modules/users/users.module";
     SharingModule,
     CommentsModule,
     ImportsModule,
+    InterestModule,
     ExportsModule,
     HealthModule,
   ],

@@ -30,7 +30,10 @@ export class PeopleController {
     query: CursorQueryDto,
   ) {
     const person = await this.users.getPublicPerson(identity);
-    const result = await this.collections.publicContributions(person.id, query);
+    const [result, saved] = await Promise.all([
+      this.collections.publicContributions(person.id, query),
+      person.showSavedCollections ? this.collections.publicSaved(person.id, 24) : null,
+    ]);
     return apiOk(
       {
         person: {
@@ -46,6 +49,8 @@ export class PeopleController {
             : null,
         collections: result.items,
         contributionCount: result.total,
+        saved: saved?.items ?? null,
+        savedCount: saved?.total ?? null,
       } satisfies PersonProfile,
       result.meta,
     );

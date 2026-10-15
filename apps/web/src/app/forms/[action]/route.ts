@@ -15,6 +15,7 @@ import type {
 import {
   accountActions,
   collectionAddress,
+  interestFeatures,
   isPublicLinkHost,
   maxCaptureLinks,
   operationActions,
@@ -41,7 +42,7 @@ import {
   sealFlow,
   sealInvitationFlow,
 } from "../../../lib/form-server";
-import { type ApiPath, safeReturn, sessionCookie } from "../../../lib/http";
+import { type ApiPath, safeDocumentReturn, safeReturn, sessionCookie } from "../../../lib/http";
 import { importForm } from "../../../lib/import-forms";
 import { sealSearch } from "../../../lib/manage-search";
 import {
@@ -163,6 +164,41 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
       status: result.ok ? (result.status ?? 200) : result.status || 503,
       headers: { "Cache-Control": "private, no-store" },
     });
+  }
+  // Show or hide the collections you saved on your public profile.
+  if (action === "profile-show-saved") {
+    const back = new URL(safeDocumentReturn(form.get("returnTo")), "http://local.invalid");
+    const result = await formPost(
+      request,
+      "/api/v1/profile",
+      { showSavedCollections: form.get("show") === "true" },
+      false,
+      "PATCH",
+    );
+    if (!result.ok)
+      back.searchParams.set("notice", result.status === 429 ? "limited" : "unavailable");
+    return redirectResponse(back.pathname + back.search);
+  }
+  // Remove a saved collection (the owner's Saved tab).
+  if (action === "collection-unsave") {
+    const id = form.get("id");
+    const back = new URL(safeDocumentReturn(form.get("returnTo")), "http://local.invalid");
+    if (!isUuid(id)) return redirectResponse(back.pathname + back.search);
+    const result = await formPost(request, `/api/v1/collections/${id}/save`, {}, false, "DELETE");
+    if (result.ok || result.status === 404) back.searchParams.set("notice", "save-removed");
+    else back.searchParams.set("notice", result.status === 429 ? "limited" : "unavailable");
+    return redirectResponse(back.pathname + back.search);
+  }
+  // Fake doors: record the use of a designed feature that is on the way, then
+  // return; `notice` asks the page to say so (a tab says it in its panel).
+  if (action === "interest") {
+    const feature = interestFeatures.find((key) => key === form.get("feature"));
+    const target = new URL(safeDocumentReturn(form.get("returnTo")), "http://local.invalid");
+    if (feature) {
+      await formPost(request, "/api/v1/interest", { feature });
+      if (form.get("notice") === "1") target.searchParams.set("notice", `soon-${feature}`);
+    }
+    return redirectResponse(target.pathname + target.search);
   }
   if (action === "capture-save") {
     const id = form.get("draftId") ?? "";

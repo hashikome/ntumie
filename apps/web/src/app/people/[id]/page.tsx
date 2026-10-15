@@ -38,6 +38,7 @@ export default async function Page({
       shareId={queryValue(query.via)}
       cursor={queryValue(query.cursor)}
       notice={queryValue(query.notice)}
+      tab={queryValue(query.tab)}
     />
   );
 }

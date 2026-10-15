@@ -80,6 +80,7 @@ const collectionShape = {
       iso(v.at)),
   sectionCount: (v: unknown) => v === undefined || number(v),
   resourceCount: (v: unknown) => v === undefined || number(v),
+  saveCount: (v: unknown) => v === undefined || number(v),
 } satisfies Shape<Collection>;
 const profileShape = {
   id: uuid,
@@ -93,6 +94,7 @@ const profileShape = {
   hubId: (v) => v === null || uuid(v),
   hubName: nullableString,
   hubCollectionCount: (v: unknown) => v === null || number(v),
+  showSavedCollections: bool,
   email: string,
   hubDescription: nullableString,
   image: nullableString,
@@ -184,6 +186,7 @@ function shape(
     "contribution",
     "sectionCount",
     "resourceCount",
+    "saveCount",
   ],
 ) {
   expect(Object.keys(actual).sort()).toEqual(
@@ -271,6 +274,8 @@ describe("W3 serialized contracts and safe HTTP errors", () => {
         owner: { userId: ownerProfile.id, username: ownerProfile.username },
         description: null,
         publishedCollectionCount: 1,
+        collectionSaves: 0,
+        contributorCount: expect.any(Number),
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });

@@ -9,6 +9,20 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Complete the Discover, hub and profile screens as designed. Discover has
+  search, popular tags (filtering by tag), and Everything / Popular / Newest /
+  Hubs tabs: Popular this month (saves over 30 days), Hubs worth subscribing
+  to and Newest, read in one `GET /api/v1/discover/overview`; cards show save
+  counts. Hubs show their collection saves and a Contributors tab (who changed
+  their collections and what they did); owners get Shared with me and Saved
+  tabs (unavailable saves can be removed). Profiles can show saved collections
+  by choice (Show what you follow). Features that are designed but not built
+  are fake doors that record interest (`POST /api/v1/interest`,
+  `feature_interest`) and say they are on the way: search, Subscribe, Join a
+  community, Communities and Partners tabs, the owner's Subscriptions and
+  Communities tabs and their profile switches. Subscriber counts stay hidden
+  until subscriptions exist.
+
 - Redesign Discover, hub pages and person profiles as cobalt band pages:
   Discover's newest collections as cards (tags, hub mark and name, section and
   resource counts) with Show more; a hub's band (mark, "@handle by Owner",

@@ -63,6 +63,7 @@ export default async function Page({
         username={segment}
         cursor={queryValue(query.cursor)}
         notice={queryValue(query.notice)}
+        tab={queryValue(query.tab)}
       />
     );
   }
@@ -83,6 +84,8 @@ export default async function Page({
     return (
       <OwnedHub
         profile={profile}
+        tab={queryValue(query.tab)}
+        notice={queryValue(query.notice)}
         cursor={queryValue(query.cursor)}
         returnTo={sourcePath(hubPath(handle), query)}
       />
@@ -95,6 +98,8 @@ export default async function Page({
       data={result.data}
       nextCursor={result.meta?.nextCursor}
       preview={queryValue(query.view) === "public"}
+      tab={queryValue(query.tab)}
+      notice={queryValue(query.notice)}
     />
   );
 }

@@ -52,7 +52,20 @@ communities (opt-in), and private-collection allowances (monetization).
 - [x] (2026-10-14 22:40Z) Designed Discover (browse, search results, no
   results), the hub homepage for visitors and owners (Your home tabs, Saved,
   Subscriptions, no hub) and the person profile, in final state.
-- [ ] M3b Discover, hub homepage and person profile with today's data.
+- [x] (2026-10-15) M3b first pass (`fe5c251`): Discover cards, hub band and
+  rows, profiles with contribution summaries, Start a collection prompt, API
+  hub mark, footer removed.
+- [x] (2026-10-15) M3b completion (owner, 15 October 2026: ship the full screens; build
+  small gaps now, fake-door big ones). Build now: save counts on cards and the
+  hub's collection saves; Discover tabs (Everything, Popular, Newest, Hubs),
+  Popular this month (saves over 30 days), Hubs worth subscribing to (hub
+  listing API), See all links; popular tags and tag filtering; hub
+  Contributors tab; owner Shared with me and Saved tabs; profile Saved tab by
+  choice with its Show what you follow toggle. Fake doors (record interest in
+  `feature_interest`, say it is on the way): search, Subscribe, Join a
+  community, hub Communities and Partners tabs, owner Subscriptions and
+  Communities tabs, the Subscriptions and Communities toggles. Subscriber
+  counts stay hidden until subscriptions exist.
 - [x] (2026-10-15) M2 Backend contracts: link notes (create, edit, clear;
   links only; 280), comment `sectionId`/`itemId` with scope refs on reads and a
   2,000-character limit (matching the DB CHECK), `newCollectionPublished` on the

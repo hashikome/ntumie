@@ -6,11 +6,13 @@ import { Updated } from "./local-time";
 
 const plural = (count: number, one: string) => `${count} ${count === 1 ? one : `${one}s`}`;
 
-// "4 sections · 8 resources", leaving out what a listing did not count.
+// "4 sections · 8 resources · 24 saves", leaving out what a listing did not count
+// and saves while there are none.
 export function CollectionCounts({ item }: { item: Collection }) {
   const parts = [
     item.sectionCount !== undefined && plural(item.sectionCount, "section"),
     item.resourceCount !== undefined && plural(item.resourceCount, "resource"),
+    item.saveCount ? plural(item.saveCount, "save") : false,
   ].filter(Boolean);
   return parts.length ? <span>{parts.join(" · ")}</span> : null;
 }
@@ -63,6 +65,7 @@ export function OwnedCollectionRow({ item }: { item: Collection }) {
           <span>
             Updated <Updated at={item.updatedAt} />
             {item.resourceCount !== undefined && ` · ${plural(item.resourceCount, "resource")}`}
+            {item.saveCount ? ` · ${plural(item.saveCount, "save")}` : ""}
           </span>
         </span>
       </div>

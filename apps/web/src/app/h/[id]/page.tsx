@@ -40,6 +40,8 @@ export default async function Page({
         {report}
         <OwnedHub
           profile={profile}
+          tab={queryValue(query.tab)}
+          notice={queryValue(query.notice)}
           cursor={queryValue(query.cursor)}
           returnTo={sourcePath(`/h/${id}`, query)}
         />
@@ -58,6 +60,8 @@ export default async function Page({
         data={result.data}
         nextCursor={result.meta?.nextCursor}
         preview={queryValue(query.view) === "public"}
+        tab={queryValue(query.tab)}
+        notice={queryValue(query.notice)}
       />
     </>
   );

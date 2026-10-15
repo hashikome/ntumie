@@ -4,10 +4,14 @@ import type {
   CollectionShareView,
   Contribution,
   CursorMeta,
+  DiscoverOverview,
+  HubCard,
+  HubContributor,
   HubPage,
   HubPerson,
   OperationReason,
   PersonRef,
+  PopularTag,
   SavedCollection,
   ShareDescriptor,
   SharedCollection,
@@ -431,7 +435,7 @@ export class CollectionsService {
   async listShared(user: AuthUser): Promise<SharedCollection[]> {
     const shares = await this.prisma.collectionShare.findMany({
       where: { userId: user.userId, collection: availableCollections(user.userId) },
-      include: { collection: { include: collectionTags } },
+      include: { collection: { include: { ...collectionTags, hub: hubListing } } },
       orderBy: { createdAt: "desc" },
     });
     // Link-sourced access is valid only while link sharing stays enabled.
@@ -439,6 +443,7 @@ export class CollectionsService {
       .filter((s) => s.source === "direct" || s.collection.linkSharingEnabled)
       .map((s) => ({
         ...this.toPublicCollection(s.collection),
+        hub: s.collection.hub,
         shareRole: wireToken(s.role, ["viewer", "contributor"]),
         shareSource: wireToken(s.source, ["direct", "link"]),
       }));
@@ -447,7 +452,7 @@ export class CollectionsService {
   async listSaved(user: AuthUser): Promise<SavedCollection[]> {
     const saves = await this.prisma.collectionSave.findMany({
       where: { userId: user.userId },
-      include: { collection: { include: collectionTags } },
+      include: { collection: { include: { ...collectionTags, hub: hubListing } } },
       orderBy: { savedAt: "desc" },
     });
     // Dormant handling: an unpublished save stays listed but marked
@@ -458,7 +463,7 @@ export class CollectionsService {
           s.collection.published && (await this.policy.resolve(s.collection, null)).canRead;
         return {
           ...this.toPublicCollection(s.collection),
-          ...(!available ? { description: null, tags: [] } : {}),
+          ...(available ? { hub: s.collection.hub } : { description: null, tags: [] }),
           savedAt: s.savedAt.toISOString(),
           available,
         };
@@ -466,10 +471,218 @@ export class CollectionsService {
     );
   }
 
+  // What a person saved, as their public profile shows it when they opt in:
+  // only collections anyone can read now. Dormant saves never show publicly.
+  async publicSaved(userId: string, limit: number) {
+    const saves = await this.prisma.collectionSave.findMany({
+      where: {
+        userId,
+        collection: { published: true, ...availableCollections() },
+      },
+      select: { collectionId: true },
+      orderBy: { savedAt: "desc" },
+    });
+    return {
+      items: await this.listingsInOrder(saves.slice(0, limit).map((s) => s.collectionId)),
+      total: saves.length,
+    };
+  }
+
   // --- discovery / lookup -------------------------------------------------
 
-  async discover(query: CursorQueryDto) {
-    return this.listPublishedCollections(query, {});
+  async discover(query: CursorQueryDto, tag?: string) {
+    return this.listPublishedCollections(query, {
+      ...(tag ? { tags: { some: { tag: { name: tag.trim().toLowerCase() } } } } : {}),
+    });
+  }
+
+  // Everything: a taste of each list in one read.
+  async discoverOverview(): Promise<DiscoverOverview> {
+    const [popular, hubs, newest, tags] = await Promise.all([
+      this.discoverPopular(3),
+      this.discoverHubs(4, "popular"),
+      this.listPublishedCollections({ limit: 4 } as CursorQueryDto, {}),
+      this.popularTags(6),
+    ]);
+    return { popular, hubs, newest: newest.items, tags };
+  }
+
+  // Popular this month: published collections by saves in the last 30 days,
+  // then the latest update. Only collections someone saved in that window.
+  async discoverPopular(limit: number) {
+    const ranked = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT c.id
+      FROM collections c
+      JOIN collection_saves cs ON cs.collection_id = c.id
+        AND cs.saved_at > now() - interval '30 days'
+      JOIN hubs h ON h.id = c.hub_id
+      JOIN users u ON u.id = h.owner_user_id AND u.account_state = 'active'
+      LEFT JOIN collection_holds hold ON hold.collection_id = c.id AND hold.active
+      WHERE c.published AND hold.collection_id IS NULL
+      GROUP BY c.id, c.updated_at
+      ORDER BY COUNT(*) DESC, c.updated_at DESC, c.id DESC
+      LIMIT ${limit}
+    `;
+    return this.listingsInOrder(ranked.map(({ id }) => id));
+  }
+
+  // Hubs worth following: public hubs (a published collection, an active
+  // owner) by saves of their collections in the last 30 days, or newest first.
+  async discoverHubs(limit: number, order: "popular" | "newest"): Promise<HubCard[]> {
+    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT h.id
+      FROM hubs h
+      JOIN users u ON u.id = h.owner_user_id AND u.account_state = 'active'
+      WHERE h.published_collection_count > 0
+      ORDER BY
+        ${
+          order === "newest"
+            ? Prisma.sql`h.created_at DESC`
+            : Prisma.sql`(SELECT COUNT(*) FROM collection_saves cs
+                JOIN collections c ON c.id = cs.collection_id AND c.published
+                WHERE c.hub_id = h.id AND cs.saved_at > now() - interval '30 days') DESC,
+              h.published_collection_count DESC`
+        },
+        h.id DESC
+      LIMIT ${limit}
+    `;
+    const hubs = await this.prisma.hub.findMany({
+      where: { id: { in: rows.map(({ id }) => id) } },
+      include: { owner: { select: { id: true, username: true, name: true } } },
+    });
+    const saves = await this.hubSaves(hubs.map((hub) => hub.id));
+    const byId = new Map(hubs.map((hub) => [hub.id, hub]));
+    return rows.flatMap(({ id }) => {
+      const hub = byId.get(id);
+      if (!hub) return [];
+      return [
+        {
+          id: hub.id,
+          handle: hub.handle,
+          name: hub.name,
+          description: hub.description,
+          owner: hub.showOwner ? { userId: hub.owner.id, username: hub.owner.username } : null,
+          ownerName: hub.showOwner ? hub.owner.name.trim() || null : null,
+          publishedCollectionCount: hub.publishedCollectionCount,
+          collectionSaves: saves.get(hub.id) ?? 0,
+        },
+      ];
+    });
+  }
+
+  // Everyone who changed the hub's published collections, most recent first,
+  // with what they did (the hub's Contributors tab). Same visibility as the
+  // hub page: public only with a published collection, else its owner only.
+  async hubContributors(hubId: string, viewer: AuthUser | null): Promise<HubContributor[]> {
+    const hub = await this.prisma.hub.findFirst({
+      where: { id: hubId, owner: { accountState: "active" } },
+      select: { id: true, ownerUserId: true, publishedCollectionCount: true },
+    });
+    if (!hub || (!hub.publishedCollectionCount && viewer?.userId !== hub.ownerUserId))
+      throw new NotFoundException("Hub not found");
+    const collections = await this.prisma.collection.findMany({
+      where: { hubId, published: true, ...availableCollections() },
+      select: { id: true, title: true },
+    });
+    if (!collections.length) return [];
+    const titles = new Map(collections.map((c) => [c.id, c.title]));
+    const groups = await this.prisma.auditLog.groupBy({
+      by: ["actorUserId", "collectionId", "action"],
+      where: {
+        collectionId: { in: [...titles.keys()] },
+        category: "content",
+        action: { in: [...contentActions] },
+      },
+      _count: { _all: true },
+      _max: { createdAt: true },
+    });
+    const people = await this.prisma.user.findMany({
+      where: {
+        id: { in: [...new Set(groups.flatMap((g) => (g.actorUserId ? [g.actorUserId] : [])))] },
+        accountState: "active",
+      },
+      select: { id: true, username: true, name: true },
+    });
+    const summaries = people.map((person) => {
+      const mine = groups.filter((g) => g.actorUserId === person.id);
+      const total = (actions: string[]) => {
+        const matching = mine.filter((g) => actions.includes(g.action));
+        return {
+          count: matching.reduce((sum, g) => sum + g._count._all, 0),
+          collections: [...new Set(matching.map((g) => g.collectionId))],
+        };
+      };
+      const created = total(["collection.created"]);
+      const links = total(["item.link_added", "item.reference_added", "items.imported"]);
+      const sections = total(["item.section_added"]);
+      const edited = total([...contentActions]);
+      const [kind, chosen] = created.count
+        ? (["created", created] as const)
+        : links.count
+          ? (["links", links] as const)
+          : sections.count
+            ? (["sections", sections] as const)
+            : (["edited", edited] as const);
+      const at = Math.max(...mine.map((g) => g._max.createdAt?.getTime() ?? 0));
+      return {
+        person: { userId: person.id, username: person.username, name: person.name.trim() || null },
+        owner: person.id === hub.ownerUserId,
+        kind,
+        count: kind === "created" ? chosen.collections.length : chosen.count,
+        collections: chosen.collections.length,
+        collectionTitle:
+          chosen.collections.length === 1
+            ? (titles.get(chosen.collections[0] ?? "") ?? null)
+            : null,
+        at: new Date(at).toISOString(),
+      } satisfies HubContributor;
+    });
+    // The owner first, then the most recent.
+    return summaries.sort(
+      (a, b) => Number(b.owner) - Number(a.owner) || Date.parse(b.at) - Date.parse(a.at),
+    );
+  }
+
+  // Tags most used across published collections active in the last 90 days
+  // (PRODUCT §6.6); private content never contributes.
+  async popularTags(limit: number): Promise<PopularTag[]> {
+    const rows = await this.prisma.$queryRaw<Array<{ name: string; collections: number }>>`
+      SELECT t.name, COUNT(*)::int AS collections
+      FROM collection_tags ct
+      JOIN tags t ON t.id = ct.tag_id
+      JOIN collections c ON c.id = ct.collection_id AND c.published
+      JOIN hubs h ON h.id = c.hub_id
+      JOIN users u ON u.id = h.owner_user_id AND u.account_state = 'active'
+      LEFT JOIN collection_holds hold ON hold.collection_id = c.id AND hold.active
+      WHERE hold.collection_id IS NULL AND c.updated_at > now() - interval '90 days'
+      GROUP BY t.name
+      ORDER BY collections DESC, t.name ASC
+      LIMIT ${limit}
+    `;
+    return rows;
+  }
+
+  // Saves across each hub's published collections.
+  private async hubSaves(hubIds: string[]) {
+    if (!hubIds.length) return new Map<string, number>();
+    const rows = await this.prisma.$queryRaw<Array<{ hub_id: string; saves: number }>>`
+      SELECT c.hub_id, COUNT(*)::int AS saves
+      FROM collection_saves cs
+      JOIN collections c ON c.id = cs.collection_id AND c.published
+      WHERE c.hub_id IN (${Prisma.join(hubIds.map((id) => Prisma.sql`${id}::uuid`))})
+      GROUP BY c.hub_id
+    `;
+    return new Map(rows.map((row) => [row.hub_id, row.saves]));
+  }
+
+  // Listing rows for these collection IDs, in this order.
+  private async listingsInOrder(ids: string[]) {
+    const order = new Map(ids.map((id, index) => [id, index]));
+    const rows = await this.prisma.collection.findMany({
+      where: { id: { in: ids } },
+      include: collectionListingInclude,
+    });
+    return this.toListings(rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)));
   }
 
   // Guides worth following: published collections ranked by how complete a
@@ -523,12 +736,7 @@ export class CollectionsService {
         c.id DESC
       LIMIT ${limit}
     `;
-    const order = new Map(ranked.map(({ id }, index) => [id, index]));
-    const rows = await this.prisma.collection.findMany({
-      where: { id: { in: ranked.map(({ id }) => id) } },
-      include: collectionListingInclude,
-    });
-    return this.toListings(rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)));
+    return this.listingsInOrder(ranked.map(({ id }) => id));
   }
 
   async getHubPage(hubId: string, query: CursorQueryDto, viewer: AuthUser | null = null) {
@@ -559,11 +767,21 @@ export class CollectionsService {
         },
       }));
     if (!hub || !visible) throw new NotFoundException("Hub not found");
-    const [collections, publishedCollectionCount] = await Promise.all([
+    const [collections, publishedCollectionCount, saves, contributors] = await Promise.all([
       this.listPublishedCollections(query, { hubId: hub.id }),
       this.prisma.collection.count({
         where: { hubId: hub.id, published: true, ...availableCollections() },
       }),
+      this.hubSaves([hub.id]),
+      this.prisma.$queryRaw<Array<{ total: number }>>`
+        SELECT COUNT(DISTINCT a.actor_user_id)::int AS total
+        FROM audit_logs a
+        JOIN collections c ON c.id = a.collection_id AND c.published AND c.hub_id = ${hub.id}::uuid
+        JOIN users u ON u.id = a.actor_user_id AND u.account_state = 'active'
+        LEFT JOIN collection_holds hold ON hold.collection_id = c.id AND hold.active
+        WHERE a.category = 'content' AND hold.collection_id IS NULL
+          AND a.action IN (${Prisma.join([...contentActions])})
+      `,
     ]);
     // ADR-0069: a hub is public only while it has a published collection; until
     // then only its owner can open it, and everyone else gets not found.
@@ -580,6 +798,8 @@ export class CollectionsService {
         ownerName: visible.showOwner ? visible.owner.name.trim() || null : null,
         description: hub.description,
         publishedCollectionCount,
+        collectionSaves: saves.get(hub.id) ?? 0,
+        contributorCount: contributors[0]?.total ?? 0,
         createdAt: hub.createdAt.toISOString(),
         updatedAt: hub.updatedAt.toISOString(),
       },
@@ -1041,7 +1261,10 @@ export class CollectionsService {
     return this.toPublicCollection(saved);
   }
 
-  private async listPublishedCollections(query: CursorQueryDto, extraWhere: { hubId?: string }) {
+  private async listPublishedCollections(
+    query: CursorQueryDto,
+    extraWhere: Prisma.CollectionWhereInput,
+  ) {
     return this.listCollectionsKeyset(query, {
       published: true,
       ...availableCollections(),
@@ -1102,8 +1325,18 @@ export class CollectionsService {
         })
       ).map((row) => [row.collectionId, row._count._all]),
     );
+    const saves = new Map(
+      (
+        await this.prisma.collectionSave.groupBy({
+          by: ["collectionId"],
+          where: { collectionId: { in: items.map((item) => item.id) } },
+          _count: { _all: true },
+        })
+      ).map((row) => [row.collectionId, row._count._all]),
+    );
     return items.map((item) => ({
       ...this.toPublicCollection(item),
+      saveCount: saves.get(item.id) ?? 0,
       sectionCount: sections.get(item.id) ?? 0,
       resourceCount: item._count.resources - (sections.get(item.id) ?? 0),
       hub: {
@@ -1161,9 +1394,10 @@ const collectionTags = {
   },
 };
 type CollectionWithTags = Collection & { tags: { tag: { name: string } }[] };
+const hubListing = { select: { id: true, handle: true, name: true } } as const;
 const collectionListingInclude = {
   ...collectionTags,
-  hub: { select: { id: true, handle: true, name: true } },
+  hub: hubListing,
   _count: { select: { resources: true } },
 } satisfies Prisma.CollectionInclude;
 type CollectionListingRow = Prisma.CollectionGetPayload<{

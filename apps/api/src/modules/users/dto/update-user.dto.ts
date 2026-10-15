@@ -27,6 +27,10 @@ export class UpdateUserDto implements UpdateProfileRequest {
   showOwner?: boolean;
 
   @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  showSavedCollections?: boolean;
+
+  @ValidateIf((_object, value) => value !== undefined)
   @IsString()
   @MaxLength(500)
   bio?: string;

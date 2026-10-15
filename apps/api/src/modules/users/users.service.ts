@@ -30,6 +30,7 @@ export class UsersService {
         username: true,
         name: true,
         bio: true,
+        showSavedCollections: true,
         hub: {
           select: {
             id: true,
@@ -82,6 +83,7 @@ export class UsersService {
       username?: string;
       bio?: string | null;
       timeZone?: string | null;
+      showSavedCollections?: boolean;
     } = {};
     if (dto.timeZone !== undefined) {
       if (dto.timeZone === null) data.timeZone = null;
@@ -110,6 +112,8 @@ export class UsersService {
     }
 
     if (dto.bio !== undefined) data.bio = dto.bio.trim() || null;
+    if (dto.showSavedCollections !== undefined)
+      data.showSavedCollections = dto.showSavedCollections;
 
     if (dto.showOwner !== undefined) await this.hubs.updateShowOwner(user.id, dto.showOwner);
 
@@ -151,6 +155,7 @@ export class UsersService {
       hubId: hub?.id ?? null,
       hubName: hub?.name ?? null,
       hubCollectionCount: hub?.collectionCount ?? null,
+      showSavedCollections: user.showSavedCollections,
       email: user.email,
       hubDescription: hub?.description ?? null,
       image: user.image,

@@ -133,7 +133,7 @@ async function waitForResend(page: Page) {
     page.getByRole("button", { name: "Send a new code", exact: true }),
   ).toBeEnabled();
 }
-async function ready(page: Page, path = "/discover") {
+async function ready(page: Page, path = "/discover?tab=newest") {
   const response = await page.goto(origin + path, { waitUntil: "domcontentloaded" });
   // Signed-out public pages may carry the edge policy; everything else is private.
   expect(response?.headers()["cache-control"]).toMatch(
@@ -642,8 +642,8 @@ describe("explore to resource: production browser journey", () => {
               await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
             const support = page
-              .getByRole("navigation", { name: "Footer" })
-              .getByRole("link", { name: "About ntumie.", exact: true });
+              .getByRole("navigation", { name: "Main navigation" })
+              .getByRole("link", { name: "About", exact: true });
             await support.focus();
             await page.keyboard.press("Shift+Tab");
             await page.keyboard.press("Tab");
@@ -978,7 +978,11 @@ describe("explore to resource: production browser journey", () => {
         await browserExpect(page.locator("h1")).toHaveText(publicHubName);
         await browserExpect(page).toHaveTitle(`${publicHubName} · ntumie.`);
         await browserExpect(page.locator(".band-handle")).toHaveText(`@${handle} by Reader`);
-        await browserExpect(page.locator(".band-section-head .meta")).toHaveText("25");
+        await browserExpect(
+          page
+            .getByRole("navigation", { name: "Hub", exact: true })
+            .getByRole("link", { name: /^Collections/ }),
+        ).toHaveText("Collections 25");
         await browserExpect(page.locator(".hub-band time")).toHaveCount(0);
         await browserExpect(page.locator(".hub-band")).not.toContainText("Created");
         await browserExpect(page.locator(".hub-band")).not.toContainText("Updated");
@@ -1054,9 +1058,7 @@ describe("explore to resource: production browser journey", () => {
         .expect(200);
       for (const path of [`/h/${hubId}`, `/@${handle}`]) {
         await ready(page, `${path}?cursor=${encodeURIComponent(cursor)}`);
-        await browserExpect(
-          page.getByRole("heading", { name: "My collections", exact: true }),
-        ).toBeVisible();
+        await browserExpect(page.getByRole("link", { name: /^My collections/ })).toBeVisible();
         await browserExpect(page.locator(".collection-item")).toHaveCount(second.body.data.length);
         await browserExpect(page.locator(".collection-item").first()).toContainText(
           second.body.data[0].title,
@@ -1067,7 +1069,9 @@ describe("explore to resource: production browser journey", () => {
       await browserExpect(more).toHaveAttribute("href", /view=public/);
       await more.click();
       await browserExpect(
-        page.getByRole("heading", { name: "Published collections", exact: true }),
+        page
+          .getByRole("navigation", { name: "Hub", exact: true })
+          .getByRole("link", { name: /^Collections/ }),
       ).toBeVisible();
       await browserExpect(page.locator("body")).not.toContainText("Private title");
     } finally {
@@ -3885,14 +3889,10 @@ it("[critical] saves a first private link through email, preserves retries, then
       const id = collections[0].id;
       await page.locator(".context a").first().click();
       await browserExpect(page).toHaveURL(`${origin}/h/${account.hub.id}`);
-      await browserExpect(
-        page.getByRole("heading", { name: "My collections", exact: true }),
-      ).toBeVisible();
+      await browserExpect(page.getByRole("link", { name: /^My collections/ })).toBeVisible();
       await browserExpect(page.getByRole("link", { name: /^Saved links, / })).toBeVisible();
       await ready(page, `/@${account.hub.handle}`);
-      await browserExpect(
-        page.getByRole("heading", { name: "My collections", exact: true }),
-      ).toBeVisible();
+      await browserExpect(page.getByRole("link", { name: /^My collections/ })).toBeVisible();
       await ready(page, `/h/${account.hub.id}?view=public`);
       await browserExpect(page.getByRole("link", { name: /^Saved links, / })).toHaveCount(0);
       await ready(page, `/c/${id}`);
@@ -3977,9 +3977,7 @@ it("[critical] saves a first private link through email, preserves retries, then
       }
       await page.screenshot({ path: `/tmp/first-link-saved-${js}.png`, fullPage: true });
       await page.locator(".wordmark").click();
-      await browserExpect(
-        page.getByRole("heading", { name: "My collections", level: 2 }),
-      ).toBeVisible();
+      await browserExpect(page.getByRole("link", { name: /^My collections/ })).toBeVisible();
       await browserExpect(page.locator(".collection-item")).toContainText(
         "A useful little library",
       );
@@ -4179,7 +4177,7 @@ it("shows collection descriptions and hub attribution without repeated separator
         description: "Collected notes and practical references. A second line for reading.",
       })
       .expect(201);
-    await ready(page, "/discover");
+    await ready(page, "/discover?tab=newest");
     const row = page.locator(".collection-item").first();
     await browserExpect(row.locator("p")).toContainText("Collected notes");
     // Cards name the hub (by its mark and name) and how much the guide holds.
@@ -4772,6 +4770,110 @@ describe("activity and attribution", () => {
     }
   }, 60000);
 });
+
+it("ships the designed Discover, hub and profile in full, with fake doors that record interest", async () => {
+  await prisma.requestBudget.deleteMany();
+  const email = `fake-doors-${crypto.randomUUID()}@example.com`;
+  const signed = await signInHubOwner(app.getHttpServer(), { email, name: "Door Keeper" });
+  const token = signed.headers["set-auth-token"] as string;
+  const tag = `door${crypto.randomUUID().slice(0, 6)}`;
+  const created = await request(app.getHttpServer())
+    .post("/api/v1/capture")
+    .auth(token, { type: "bearer" })
+    .send({
+      operationId: crypto.randomUUID(),
+      startedAt: Date.now(),
+      destination: "new",
+      collectionTitle: "Doors worth opening",
+      links: [{ url: `https://fixture-links.dev/${crypto.randomUUID()}`, tags: [tag] }],
+    })
+    .expect(201);
+  const id = created.body.data.collectionId as string;
+  const { hubId } = await prisma.collection.findUniqueOrThrow({ where: { id } });
+  const person = await prisma.user.findUniqueOrThrow({ where: { email } });
+  for (const js of [true, false]) {
+    const { page, close } = await freshPage(js);
+    try {
+      const before = await prisma.featureInterest.count({ where: { feature: "search" } });
+      await ready(page, "/discover");
+      const tabs = page.getByRole("navigation", { name: "Discover", exact: true });
+      await browserExpect(tabs.getByRole("link")).toHaveText([
+        "Everything",
+        "Popular",
+        "Newest",
+        "Hubs",
+      ]);
+      // Search is on the way: using it records interest and says so.
+      await page.getByLabel("Search collections").fill("compost");
+      await page.getByRole("button", { name: "Search", exact: true }).click();
+      await browserExpect(page.locator(".toast")).toContainText("Search is on the way");
+      expect(await prisma.featureInterest.count({ where: { feature: "search" } })).toBe(before + 1);
+      // Popular tags filter, removable.
+      await ready(page, `/discover?tag=${tag}`);
+      await browserExpect(page.locator(".filter-chip")).toContainText(`Tag: ${tag}`);
+      await browserExpect(
+        page.getByRole("link", { name: "Doors worth opening", exact: true }),
+      ).toBeVisible();
+      await ready(page, "/discover?tab=hubs");
+      const hubCard = page.locator(".hub-card", { hasText: "@" }).first();
+      await browserExpect(hubCard.getByRole("button", { name: "Subscribe" })).toBeVisible();
+      // The hub: Subscribe is a fake door; Contributors is real; Partners says it is coming.
+      await ready(page, `/h/${hubId}`);
+      const subscribers = await prisma.featureInterest.count({
+        where: { feature: "subscriptions" },
+      });
+      await page.locator(".band-actions").getByRole("button", { name: "Subscribe" }).click();
+      await browserExpect(page.locator(".toast")).toContainText("Subscriptions are on the way");
+      expect(await prisma.featureInterest.count({ where: { feature: "subscriptions" } })).toBe(
+        subscribers + 1,
+      );
+      const hubTabs = page.getByRole("navigation", { name: "Hub", exact: true });
+      await hubTabs.getByRole("link", { name: /^Contributors/ }).click();
+      await browserExpect(page.locator(".people-rows")).toContainText(
+        "Owner · Created 1 collection",
+      );
+      await hubTabs.getByRole("button", { name: "Partners", exact: true }).click();
+      await browserExpect(
+        page.getByRole("heading", { name: "Partner hubs are on the way" }),
+      ).toBeVisible();
+      await browserExpect(page).toHaveURL(new RegExp(`/h/${hubId}\\?tab=partners$`));
+      for (const width of [320, 390, 1280]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+      }
+      await page.setViewportSize({ width: 1280, height: 900 });
+    } finally {
+      await close();
+    }
+  }
+  // The owner: Saved tab, and showing saves on the profile by choice.
+  const { page, close } = await freshPage();
+  try {
+    await prisma.collectionSave.create({ data: { collectionId: sourceId, userId: person.id } });
+    await browserSignIn(page, email);
+    await ready(page, `/h/${hubId}?tab=saved`);
+    await browserExpect(page.getByRole("link", { name: /^Saved/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await browserExpect(page.locator(".collection-item")).toHaveCount(1);
+    await ready(page, `/${person.username}`);
+    const toggle = page.getByRole("switch", { name: "Saved collections" });
+    await browserExpect(toggle).toHaveAttribute("aria-checked", "false");
+    await toggle.click();
+    await browserExpect(page.getByRole("switch", { name: "Saved collections" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await browserExpect(page.getByRole("link", { name: /^Saved 1/ })).toBeVisible();
+    await page.getByRole("switch", { name: "Communities" }).click();
+    await browserExpect(page.locator(".toast")).toContainText("Communities are on the way");
+  } finally {
+    await close();
+  }
+}, 90000);
 
 it("edits a hubless person's username and profile without creating a hub", async () => {
   for (const js of [true]) {

@@ -5,10 +5,13 @@ import { type ApiPath, permalink, withCursor } from "../lib/http";
 import { readShared } from "../lib/server-api";
 import { readOwnProfile, readSession } from "../lib/session";
 import { Avatar } from "./avatar";
+import { CollectionCard } from "./collection-card";
+import { FakeDoor } from "./fake-door";
 import { Feedback } from "./feedback";
 import { FormNotice } from "./form-notice";
 import { HubMark } from "./hub-mark";
 import { Updated } from "./local-time";
+import { NativeForm } from "./native-form";
 import { ShareAction } from "./share-action";
 import { ShareOpen } from "./share-open";
 import { StartCollectionPrompt } from "./start-collection-prompt";
@@ -19,12 +22,14 @@ export async function PersonProfile({
   cursor,
   notice,
   shareId,
+  tab,
 }: {
   username?: string;
   userId?: string;
   cursor?: string;
   notice?: string;
   shareId?: string;
+  tab?: string;
 }) {
   const profilePath = userId ? `/people/${userId}` : `/${encodeURIComponent(username ?? "")}`;
   const apiPath: ApiPath = userId
@@ -37,7 +42,8 @@ export async function PersonProfile({
   ]);
   if (!result.ok && result.status === 404) notFound();
   if (!result.ok) return <Feedback error={result} resetPath={profilePath} />;
-  const { person, hub, collections, contributionCount } = result.data;
+  const { person, hub, collections, contributionCount, saved } = result.data;
+  const current = tab === "saved" && saved ? "saved" : "contributions";
   const own = session?.userId === person.userId;
   // Only the owner sees the prompts, and only while they keep no collections.
   const mine = own ? await readOwnProfile() : null;
@@ -80,7 +86,7 @@ export async function PersonProfile({
         </div>
       </section>
       <div className="band-body">
-        {own && <FormNotice code={notice} />}
+        <FormNotice code={notice} />
         {starting && mine ? (
           <div className="profile-prompts">
             <StartCollectionPrompt
@@ -90,43 +96,74 @@ export async function PersonProfile({
                   : undefined
               }
             />
-            {!person.bio && (
-              <section className="profile-hint" aria-labelledby="bio-hint-title">
-                <h2 id="bio-hint-title">Say who you are</h2>
-                <p>A line or two on what you read and why. It shows under your name.</p>
-                <a className="button" href="/settings#bio">
-                  Add a bio
-                </a>
-              </section>
-            )}
+            <div className="profile-hints">
+              {!person.bio && (
+                <section className="profile-hint" aria-labelledby="bio-hint-title">
+                  <h2 id="bio-hint-title">Say who you are</h2>
+                  <p>A line or two on what you read and why. It shows under your name.</p>
+                  <a className="button" href="/settings#bio">
+                    Add a bio
+                  </a>
+                </section>
+              )}
+              <ShowWhatYouFollow shown={mine.showSavedCollections} returnTo={profilePath} />
+            </div>
           </div>
         ) : null}
-        {(!starting || collections.length > 0) && (
-          <section aria-labelledby="contributions-title">
-            <div className="band-section-head">
-              <h2 id="contributions-title">Contributions</h2>
-              <span className="meta">{contributionCount}</span>
-            </div>
-            {collections.length ? (
-              <ul className="collection-rows">
-                {collections.map((item) => (
-                  <ContributionRow key={item.id} item={item} />
-                ))}
-              </ul>
-            ) : (
-              <p className="meta">No public contributions yet.</p>
-            )}
-            {result.meta?.nextCursor && (
-              <div className="continuation">
+        {(!starting || collections.length > 0 || saved) && (
+          <>
+            <nav className="page-tabs" aria-label="Profile">
+              <a href={profilePath} aria-current={current === "contributions" ? "page" : undefined}>
+                Contributions <span>{contributionCount}</span>
+              </a>
+              {saved && (
                 <a
-                  className="button"
-                  href={`${profilePath}?cursor=${encodeURIComponent(result.meta.nextCursor)}`}
+                  href={`${profilePath}?tab=saved`}
+                  aria-current={current === "saved" ? "page" : undefined}
                 >
-                  Show more
+                  Saved <span>{result.data.savedCount ?? saved.length}</span>
                 </a>
+              )}
+            </nav>
+            {current === "saved" && saved ? (
+              saved.length ? (
+                <ul className="collection-cards">
+                  {saved.map((item) => (
+                    <CollectionCard key={item.id} item={item} />
+                  ))}
+                </ul>
+              ) : (
+                <p className="empty">No saved collections to show.</p>
+              )
+            ) : (
+              <>
+                {collections.length ? (
+                  <ul className="collection-rows">
+                    {collections.map((item) => (
+                      <ContributionRow key={item.id} item={item} />
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="meta">No public contributions yet.</p>
+                )}
+                {result.meta?.nextCursor && (
+                  <div className="continuation">
+                    <a
+                      className="button"
+                      href={`${profilePath}?cursor=${encodeURIComponent(result.meta.nextCursor)}`}
+                    >
+                      Show more
+                    </a>
+                  </div>
+                )}
+              </>
+            )}
+            {mine && !starting && (
+              <div className="profile-follow-settings">
+                <ShowWhatYouFollow shown={mine.showSavedCollections} returnTo={profilePath} />
               </div>
             )}
-          </section>
+          </>
         )}
       </div>
     </div>
@@ -171,5 +208,45 @@ function ContributionRow({ item }: { item: Collection }) {
         </span>
       </div>
     </li>
+  );
+}
+
+// Only the owner sees this: what visitors may see besides contributions.
+// Saves are real; subscriptions and communities are on the way (fake doors).
+function ShowWhatYouFollow({ shown, returnTo }: { shown: boolean; returnTo: string }) {
+  return (
+    <section className="profile-hint follow-settings" aria-labelledby="follow-title">
+      <h2 id="follow-title">Show what you follow</h2>
+      <p>Let visitors see your saves, subscriptions and communities.</p>
+      <div className="switch-row">
+        <span id="show-saved-label">Saved collections</span>
+        <NativeForm action="/forms/profile-show-saved" className="fake-door">
+          <input type="hidden" name="show" value={String(!shown)} />
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <button
+            type="submit"
+            role="switch"
+            aria-checked={shown}
+            aria-labelledby="show-saved-label"
+            className="switch"
+          />
+        </NativeForm>
+      </div>
+      {(["subscriptions", "communities"] as const).map((feature) => (
+        <div className="switch-row" key={feature}>
+          <span id={`show-${feature}-label`}>
+            {feature === "subscriptions" ? "Subscriptions" : "Communities"}
+          </span>
+          <FakeDoor
+            feature={feature}
+            returnTo={returnTo}
+            className="switch"
+            switchLabelledBy={`show-${feature}-label`}
+          >
+            {null}
+          </FakeDoor>
+        </div>
+      ))}
+    </section>
   );
 }

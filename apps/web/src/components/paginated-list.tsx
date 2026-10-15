@@ -19,6 +19,8 @@ type Props = {
   collectionId?: string;
   canEdit?: boolean;
   publicHub?: { handle: string; preview?: boolean };
+  /** The page's own query (a tab or tag) that its no-JavaScript links keep. */
+  pageParams?: Record<string, string>;
 } & (
   | {
       kind: "collections";
@@ -171,6 +173,7 @@ export function PaginatedList(props: Props) {
     return () => body.removeEventListener("scroll", onScroll);
   }, [cursor, error, more, props.kind]);
   const viewParams = {
+    ...props.pageParams,
     ...(props.token ? { s: props.token } : {}),
     ...(props.publicHub?.preview ? { view: "public" } : {}),
   };

@@ -45,6 +45,16 @@ export class HubsController {
     return apiOk({ hub: data.hub, collections: data.collections }, data.meta);
   }
 
+  // Who changed the hub's published collections, and what they did.
+  @UseGuards(OptionalAuthGuard)
+  @Get(":hubId/contributors")
+  async listHubContributors(
+    @Param("hubId", new ParseUUIDPipe()) hubId: string,
+    @CurrentUser() user: AuthUser | null,
+  ) {
+    return apiOk(await this.collectionsService.hubContributors(hubId, user));
+  }
+
   // Hub collection list: members see all; others see the published subset.
   @UseGuards(OptionalAuthGuard)
   @Get(":hubId/collections")

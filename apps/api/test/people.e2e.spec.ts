@@ -62,6 +62,8 @@ describe("people and optional hubs", () => {
       hub: null,
       collections: [],
       contributionCount: 0,
+      saved: null,
+      savedCount: null,
     });
     expect(JSON.stringify(publicView.body)).not.toContain(person.email);
     expect(

@@ -308,4 +308,92 @@ describe("cobalt redesign contracts", () => {
       .body.data as Array<{ id: string; contributors?: unknown }>;
     expect(visible.find((row) => row.id === id)?.contributors).toBeUndefined();
   });
+
+  it("discovers popular collections, hubs and tags, filters by tag and counts saves", async () => {
+    const curator = await person("discover-curator");
+    const tag = `tag${randomUUID().slice(0, 8)}`;
+    const make = async (title: string) => {
+      const created = await capture(curator, {
+        collectionTitle: title,
+        links: [{ url: link(), tags: [tag] }],
+      }).expect(201);
+      return created.body.data.collectionId as string;
+    };
+    const loved = await make("Loved this month");
+    const quiet = await make("Quiet guide");
+    for (const who of [owner, reader])
+      await prisma.collectionSave.create({ data: { collectionId: loved, userId: who.id } });
+    const { hubId } = await prisma.collection.findUniqueOrThrow({ where: { id: loved } });
+
+    const popular = (await request(server()).get("/api/v1/discover/popular?limit=48").expect(200))
+      .body.data as Array<{ id: string; saveCount: number }>;
+    const ids = popular.map((item) => item.id);
+    expect(ids).toContain(loved);
+    expect(ids).not.toContain(quiet);
+    expect(popular.find((item) => item.id === loved)?.saveCount).toBe(2);
+
+    const tagged = (
+      await request(server()).get(`/api/v1/discover?tag=${tag.toUpperCase()}`).expect(200)
+    ).body.data as Array<{ id: string }>;
+    expect(tagged.map((item) => item.id).sort()).toEqual([loved, quiet].sort());
+    const tags = (await request(server()).get("/api/v1/discover/tags?limit=48").expect(200)).body
+      .data as Array<{ name: string; collections: number }>;
+    expect(tags.find((item) => item.name === tag)?.collections).toBe(2);
+
+    for (const order of ["popular", "newest"]) {
+      const hubs = (
+        await request(server()).get(`/api/v1/discover/hubs?limit=48&order=${order}`).expect(200)
+      ).body.data as Array<{ id: string; collectionSaves: number }>;
+      expect(hubs.find((hub) => hub.id === hubId)?.collectionSaves).toBe(2);
+    }
+    const page = (await request(server()).get(`/api/v1/hubs/${hubId}`).expect(200)).body.data;
+    expect(page.hub.collectionSaves).toBe(2);
+
+    const contributors = (
+      await request(server()).get(`/api/v1/hubs/${hubId}/contributors`).expect(200)
+    ).body.data;
+    expect(contributors[0]).toMatchObject({
+      person: { userId: curator.id },
+      owner: true,
+      kind: "created",
+      count: 2,
+    });
+    await request(server()).get("/api/v1/discover/hubs?order=loudest").expect(400);
+  });
+
+  it("records interest in features that are on the way, signed in or not", async () => {
+    await request(server()).post("/api/v1/interest").send({ feature: "search" }).expect(201);
+    await auth(request(server()).post("/api/v1/interest"), reader)
+      .send({ feature: "subscriptions" })
+      .expect(201);
+    await request(server()).post("/api/v1/interest").send({ feature: "teleport" }).expect(400);
+    expect(
+      await prisma.featureInterest.count({
+        where: { feature: "subscriptions", userId: reader.id },
+      }),
+    ).toBeGreaterThan(0);
+  });
+
+  it("shows saved collections on a profile only by choice and only readable ones", async () => {
+    const saver = await person("public-saver");
+    const created = await capture(owner, {
+      collectionTitle: "Worth saving",
+      links: [{ url: link() }],
+    }).expect(201);
+    const id = created.body.data.collectionId as string;
+    await auth(request(server()).post(`/api/v1/collections/${id}/save`), saver).expect((r) =>
+      expect([200, 201]).toContain(r.status),
+    );
+    const profile = async () =>
+      (await request(server()).get(`/api/v1/people/${saver.id}`).expect(200)).body.data;
+    expect(await profile()).toMatchObject({ saved: null, savedCount: null });
+    await auth(request(server()).patch("/api/v1/profile"), saver)
+      .send({ showSavedCollections: true })
+      .expect(200);
+    const shown = await profile();
+    expect(shown.savedCount).toBe(1);
+    expect(shown.saved[0]).toMatchObject({ id, title: "Worth saving" });
+    await prisma.collection.update({ where: { id }, data: { published: false } });
+    expect(await profile()).toMatchObject({ saved: [], savedCount: 0 });
+  });
 });

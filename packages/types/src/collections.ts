@@ -22,6 +22,8 @@ export interface Collection {
   /** Listings (Discover, hub pages): how many sections and resources it holds. */
   sectionCount?: number;
   resourceCount?: number;
+  /** Listings: how many people saved it. */
+  saveCount?: number;
   id: string;
   hubId: string;
   title: string;
@@ -146,4 +148,25 @@ export interface CollectionImpact {
 
 export interface TransferCollectionRequest extends CollectionImpactRequest {
   email: string;
+}
+
+/**
+ * Designed features that are not built yet. Using one records interest
+ * (POST /api/v1/interest) and the client says it is on the way.
+ */
+export const interestFeatures = ["search", "subscriptions", "communities", "partners"] as const;
+export type InterestFeature = (typeof interestFeatures)[number];
+
+/** A tag on published collections, with how many use it. */
+export interface PopularTag {
+  name: string;
+  collections: number;
+}
+
+/** Discover's Everything view in one read. */
+export interface DiscoverOverview {
+  popular: Collection[];
+  hubs: import("./hubs.js").HubCard[];
+  newest: Collection[];
+  tags: PopularTag[];
 }

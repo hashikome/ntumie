@@ -25,6 +25,8 @@ model User {
   // Last explicit published/private choice for a new collection; null means
   // the published default (ADR-0067 plan, remembered visibility).
   newCollectionPublished Boolean?  @map("new_collection_published")
+  // Public profile opt-in: show the published collections this person saved.
+  showSavedCollections   Boolean   @default(false) @map("show_saved_collections")
   email                  String    @unique @db.VarChar(255)
   twoFactorEnabled       Boolean   @default(false) @map("two_factor_enabled")
   emailVerified          Boolean   @default(false) @map("email_verified")
@@ -58,6 +60,7 @@ model User {
   comments           CollectionComment[] @relation("CommentAuthor")
   hiddenComments     CollectionComment[] @relation("CommentHider")
   addedResources     Resource[]          @relation("ResourceAddedBy")
+  featureInterest    FeatureInterest[]
 
   @@index([deletionScheduledFor])
   @@map("users")
@@ -651,4 +654,18 @@ model PendingActionPayload {
 
   @@index([expiresAt])
   @@map("pending_action_payloads")
+}
+
+// Demand for features that are designed but not built yet (fake doors): one
+// row per use. Holds no content, only which feature and who (when signed in).
+model FeatureInterest {
+  id        String   @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  feature   String   @db.VarChar(48)
+  userId    String?  @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([feature, createdAt], map: "idx_feature_interest_feature_created_at")
+  @@map("feature_interest")
 }

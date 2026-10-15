@@ -44,14 +44,29 @@ HTTP/mapper coverage per slice; DTOs/Swagger/shared types remain handwritten.
 Local Markdown links are enforced; the guide pin still checks committed trees
 only, so sweep it during review and pin after the reviewed commit exists.
 
-## Discover search and filters
+## Feature discoveries (fake doors)
 
-Text search and tag filters are planned. Popular tags count tags on published
-collections over the last 90 days; private content never contributes. See
-[tenancy and access](../design-docs/tenancy-and-access.md#discover-filters-planned).
-Date-range filtering needs a concrete discovery use case. Desktop Previous/Next
-has no visible numeric range between the controls; accessible page feedback remains.
-Do not ship placeholder search/filter controls before their query path works.
+Designed controls whose features are not built yet ship as fake doors (owner,
+15 October 2026): using one records a `feature_interest` row (feature key and,
+signed in, the person) and says the feature is on the way. Read demand with
+`SELECT feature, count(*) FROM feature_interest GROUP BY feature`. Each needs
+its own slice:
+
+- `search`: text search across hubs and collections (matching hubs first,
+  matched words marked, tags as removable filters, a no-results state). The
+  Discover band's search box posts to the fake door until then.
+- `subscriptions`: Subscribe on hubs and hub cards, per-hub bells, the owner's
+  Subscriptions tab and feed, subscriber counts (hidden until then), the
+  profile's Subscriptions switch, and "Most subscribed" ordering (Discover's
+  hub list orders by recent collection saves meanwhile).
+- `communities`: Join a community, the hub's Communities tab, the owner's
+  Communities tab and the profile switch (ADR-0050, paid curators).
+- `partners`: the hub's Partners tab and partner credit
+  ([ADR-0068](../engineering-decisions/0068-partner-hub-credit.md)).
+
+Popular tags count tags on published collections active in the last 90 days;
+private content never contributes. Date-range filtering needs a concrete
+discovery use case.
 
 ## Sharing and hub engagement
 

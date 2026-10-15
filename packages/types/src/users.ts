@@ -19,6 +19,8 @@ export interface Profile {
   hubName: string | null;
   /** Every collection in the hub, private ones included; null without a hub. */
   hubCollectionCount: number | null;
+  /** Public profile shows the published collections this person saved. */
+  showSavedCollections: boolean;
   email: string;
   hubDescription: string | null;
   image: string | null;
@@ -38,6 +40,8 @@ export interface UpdateProfileRequest {
   showOwner?: boolean;
   handle?: string;
   hubDescription?: string;
+  /** Show the published collections you saved on your public profile. */
+  showSavedCollections?: boolean;
 }
 
 export interface HandleAvailability {
@@ -51,6 +55,9 @@ export interface PersonProfile {
   collections: import("./collections.js").Collection[];
   /** How many public collections this person has contributed to. */
   contributionCount: number;
+  /** Published collections they saved, when they chose to show them; else null. */
+  saved: import("./collections.js").Collection[] | null;
+  savedCount: number | null;
 }
 export interface UsernameAvailability {
   username: string;
