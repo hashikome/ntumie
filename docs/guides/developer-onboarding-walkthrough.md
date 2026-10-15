@@ -12,7 +12,7 @@ answer in your own words before continuing. Reading the whole file in one go
 is the failure mode this structure exists to prevent. Every file is a
 clickable link.
 
-**Pin:** verified against commit `5f3613457db6f193490cf57aca296d6f8042c071`. This is enforced, not honor
+**Pin:** verified against commit `13d44f92de7d98601e43a262bc02eb7c8e9e6f57`. This is enforced, not honor
 system: `check:guide-pin` (part of `bun run verify`) fails when any file this
 guide links changes after the pinned commit. To clear it, reread the affected
 sessions, fix any drift, and move the pin to the latest commit — in a
