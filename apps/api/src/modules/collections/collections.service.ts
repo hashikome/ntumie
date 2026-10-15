@@ -14,6 +14,7 @@ import type {
 import { type ActivityEntry, auditActions, contentActions } from "@ntumie/types";
 import { isUUID } from "class-validator";
 import { CursorQueryDto } from "src/common/dto/cursor-query.dto";
+import { ResourceKind } from "src/common/enums/resource-kind.enum";
 import { AuthUser } from "src/common/interfaces/auth-user.interface";
 import { decodeCursor, encodeCursor } from "src/common/utils/cursor.util";
 import { toVersionEtag } from "src/common/utils/etag.util";
@@ -922,6 +923,11 @@ export class CollectionsService {
             name: true,
           },
         },
+        _count: {
+          select: {
+            resources: true,
+          },
+        },
       },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       take: limit + 1,
@@ -931,10 +937,22 @@ export class CollectionsService {
     const last = items[items.length - 1];
     const nextCursor =
       rows.length > limit && last ? encodeCursor({ u: last.updatedAt, id: last.id }) : null;
+    // Sections are heading items; everything else in the collection is a resource.
+    const sections = new Map(
+      (
+        await this.prisma.resource.groupBy({
+          by: ["collectionId"],
+          where: { collectionId: { in: items.map((item) => item.id) }, kind: ResourceKind.HEADING },
+          _count: { _all: true },
+        })
+      ).map((row) => [row.collectionId, row._count._all]),
+    );
 
     return {
       items: items.map((item) => ({
         ...this.toPublicCollection(item),
+        sectionCount: sections.get(item.id) ?? 0,
+        resourceCount: item._count.resources - (sections.get(item.id) ?? 0),
         hub: {
           id: item.hub.id,
           handle: item.hub.handle,

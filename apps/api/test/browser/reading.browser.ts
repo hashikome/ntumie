@@ -484,11 +484,8 @@ describe("explore to resource: production browser journey", () => {
           await browserExpect(page).toHaveTitle("ntumie. · Good links belong together.");
           await browserExpect(page.locator("html")).toHaveAttribute("data-theme", "system");
           await browserExpect(
-            page.getByRole("figure", { name: "Example collection" }),
+            page.getByRole("figure", { name: /^A sample collection labelled/ }),
           ).toBeVisible();
-          await browserExpect(
-            page.getByRole("figure").getByText("Example", { exact: true }),
-          ).toHaveCount(0);
           for (const width of [320, 390, 768, 1280, 1440]) {
             await page.setViewportSize({ width, height: 900 });
             expect(
@@ -500,9 +497,6 @@ describe("explore to resource: production browser journey", () => {
           const logo = await page.locator(".wordmark").boundingBox();
           const nav = await page.locator(".primary-nav").boundingBox();
           expect(logo && nav && nav.x > logo.x + logo.width + 100).toBeTruthy();
-          expect(
-            await page.locator("main").evaluate((el) => el.scrollHeight <= el.clientHeight + 1),
-          ).toBe(true);
           if (js)
             await page.screenshot({ path: `/tmp/landing-${theme}-desktop.png`, fullPage: true });
           await page.setViewportSize({ width: 390, height: 844 });
@@ -536,165 +530,6 @@ describe("explore to resource: production browser journey", () => {
       } finally {
         await close();
       }
-    }
-  }, 30000);
-
-  it("lets visitors explore the collection example, copy item links and open resource titles", async () => {
-    for (const js of [true, false]) {
-      const { page, close } = await freshPage(js);
-      try {
-        await page.setViewportSize({ width: 1280, height: 900 });
-        await ready(page, "/?notice=signed-out");
-        const address = page.url();
-        const leftPosition = async () => {
-          const box = await page.locator(".landing-intro").boundingBox();
-          // Keyboard focus may scroll the viewport; compare the layout position.
-          return box ? { ...box, y: box.y + (await page.evaluate(() => window.scrollY)) } : null;
-        };
-        const initialLeftPosition = await leftPosition();
-        const example = page.getByRole("figure", { name: "Example collection" });
-        const section = example.locator(".section-disclosure");
-        const items = example.locator(".resource-disclosure");
-        await browserExpect(items.first()).toHaveAttribute("open", "");
-        expect(await page.evaluate(() => window.scrollY)).toBe(0);
-        await browserExpect(example).not.toContainText("Published by");
-        await browserExpect(
-          example.getByRole("button", { name: "Copy link to this item", includeHidden: true }),
-        ).toHaveCount(js ? 2 : 0);
-        await browserExpect(
-          example.getByRole("link", { name: "Link to this item", exact: true }),
-        ).toHaveCount(0);
-        await browserExpect(
-          example.getByRole("link", {
-            name: "Organize Your Bookmarks with the PARA Method for Lightning Fast Web Browsing (opens in a new tab)",
-            exact: true,
-          }),
-        ).toHaveAttribute(
-          "href",
-          "https://fortelabs.com/blog/organize-your-bookmarks-with-the-para-method-for-lightning-fast-web-browsing/",
-        );
-        await browserExpect(
-          example.getByRole("link", {
-            name: "A Brief History & Ethos of the Digital Garden (opens in a new tab)",
-            exact: true,
-          }),
-        ).toHaveAttribute("href", "https://maggieappleton.com/garden-history");
-        const secondSummary = items.nth(1).locator("summary");
-        await secondSummary.focus();
-        await page.keyboard.press("Enter");
-        await browserExpect(items.nth(1)).toHaveAttribute("open", "");
-        await browserExpect(items.first()).not.toHaveAttribute("open", "");
-        await browserExpect(
-          example.getByText(
-            "Explore how a personal collection of knowledge can grow, connect ideas, and be shared with others.",
-          ),
-        ).toBeVisible();
-        await section.locator(":scope > summary").click();
-        await browserExpect(section).not.toHaveAttribute("open", "");
-        expect(await leftPosition()).toEqual(initialLeftPosition);
-        await browserExpect(example.getByText("Show items", { exact: true })).toBeVisible();
-        await page.screenshot({ path: `/tmp/landing-example-collapsed-${js}.png`, fullPage: true });
-        await section.locator(":scope > summary").focus();
-        await page.keyboard.press("Space");
-        await browserExpect(section).toHaveAttribute("open", "");
-        await browserExpect(
-          example.getByRole("link", {
-            name: "Organize Your Bookmarks with the PARA Method for Lightning Fast Web Browsing (opens in a new tab)",
-            exact: true,
-          }),
-        ).toBeVisible();
-        expect(page.url()).toBe(address);
-        expect(await leftPosition()).toEqual(initialLeftPosition);
-        if ((await items.nth(1).getAttribute("open")) === null)
-          await items.nth(1).locator("summary").click();
-        let copied: string;
-        if (js) {
-          await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-          const beforeCopy = page.url();
-          await items.nth(1).getByRole("button", { name: "Copy link to this item" }).click();
-          await browserExpect(items.nth(1).getByRole("status")).toHaveText("Link copied.");
-          expect(page.url()).toBe(beforeCopy);
-          await browserExpect(items.nth(1)).toHaveAttribute("open", "");
-          copied = await page.evaluate(() => navigator.clipboard.readText());
-        } else {
-          await browserExpect(
-            items.nth(1).getByRole("button", { name: "Copy link to this item" }),
-          ).toHaveCount(0);
-          copied = new URL(
-            (await items
-              .nth(1)
-              .getByRole("link", { name: "Open item link to copy its address" })
-              .getAttribute("href")) ?? "",
-            origin,
-          ).href;
-        }
-        const selected = new URL(copied);
-        expect(selected.origin).toBe(origin);
-        expect(selected.pathname).toBe("/");
-        expect(selected.searchParams.get("item")).toBe("019a0000-0000-7000-8000-000000000006");
-        await page.goto(copied);
-        await browserExpect(items.nth(1)).toHaveAttribute("open", "");
-        await browserExpect(items.first()).not.toHaveAttribute("open", "");
-        await ready(page, "/");
-        // Title clicks navigate; clicking the surrounding summary expands details.
-        await page
-          .context()
-          .route(
-            "https://fortelabs.com/blog/organize-your-bookmarks-with-the-para-method-for-lightning-fast-web-browsing/",
-            (route) =>
-              route.fulfill({ contentType: "text/html", body: "<h1>External resource</h1>" }),
-          );
-        const popupPromise = page.waitForEvent("popup");
-        await example
-          .getByRole("link", {
-            name: "Organize Your Bookmarks with the PARA Method for Lightning Fast Web Browsing (opens in a new tab)",
-            exact: true,
-          })
-          .click();
-        const popup = await popupPromise;
-        await browserExpect(popup).toHaveURL(
-          "https://fortelabs.com/blog/organize-your-bookmarks-with-the-para-method-for-lightning-fast-web-browsing/",
-        );
-        await browserExpect(popup.locator("h1")).toHaveText("External resource");
-        expect(page.url()).toBe(`${origin}/`);
-        await popup.close();
-      } finally {
-        await close();
-      }
-    }
-  }, 30000);
-
-  it("types landing questions, holds each, loops back to the first, and respects reduced motion", async () => {
-    const { page, close } = await freshPage();
-    try {
-      await page.emulateMedia({ reducedMotion: "no-preference" });
-      await ready(page, "/");
-      await browserExpect(page.locator(".question-text")).toHaveText("A reading list?|");
-      const height = await page
-        .locator(".typed-question")
-        .evaluate((el) => el.getBoundingClientRect().height);
-      const holdStarted = Date.now();
-      await page.waitForTimeout(2000);
-      await browserExpect(page.locator(".question-text")).toHaveText("A reading list?|");
-      await browserExpect(page.locator(".question-text")).not.toHaveText("A reading list?|");
-      // The hold (3.2 s) starts slightly before this test observes the full text.
-      expect(Date.now() - holdStarted).toBeGreaterThanOrEqual(2500);
-      await browserExpect(page.locator(".question-text")).toHaveText(
-        "A little corner of the web worth sharing?|",
-        { timeout: 12000 },
-      );
-      expect(
-        await page.locator(".typed-question").evaluate((el) => el.getBoundingClientRect().height),
-      ).toBe(height);
-      await browserExpect(page.locator(".question-text")).toHaveText("A reading list?|", {
-        timeout: 12000,
-      });
-      await browserExpect(page.getByRole("button", { name: /question animation/ })).toHaveCount(0);
-      await page.emulateMedia({ reducedMotion: "reduce" });
-      await browserExpect(page.locator(".question-animation")).toBeHidden();
-      await browserExpect(page.locator(".question-static")).toBeVisible();
-    } finally {
-      await close();
     }
   }, 30000);
 
@@ -828,50 +663,55 @@ describe("explore to resource: production browser journey", () => {
     }
   }, 60000);
 
-  it("fits home and About in desktop viewports with shared collection structure and right footer links", async () => {
+  it("lays out home and About as cobalt brand pages with the labelled sample and right footer links", async () => {
     for (const js of [true, false]) {
       const { page, close } = await freshPage(js);
       try {
         for (const path of ["/", "/about"]) {
           await ready(page, path);
-          const collection = page.locator(".collection-example");
-          await browserExpect(collection.locator(".collection-heading h2")).toHaveCount(1);
-          await browserExpect(collection.locator(".section-disclosure h3")).toHaveCount(1);
-          await browserExpect(collection.locator(".resource-disclosure h4")).toHaveCount(2);
+          if (path === "/") {
+            const sample = page.getByRole("figure", { name: /^A sample collection labelled/ });
+            await browserExpect(sample.locator(".anatomy-title")).toHaveText(
+              "Starting a kitchen garden",
+            );
+            await browserExpect(sample.locator(".anatomy-section")).toHaveText([
+              "Choosing a spot",
+              "Preparing beds",
+            ]);
+            await browserExpect(sample.locator(".callout")).toHaveCount(4);
+          } else {
+            await browserExpect(
+              page.getByRole("figure", {
+                name: "The same links, saved and forgotten, then arranged into a guide with sections and a reason for each",
+              }),
+            ).toBeVisible();
+          }
           for (const [width, height] of [
-            [1280, 700],
+            [390, 844],
             [1280, 800],
-            [1440, 900],
             [1920, 1080],
           ]) {
             await page.setViewportSize({ width, height });
             const bounds = await page.evaluate(() => {
               const footer = document.querySelector(".footer-nav a")?.getBoundingClientRect();
-              const intro = document.querySelector(".collection-example")?.getBoundingClientRect();
-              if (!footer || !intro) throw new Error("Missing landing layout");
+              const content = document.querySelector(".footer-content")?.getBoundingClientRect();
+              const band = document.querySelector(".brand-band")?.getBoundingClientRect();
+              if (!footer || !content || !band) throw new Error("Missing brand layout");
               return {
-                height: document.documentElement.scrollHeight,
                 width: document.documentElement.scrollWidth,
-                right: footer.right - intro.right,
-                bottom: footer.bottom,
+                right: footer.right - content.right,
+                bandTop: band.top,
               };
             });
-            expect(bounds.height).toBeLessThanOrEqual(height);
             expect(bounds.width).toBeLessThanOrEqual(width);
             expect(Math.abs(bounds.right)).toBeLessThan(2);
-            expect(bounds.bottom).toBeLessThanOrEqual(height);
           }
-          const panel = collection.getByRole("region", { name: "Resources", exact: true });
-          await page.setViewportSize({ width: 1280, height: 700 });
-          await panel.focus();
-          await page.keyboard.press("End");
-          await browserExpect(collection.locator(".resource-disclosure").last()).toBeInViewport();
-          await page.setViewportSize({ width: 640, height: 400 });
-          await page.getByRole("contentinfo").scrollIntoViewIfNeeded();
-          await browserExpect(page.getByRole("contentinfo").getByRole("link")).toBeInViewport();
-          expect(
-            await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-          ).toBe(true);
+          // The header joins the band: both use the primary fill.
+          const colors = await page.evaluate(() => [
+            getComputedStyle(document.querySelector(".topbar") as Element).backgroundColor,
+            getComputedStyle(document.querySelector(".brand-band") as Element).backgroundColor,
+          ]);
+          expect(colors[0]).toBe(colors[1]);
         }
       } finally {
         await close();
@@ -891,7 +731,9 @@ describe("explore to resource: production browser journey", () => {
             for (const path of ["/", "/about", "/sign-in"]) {
               await ready(page, path);
               if (path === "/about") {
-                await browserExpect(page.locator("h1")).toHaveText("Good links belong together.");
+                await browserExpect(page.locator("h1")).toHaveText(
+                  "A guide is more than a pile of links.",
+                );
               }
               const footer = page.getByRole("contentinfo");
               await footer.scrollIntoViewIfNeeded();
@@ -981,68 +823,18 @@ describe("explore to resource: production browser journey", () => {
           "/sign-up",
         );
         await browserExpect(footer.locator(".footer-tagline")).toHaveCount(0);
-        const collection = page.getByRole("region", { name: "A few useful links" });
-        await browserExpect(collection.locator("summary a")).toHaveCount(2);
-        const support = collection.getByRole("link", { name: "Support", exact: true });
-        const maker = collection.getByRole("link", { name: /Meet the maker/ });
-        await browserExpect(support).not.toHaveAttribute("target", "_blank");
-        await browserExpect(maker).toHaveAttribute("target", "_blank");
-        await browserExpect(maker).toHaveAttribute("href", "https://namestarlit.com/");
-        const makerDetails = collection.locator(".resource-disclosure").nth(1);
-        await makerDetails.locator("summary").focus();
-        await page.keyboard.press("Enter");
-        await browserExpect(makerDetails).toHaveAttribute("open", "");
-        await browserExpect(collection.getByText(/Explore the projects and notes/)).toBeVisible();
-        const itemLink =
-          "/about?item=019a0000-0000-7000-8000-000000000016#item-019a0000-0000-7000-8000-000000000016";
-        if (js) {
-          // Denied clipboard access must still reveal a usable address.
-          await page.evaluate(() => {
-            Object.defineProperty(navigator, "clipboard", {
-              configurable: true,
-              value: {
-                writeText: async () => {
-                  throw new Error("Clipboard unavailable");
-                },
-              },
-            });
-          });
-          await makerDetails.getByRole("button", { name: "Copy link to this item" }).click();
-          await browserExpect(makerDetails.getByLabel("Link to this item")).toHaveValue(
-            `${origin}${itemLink}`,
-          );
-        } else {
-          await browserExpect(
-            makerDetails.getByRole("link", { name: "Open item link to copy its address" }),
-          ).toHaveAttribute("href", itemLink);
-        }
-        await ready(page, itemLink);
-        await browserExpect(makerDetails).toHaveAttribute("open", "");
-        await browserExpect(collection.locator(".resource-disclosure").first()).not.toHaveAttribute(
-          "open",
-          "",
-        );
-        await browserExpect(collection.locator(".row-meta")).toContainText("@ntumie");
-        await browserExpect(collection.locator(".row-meta")).toContainText("Updated");
-        await browserExpect(makerDetails.getByText(/^Added by namestarlit/)).toBeVisible();
-        await browserExpect(makerDetails.locator("time")).toHaveAttribute(
-          "datetime",
-          "2026-10-12T02:58:20.000Z",
-        );
-        const sectionSummary = collection.locator(".section-disclosure > summary");
-        await sectionSummary.click();
-        await browserExpect(maker).not.toBeVisible();
-        await sectionSummary.click();
-        await browserExpect(maker).toBeVisible();
+        const help = page.getByRole("region", { name: "Help and the person behind ntumie." });
+        const support = help.getByRole("link", { name: "Open Support", exact: true });
+        const maker = help.getByRole("link", { name: "namestarlit.com", exact: true });
+        await browserExpect(support).toHaveAttribute("href", "/support");
+        await browserExpect(maker).toHaveAttribute("href", "https://namestarlit.com");
         await support.click();
         await browserExpect(page).toHaveURL(`${origin}/support`);
         await browserExpect(footer.locator(".footer-tagline")).toHaveCount(0);
         await footer.getByRole("link", { name: "About ntumie." }).click();
         await footer.getByRole("link", { name: "Join ntumie." }).click();
         await browserExpect(page).toHaveURL(`${origin}/sign-up`);
-        await page.context().addCookies([{ name: "resource_same_tab", value: "on", url: origin }]);
         await ready(page, "/about");
-        await browserExpect(maker).not.toHaveAttribute("target", "_blank");
         const [name, ...value] = cookie.split("=");
         await page.context().addCookies([{ name, value: value.join("="), url: origin }]);
         await page.reload();
@@ -2699,7 +2491,7 @@ describe("management: production browser journey", () => {
       await browserExpect(page.locator(".toast")).toContainText("sent a new code");
       await page.getByLabel("Six-digit code").fill(await capturedCode(op.email));
       await page.getByRole("button", { name: "Verify and continue" }).click();
-      await browserExpect(page.locator("h1")).toHaveText("Good links deservea place to belong.");
+      await browserExpect(page.locator("h1")).toHaveText("Good links belong together.");
       expect(new URL(page.url()).origin).toBe(origin);
       // A sensitive action with a stale verification asks the signed-in
       // operator to confirm it's them, then finishes the action by itself.
@@ -3907,8 +3699,25 @@ describe("account shell and appearance", () => {
         .auth(timezoneToken, { type: "bearer" })
         .expect(200)
     ).body.data;
-    const at = "2026-10-08T10:00:00.000Z";
+    const at = "2026-10-14T09:00:00.000Z";
     const demoTime = `.item-context time[datetime="${at}"]`;
+    // A published collection with one link added at a fixed time; its item
+    // address opens the details that show the time.
+    const hub = await prisma.hub.findUniqueOrThrow({ where: { ownerUserId: profile.id } });
+    const dated = await prisma.collection.create({
+      data: { hubId: hub.id, title: "Dated shelf", published: true },
+    });
+    const datedItem = await prisma.resource.create({
+      data: {
+        collectionId: dated.id,
+        kind: "external_link",
+        url: `https://fixture-links.dev/dated-${crypto.randomUUID()}`,
+        position: 0,
+        addedByUserId: profile.id,
+        createdAt: new Date(at),
+      },
+    });
+    const datedPath = `/c/${dated.id}?item=${datedItem.id}`;
     const [name, ...value] = timezoneCookie.split("=");
     const savedCookie = { name, value: value.join("="), url: origin };
     try {
@@ -3953,8 +3762,8 @@ describe("account shell and appearance", () => {
               }
             }
           }
-          await ready(page, "/");
-          await browserExpect(page.locator(demoTime).first()).toHaveText("8 Oct 2026, 13:00");
+          await ready(page, datedPath);
+          await browserExpect(page.locator(demoTime).first()).toHaveText("14 Oct 2026, 12:00");
           // A second device with no JS proves the preference arrives in SSR,
           // independent of both device timezone and browser-local storage.
           const second = await browser.newContext({
@@ -3965,8 +3774,8 @@ describe("account shell and appearance", () => {
           try {
             await second.addCookies([savedCookie]);
             const other = await second.newPage();
-            await ready(other, "/");
-            await browserExpect(other.locator(demoTime).first()).toHaveText("8 Oct 2026, 13:00");
+            await ready(other, datedPath);
+            await browserExpect(other.locator(demoTime).first()).toHaveText("14 Oct 2026, 12:00");
           } finally {
             await closeSecond();
           }
@@ -3982,9 +3791,9 @@ describe("account shell and appearance", () => {
                 (await prisma.user.findUniqueOrThrow({ where: { id: profile.id } })).timeZone,
             )
             .toBeNull();
-          await ready(page, "/");
+          await ready(page, datedPath);
           if (js)
-            await browserExpect(page.locator(demoTime).first()).toHaveText("8 Oct 2026, 03:00");
+            await browserExpect(page.locator(demoTime).first()).toHaveText("14 Oct 2026, 02:00");
           else
             await browserExpect(page.locator(".item-context noscript time").first()).toContainText(
               "10:00 UTC",
@@ -3996,9 +3805,9 @@ describe("account shell and appearance", () => {
             .send({ timeZone: "Asia/Tokyo" })
             .expect(200);
           await context.clearCookies();
-          await ready(page, "/");
+          await ready(page, datedPath);
           if (js)
-            await browserExpect(page.locator(demoTime).first()).toHaveText("8 Oct 2026, 03:00");
+            await browserExpect(page.locator(demoTime).first()).toHaveText("14 Oct 2026, 02:00");
         } finally {
           await closeContext();
         }
@@ -4080,7 +3889,11 @@ it("[critical] saves a first private link through email, preserves retries, then
     const { page, close } = await freshPage(js);
     try {
       await ready(page, "/");
-      await page.getByRole("link", { name: "Save your first link", exact: true }).click();
+      // The hero's Start a collection opens the first-link flow until M5 replaces it.
+      await page
+        .getByRole("main")
+        .getByRole("link", { name: "Start a collection", exact: true })
+        .click();
       await page.getByLabel("Link URL", { exact: true }).fill(url);
       await browserExpect(page.getByLabel("Publish new collection")).toHaveValue("true");
       await page.getByLabel("Publish new collection").selectOption("false");
@@ -4453,13 +4266,6 @@ it("shows collection descriptions and hub attribution without repeated separator
     await page.keyboard.press("PageDown");
     expect(await page.locator("main").evaluate((el) => el.scrollTop)).toBe(0);
     await page.screenshot({ path: "/tmp/capture-explore-rows.png", fullPage: true });
-    await ready(page, "/");
-    expect(
-      await page
-        .locator(".collection-example .resource-row")
-        .first()
-        .evaluate((el) => getComputedStyle(el).borderTopWidth),
-    ).toBe("0px");
   } finally {
     await close();
   }

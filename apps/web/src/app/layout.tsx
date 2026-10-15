@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ApiOriginProvider } from "../components/api-origin";
 import { AppNavigation } from "../components/app-navigation";
 import { FocusMode } from "../components/focus-mode";
+import { PrimaryLinks } from "../components/primary-links";
 import { ResourceNavigationProvider } from "../components/resource-navigation";
 import { RouteCodePreload } from "../components/route-code-preload";
 import { SessionNav } from "../components/session-nav";
@@ -69,8 +70,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
                     ntumie.
                   </a>
                   <div className="primary-nav">
-                    <a href="/discover">Discover</a>
-                    <a href="/about">About</a>
+                    <PrimaryLinks />
                     <SessionNav session={session} />
                   </div>
                 </nav>

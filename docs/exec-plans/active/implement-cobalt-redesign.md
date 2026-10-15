@@ -63,7 +63,18 @@ communities (opt-in), and private-collection allowances (monetization).
   `20261014220000_redesign_notes_comment_scope_hub_counts` and
   `20261014221000_hub_updated_at_ignores_counts`; spec
   `apps/api/test/redesign-contracts.e2e.spec.ts`.
-- [ ] M3 Home and About.
+- [x] (2026-10-15) M3 Home and About: cobalt band pages with the header
+  joining the band (`body:has(.brand-page)`), the route diagram (wide and
+  phone), "How to read a collection" from the real preview with numbered
+  annotation markers, the three ideas, Guides worth following from Discover,
+  About's saved-and-forgotten visual, steps and help cards; the kitchen-garden
+  fixture (8 verified links, descriptions from page metadata) replaces Ada's and
+  the About collection; the typing questions are gone. Browser tests updated.
+- [ ] To document in the docs-cleanup pass (owner: implement first, document
+  later): home/About copy and structure (supersedes parts of ADR-0063 and
+  `web-product-experience.md` landing text), removal of the About collection and
+  its `/about?item=` links, landing questions removed, header About link and
+  Start a collection.
 - [ ] M4 Collection reader (desktop and phone).
 - [ ] M5 Start a collection, sign in and sign up.
 - [ ] M6 Save a link dialog and the Edit workspace.
@@ -84,6 +95,13 @@ communities (opt-in), and private-collection allowances (monetization).
   Fix it with the reader rebuild in M4.
   Evidence: fails identically on commit `f893576` with the M1 web changes
   stashed (`bun tooling/verify-browser.ts --test-name-pattern 'reader polish keeps'`).
+- Observation: "opens items beyond the first page at the ID address, preserves
+  access and toggles inline (true)" fails intermittently before any M3 change:
+  after `page.reload()` on a copied `?item=…#item-…` address, the item's details
+  stay closed. Fix it with the reader rebuild in M4.
+  Evidence: 15 October 2026, six repeats each: 2/6 failed with the M3 web
+  changes, 1/6 failed with them stashed, all at the same step and with the same
+  error (`.item-context` "hidden").
 - Observation: M1's first full browser run found four regressions, all fixed:
   the 80rem shell broke the landing/footer alignment test (shell width moved to
   the screen milestones), pill buttons overflowed at 200% zoom (labels now wrap

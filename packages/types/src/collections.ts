@@ -17,6 +17,9 @@ export interface Collection {
   /** canManage: the owner; canEdit: a contributor (owner or contributor). */
   capabilities?: { canManage: boolean; canEdit: boolean };
   restriction?: { reason: import("./operations.js").OperationReason; supportUrl: string };
+  /** Listings (Discover, hub pages): how many sections and resources it holds. */
+  sectionCount?: number;
+  resourceCount?: number;
   id: string;
   hubId: string;
   title: string;

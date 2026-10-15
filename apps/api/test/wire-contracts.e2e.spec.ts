@@ -68,6 +68,8 @@ const collectionShape = {
   version: number,
   createdAt: iso,
   updatedAt: iso,
+  sectionCount: (v: unknown) => v === undefined || number(v),
+  resourceCount: (v: unknown) => v === undefined || number(v),
 } satisfies Shape<Collection>;
 const profileShape = {
   id: uuid,
@@ -168,6 +170,8 @@ function shape(
     "collectionHint",
     "creator",
     "contributors",
+    "sectionCount",
+    "resourceCount",
   ],
 ) {
   expect(Object.keys(actual).sort()).toEqual(

@@ -9,6 +9,12 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Rebuild home and About as cobalt brand pages: band hero with the route
+  diagram, "How to read a collection" built from the real collection preview,
+  Guides worth following from Discover, and About's saved-and-forgotten visual,
+  steps and help cards. The sample collection is now "Starting a kitchen garden"
+  with eight real links.
+
 - Add the redesign's backend contracts: notes on links (280 characters,
   editable and clearable), questions tied to a section and an attached item,
   a remembered published/private choice
