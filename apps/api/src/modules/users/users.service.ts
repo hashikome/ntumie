@@ -136,6 +136,7 @@ export class UsersService {
         name: true,
         description: true,
         showOwner: true,
+        collectionCount: true,
       },
     });
     return {
@@ -149,6 +150,7 @@ export class UsersService {
       handleChangeAvailableAt: handleChangeAvailableAt(hub?.handleChangedAt),
       hubId: hub?.id ?? null,
       hubName: hub?.name ?? null,
+      hubCollectionCount: hub?.collectionCount ?? null,
       email: user.email,
       hubDescription: hub?.description ?? null,
       image: user.image,

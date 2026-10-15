@@ -16,18 +16,26 @@ async function Discover({
   const result = await serverRead<Collection[]>(withCursor("/api/v1/discover", cursor));
   if (!result.ok) return <Feedback error={result} resetPath="/discover" />;
   return (
-    <section data-reader className="reader collection-browser">
-      <div className="page-heading">
-        <h1>Someone already found your next good read.</h1>
-        <p>Discover the links someone kept.</p>
-      </div>
-      <PaginatedList
-        kind="collections"
-        path="/api/v1/discover"
-        initial={result.data}
-        nextCursor={result.meta?.nextCursor}
-      />
-    </section>
+    <div className="band-page" data-reader>
+      <section className="brand-band page-band" aria-labelledby="discover-title">
+        <h1 id="discover-title">Discover</h1>
+        <p className="band-lead">
+          Guides people put together around one idea, and the hubs that make them.
+        </p>
+      </section>
+      <section className="band-body" aria-labelledby="newest-title">
+        <div className="band-section-head">
+          <h2 id="newest-title">Newest collections</h2>
+        </div>
+        <PaginatedList
+          kind="collections"
+          layout="cards"
+          path="/api/v1/discover"
+          initial={result.data}
+          nextCursor={result.meta?.nextCursor}
+        />
+      </section>
+    </div>
   );
 }
 export default function Page(props: {

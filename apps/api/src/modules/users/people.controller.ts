@@ -45,6 +45,7 @@ export class PeopleController {
             ? { id: person.hub.id, name: person.hub.name, handle: person.hub.handle }
             : null,
         collections: result.items,
+        contributionCount: result.total,
       } satisfies PersonProfile,
       result.meta,
     );

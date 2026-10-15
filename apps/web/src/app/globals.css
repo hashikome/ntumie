@@ -106,7 +106,7 @@ body {
   min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(min-content, 1fr) auto;
+  grid-template-rows: auto minmax(min-content, 1fr);
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -267,49 +267,9 @@ main {
 main:focus-visible {
   outline: none;
 }
-.site-footer {
-  padding-inline: 1.25rem;
-}
-.footer-content {
-  min-height: 4.75rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1.5rem;
-  padding: 1rem 0;
-}
-.footer-nav {
-  margin-inline-start: auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 1.5rem;
-}
-.footer-nav a {
-  display: inline-flex;
-  align-items: center;
-  min-height: max(2.75rem, var(--control));
-  color: var(--color-ink);
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-.footer-nav a:is(:hover, :focus-visible) {
-  color: var(--color-link);
-  text-decoration: none;
-}
-.footer-nav a:active {
-  color: var(--color-primary-pressed);
-}
 @media (min-width: 640px) {
   .wordmark {
     font-size: 1.75rem;
-  }
-  .site-footer {
-    padding-inline: 2rem;
-  }
-  .footer-content {
-    max-width: 66rem;
   }
 }
 .support-page h2 {
@@ -335,9 +295,6 @@ main:focus-visible {
 .reader,
 .feedback {
   max-width: 48rem;
-}
-.collection-browser {
-  max-width: none;
 }
 .account-flow {
   max-width: 32rem;
@@ -406,7 +363,6 @@ main:focus-visible {
 
 /* ---------- Rows: one vocabulary for collections and resources ---------- */
 
-.collection-list,
 .resource-list {
   list-style: none;
   padding: 0;
@@ -756,12 +712,6 @@ a.person:hover .person-handle:only-child {
 .continuation > p {
   color: var(--color-muted);
   margin: 0 0 0.75rem;
-}
-.collection-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
 }
 
 /* ---------- Forms ---------- */
@@ -1877,44 +1827,45 @@ html[data-revalidating="true"] .session-nav {
 /* ---------- Brand pages: home and About ---------- */
 
 /* The header joins the cobalt band on brand pages only. */
-body:has(.brand-page) .topbar {
+body:is(:has(.brand-page), :has(.topbar.signed-out):has(.band-page)) .topbar {
   background: var(--color-primary);
   border-bottom-color: transparent;
 }
-body:has(.brand-page)
+body:is(:has(.brand-page), :has(.topbar.signed-out):has(.band-page))
   .topbar
   :is(.wordmark, .primary-nav > a:not(.button), .session-nav > .nav-link),
-body:has(.brand-page) .topbar .wordmark:is(:hover, :active, :visited, :focus-visible) {
+body:is(:has(.brand-page), :has(.topbar.signed-out):has(.band-page))
+  .topbar
+  .wordmark:is(:hover, :active, :visited, :focus-visible) {
   color: var(--color-on-primary);
 }
-body:has(.brand-page) .topbar .button.primary {
+body:is(:has(.brand-page), :has(.topbar.signed-out):has(.band-page)) .topbar .button.primary {
   background: var(--color-on-primary);
   border-color: var(--color-on-primary);
   color: var(--color-primary);
 }
-body:has(.brand-page) .topbar .button.primary:hover {
+body:is(:has(.brand-page), :has(.topbar.signed-out):has(.band-page)) .topbar .button.primary:hover {
   background: var(--color-on-primary-muted);
   border-color: var(--color-on-primary-muted);
   color: var(--color-primary);
 }
-body:has(.brand-page) .topbar :focus-visible,
+body:is(:has(.brand-page), :has(.topbar.signed-out):has(.band-page)) .topbar :focus-visible,
 .brand-band :focus-visible {
   outline-color: var(--color-on-primary);
 }
 main:has(> .brand-page) {
   padding-top: 0;
 }
-/* Brand pages use the wider 80rem column of their designs, header and footer included. */
+/* Brand pages use the wider 80rem column of their designs, header included. */
 body:has(.brand-page) {
   --shell: 80rem;
 }
-/* Full-bleed colour without widening the page: the shadow paints past the
-   shell and the clip keeps it from adding horizontal scroll. */
+/* Full-bleed colour without widening the page: the border image paints one
+   surface past the shell sideways (an outset adds no scroll width), so no
+   seam shows where the band ends on a fractional pixel. */
 .brand-band {
-  background: var(--color-primary);
   color: var(--color-on-primary);
-  box-shadow: 0 0 0 100vmax var(--color-primary);
-  clip-path: inset(0 -100vmax);
+  border-image: linear-gradient(var(--color-primary), var(--color-primary)) fill 0 / 0 / 0 100vmax;
 }
 .brand-band a:not(.button) {
   color: var(--color-on-primary);
@@ -2592,146 +2543,394 @@ body:has(.brand-page) {
   }
 }
 
-/* ---------- Discovery: Explore and hubs ---------- */
+/* ---------- Band pages: Discover, hubs and profiles ---------- */
 
-.collection-browser .collection-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+/* The designs' 80rem column; signed out, the header joins the band (above). */
+body:has(.band-page) {
+  --shell: 80rem;
 }
-.collection-browser .collection-row {
-  min-width: 0;
-  margin-inline: 0;
-  padding: 1rem 1.25rem;
-  background: var(--color-surface);
-  border-radius: var(--radius-panel);
+main:has(> .band-page) {
+  padding-top: 0;
 }
-.collection-browser .collection-row:has(a):hover {
-  background: color-mix(in oklch, var(--color-surface), var(--color-ink) 5%);
+.page-band {
+  padding-block: 2.5rem;
 }
-.collection-browser .collection-row h2 {
-  font-size: var(--text-row);
-}
-.collection-browser .preview {
-  margin-top: 0.25rem;
-  font-size: 0.9375rem;
-}
-.collection-browser .row-meta {
-  margin-top: 0.625rem;
-  font-size: 0.8125rem;
-}
-.collection-browser .page-heading {
-  padding-bottom: 1.75rem;
-}
-/* paginated-list.tsx reserves exactly 1rem above the controls when fitting rows. */
-.collection-browser .continuation {
-  margin-top: 1rem;
-}
-.collection-browser .hub-heading {
-  padding-bottom: 2.5rem;
-}
-.hub-introduction {
-  flex: 1;
-  min-width: 0;
-}
-.hub-introduction h1 {
-  margin-bottom: 0.25rem;
-}
-.hub-identity {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0;
-  margin: 0;
-  font-size: 0.9375rem;
+.page-band h1 {
+  font-size: 2.75rem;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  margin: 0 0 0.625rem;
+  color: var(--color-on-primary);
   overflow-wrap: anywhere;
 }
-.hub-identity {
-  column-gap: 0.375rem;
+.band-lead {
+  color: var(--color-on-primary-muted);
+  font-size: 1.1875rem;
+  max-width: 52ch;
+  margin: 0;
 }
-.hub-introduction .description {
-  margin-block: 1rem 0;
-}
-.hub-collections-heading {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 0.625rem;
-  margin-bottom: 0.5rem;
-}
-.hub-collections-heading h2 {
-  font-size: var(--text-section);
-  line-height: var(--text-section--line-height);
-  font-weight: 650;
-  letter-spacing: -0.015em;
-}
-.hub-collections-heading .meta {
-  min-width: 1.5rem;
-  padding: 0 0.5rem;
-  border-radius: 1rem;
-  background: var(--color-surface);
-  font-size: 0.8125rem;
-  line-height: 1.5rem;
-  font-weight: 600;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.collection-browser .collection-list:empty {
-  display: none;
-}
-.public-hub .empty {
-  padding-block: 0.5rem 0;
-}
-.own-hub > .empty {
-  margin-top: 1rem;
-  padding: 2rem;
-  max-width: 36rem;
-  background: var(--color-surface);
-  border-radius: var(--radius-panel);
-  color: var(--color-ink);
-}
-.own-hub > .empty h2 {
-  font-size: var(--text-section);
-  line-height: var(--text-section--line-height);
-  font-weight: 650;
-}
-.own-hub > .empty p {
-  color: var(--color-muted);
-  margin: 0.375rem 0 1.25rem;
+.hub-mark {
+  flex: none;
+  display: block;
+  border-radius: 6px;
 }
 
-/* Desktop discovery fits complete rows into the frame (see paginated-list.tsx). */
-.collection-row[hidden] {
+.band-lead.person-bio {
+  margin-top: 0;
+  max-width: 52ch;
+}
+.band-identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.875rem;
+}
+.band-identity > div {
+  min-width: 0;
+}
+.band-identity h1 {
+  margin: 0;
+}
+.band-identity .hub-mark {
+  border-radius: 12px;
+  border: 2px solid var(--color-on-primary);
+}
+.band-identity .person-picture {
+  display: block;
+  margin: 0;
+}
+.band-identity .person-picture .avatar {
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 3px solid var(--color-on-primary);
+}
+.band-handle {
+  margin: 0.25rem 0 0;
+  color: var(--color-on-primary-muted);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.brand-band .band-handle a {
+  font-weight: 700;
+}
+.band-handle .person-handle {
+  color: inherit;
+}
+.band-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.375rem;
+}
+.band-actions:empty {
   display: none;
 }
-@media (min-width: 640px) and (min-height: 481px) {
-  .collection-browser.sized-collections {
-    contain: size layout;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+.band-actions .button {
+  font-weight: 600;
+}
+.band-body {
+  padding-block: 2rem 3.5rem;
+}
+.band-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+.band-section-head h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.band-section-head .meta {
+  font-size: 1rem;
+}
+.band-body .continuation {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+.band-body .continuation:empty {
+  display: none;
+}
+.band-body .empty {
+  color: var(--color-muted);
+}
+
+/* Cards: Discover and a hub to its visitors. */
+.collection-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.collection-cards:empty {
+  display: none;
+}
+.collection-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  padding: 1.25rem 1.375rem;
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.collection-card:hover {
+  background: color-mix(in oklch, var(--color-surface), var(--color-ink) 5%);
+}
+.collection-card:has(a:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.collection-card-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.collection-card-title a,
+.collection-card-title a:hover {
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.collection-card .collection-card-title a:focus-visible {
+  outline: none;
+}
+/* The title's link covers the card. */
+.collection-card .collection-card-title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.collection-card p {
+  margin: 0;
+  color: var(--color-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.card-tags .tag {
+  padding: 0.125rem 0.625rem;
+  border-radius: var(--radius-tag);
+  background: var(--color-canvas);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.card-meta:empty {
+  display: none;
+}
+.card-hub > span {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* Rows: the owner's collections and a person's contributions. */
+.collection-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.owned-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 0.25rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+.owned-row > div {
+  min-width: 0;
+}
+.owned-row-title {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.owned-row-title:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+}
+.owned-row-description {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--color-muted);
+  max-width: 72ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.owned-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.visibility-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 1.5rem;
+  padding: 0 0.625rem;
+  border-radius: var(--radius-tag);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-weight: 600;
+}
+.visibility-pill.is-published {
+  background: var(--color-primary-soft);
+  color: var(--color-link);
+}
+.row-hub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.row-hub:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+}
+.avatar-stack {
+  display: flex;
+}
+.avatar-stack .avatar {
+  width: 1.625rem;
+  height: 1.625rem;
+  border: 2px solid var(--color-canvas);
+  margin-left: -0.5rem;
+}
+.avatar-stack .avatar:first-child {
+  margin-left: 0;
+}
+
+/* Someone with no collections yet: start one; their hub comes with it. */
+.profile-prompts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.start-prompt,
+.profile-hint {
+  padding: 1.5rem;
+  border-radius: var(--radius-panel);
+}
+.start-prompt {
+  background: var(--color-primary-soft);
+}
+/* Alone (the owner's empty hub), it keeps the width it has beside the bio hint. */
+.band-body > .start-prompt {
+  max-width: 46rem;
+}
+.profile-hint {
+  background: var(--color-surface);
+}
+.start-prompt h2,
+.profile-hint h2 {
+  font-size: 1.25rem;
+  margin: 0 0 0.375rem;
+}
+.start-prompt > p,
+.profile-hint p {
+  margin: 0 0 0.875rem;
+  color: var(--color-muted);
+}
+.start-prompt-points {
+  list-style: none;
+  margin: 0 0 1.125rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.start-prompt-points li {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+}
+.start-prompt-points svg {
+  flex: none;
+  margin-top: 0.25rem;
+  color: var(--color-link);
+}
+.start-prompt form {
+  display: grid;
+  gap: 0.375rem;
+  justify-items: start;
+}
+.start-prompt label {
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+.start-prompt input {
+  width: 100%;
+}
+.start-prompt .button {
+  margin-top: 0.875rem;
+}
+
+@media (max-width: 900px) {
+  .collection-cards,
+  .profile-prompts {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .sized-collections .page-heading {
-    flex: 0 0 auto;
+}
+@media (max-width: 639px) {
+  .page-band {
+    padding-block: 1.375rem 1.5rem;
   }
-  .sized-collections .collection-list {
-    flex: 1 1 0;
-    min-height: 0;
-    align-content: start;
-    overflow: hidden;
+  .page-band h1 {
+    font-size: 2.25rem;
   }
-  .sized-collections .continuation {
-    flex: 0 0 auto;
-    min-height: var(--control);
+  .band-lead {
+    font-size: 1rem;
   }
-  .sized-collections .collection-row h2 {
+  .band-section-head h2 {
+    font-size: 1.25rem;
+  }
+  .band-body {
+    padding-block: 1.25rem 2.5rem;
+  }
+  .collection-cards {
+    gap: 0.75rem;
+  }
+  .collection-card {
+    padding: 1rem;
+  }
+  .owned-row-description {
+    white-space: normal;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .sized-collections:not(.fits-desktop) .collection-list {
-    overflow: visible;
-    flex-basis: auto;
   }
 }
 
@@ -3366,9 +3565,6 @@ main .ops-filters select {
   .row-meta > :not(:last-child):not(:has(+ .tags))::after {
     content: none;
   }
-  .collection-browser .collection-list {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .topbar > nav {
     min-height: 3.5rem;
     gap: 0.5rem;
@@ -3569,12 +3765,6 @@ main .ops-filters select {
   margin: 0;
 }
 .notification-settings h2 {
-  margin-bottom: 0.75rem;
-}
-.profile-create-hub {
-  margin-bottom: 1.75rem;
-}
-.profile-create-hub p {
   margin-bottom: 0.75rem;
 }
 
@@ -4613,12 +4803,8 @@ main .import-page .import-start input[type="file"]::file-selector-button:hover {
 }
 @media (min-width: 1024px) {
   body:has(.manage-workspace) .topbar > .shell,
-  body:has(.manage-workspace) .site-footer > .shell,
   main.shell:has(.manage-workspace) {
     width: min(100%, 88rem);
-  }
-  body:has(.manage-workspace) .footer-content {
-    max-width: 84rem;
   }
   .manage-workspace {
     display: grid;

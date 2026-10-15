@@ -1,15 +1,17 @@
-import type { PersonProfile as PersonProfileData } from "@ntumie/types";
+import { webServerConfig } from "@ntumie/config/web-server";
+import type { Collection, PersonProfile as PersonProfileData } from "@ntumie/types";
 import { notFound } from "next/navigation";
-import { type ApiPath, withCursor } from "../lib/http";
+import { type ApiPath, permalink, withCursor } from "../lib/http";
 import { readShared } from "../lib/server-api";
-import { readSession } from "../lib/session";
+import { readOwnProfile, readSession } from "../lib/session";
 import { Avatar } from "./avatar";
 import { Feedback } from "./feedback";
 import { FormNotice } from "./form-notice";
-import { NativeForm } from "./native-form";
-import { CollectionRow } from "./primitives";
+import { HubMark } from "./hub-mark";
+import { Updated } from "./local-time";
 import { ShareAction } from "./share-action";
 import { ShareOpen } from "./share-open";
+import { StartCollectionPrompt } from "./start-collection-prompt";
 
 export async function PersonProfile({
   username,
@@ -35,65 +37,139 @@ export async function PersonProfile({
   ]);
   if (!result.ok && result.status === 404) notFound();
   if (!result.ok) return <Feedback error={result} resetPath={profilePath} />;
-  const { person, hub, collections } = result.data;
+  const { person, hub, collections, contributionCount } = result.data;
   const own = session?.userId === person.userId;
-  const name = person.name;
+  // Only the owner sees the prompts, and only while they keep no collections.
+  const mine = own ? await readOwnProfile() : null;
+  const starting = Boolean(mine && (!mine.hubId || mine.hubCollectionCount === 0));
   return (
-    <section className="reader collection-browser" data-reader>
+    <div className="band-page person-page" data-reader>
       <ShareOpen shareId={shareId} kind="profile" resourceId={person.userId} />
-      <div className="page-heading shareable-heading">
-        <div>
-          <div className="person-picture">
+      <section className="brand-band page-band" aria-labelledby="person-title">
+        <div className="band-identity">
+          <span className="person-picture">
             <Avatar userId={person.userId} large />
+          </span>
+          <div>
+            <h1 id="person-title">{person.name || person.username}</h1>
+            {(person.name || hub) && (
+              <p className="band-handle">
+                <span>{person.username}</span>
+                {hub && (
+                  <>
+                    {" "}
+                    of <a href={`/h/${hub.id}`}>{hub.name}</a>
+                  </>
+                )}
+              </p>
+            )}
           </div>
-          <h1>{name || person.username}</h1>
-          {(name || hub) && (
-            <p className="hub-identity meta">
-              <span>{person.username}</span>
-              {hub && (
-                <>
-                  {" "}
-                  of{" "}
-                  <a className="person-name" href={`/h/${hub.id}`}>
-                    {hub.name}
-                  </a>
-                </>
-              )}
-            </p>
+        </div>
+        {person.bio && <p className="band-lead person-bio">{person.bio}</p>}
+        <div className="band-actions">
+          {own && (
+            <a className="button band-ghost" href="/settings">
+              Settings
+            </a>
           )}
-          {person.bio && <p className="person-bio">{person.bio}</p>}
+          <ShareAction
+            target={{ kind: "profile", id: person.userId }}
+            returnTo={returnTo}
+            className="button band-ghost"
+          />
         </div>
-        <ShareAction target={{ kind: "profile", id: person.userId }} returnTo={returnTo} />
+      </section>
+      <div className="band-body">
+        {own && <FormNotice code={notice} />}
+        {starting && mine ? (
+          <div className="profile-prompts">
+            <StartCollectionPrompt
+              hubAddress={
+                mine.hubId && mine.handle
+                  ? `${new URL(webServerConfig().publicOrigin).host}/@${mine.handle}`
+                  : undefined
+              }
+            />
+            {!person.bio && (
+              <section className="profile-hint" aria-labelledby="bio-hint-title">
+                <h2 id="bio-hint-title">Say who you are</h2>
+                <p>A line or two on what you read and why. It shows under your name.</p>
+                <a className="button" href="/settings#bio">
+                  Add a bio
+                </a>
+              </section>
+            )}
+          </div>
+        ) : null}
+        {(!starting || collections.length > 0) && (
+          <section aria-labelledby="contributions-title">
+            <div className="band-section-head">
+              <h2 id="contributions-title">Contributions</h2>
+              <span className="meta">{contributionCount}</span>
+            </div>
+            {collections.length ? (
+              <ul className="collection-rows">
+                {collections.map((item) => (
+                  <ContributionRow key={item.id} item={item} />
+                ))}
+              </ul>
+            ) : (
+              <p className="meta">No public contributions yet.</p>
+            )}
+            {result.meta?.nextCursor && (
+              <div className="continuation">
+                <a
+                  className="button"
+                  href={`${profilePath}?cursor=${encodeURIComponent(result.meta.nextCursor)}`}
+                >
+                  Show more
+                </a>
+              </div>
+            )}
+          </section>
+        )}
       </div>
-      {own && <FormNotice code={notice} />}
-      {own && !session.hubId && (
-        <div className="profile-create-hub">
-          <p>Create a hub to keep your collections in one place.</p>
-          <NativeForm action="/forms/create-hub">
-            <button type="submit" className="button">
-              Create hub
-            </button>
-          </NativeForm>
-        </div>
-      )}
-      <h2>Public contributions</h2>
-      {collections.length ? (
-        <ul className="collection-list">
-          {collections.map((item) => (
-            <CollectionRow key={item.id} item={item} />
-          ))}
-        </ul>
-      ) : (
-        <p className="meta">No public contributions yet.</p>
-      )}
-      {result.meta?.nextCursor && (
-        <a
-          className="button"
-          href={`${profilePath}?cursor=${encodeURIComponent(result.meta.nextCursor)}`}
-        >
-          More contributions
+    </div>
+  );
+}
+
+const plural = (count: number, one: string) => `${count} ${count === 1 ? one : `${one}s`}`;
+
+// A collection the person helped make, with its hub and what they did there.
+function ContributionRow({ item }: { item: Collection }) {
+  const done = item.contribution;
+  return (
+    <li className="owned-row collection-item">
+      <div>
+        <a className="owned-row-title" href={permalink(item.id)}>
+          {item.title}
         </a>
-      )}
-    </section>
+        {item.description && <span className="owned-row-description">{item.description}</span>}
+        <span className="owned-row-meta">
+          {item.hub && (
+            <a className="row-hub" href={`/h/${encodeURIComponent(item.hub.id)}`}>
+              <HubMark hubId={item.hub.id} size={20} />
+              {item.hub.name}
+            </a>
+          )}
+          {done?.kind === "created" || !done ? (
+            <span>
+              {item.hub && "· "}
+              {done ? "Created · " : ""}Updated <Updated at={item.updatedAt} />
+            </span>
+          ) : (
+            <span>
+              {item.hub && "· "}
+              {done.kind === "links"
+                ? `Added ${plural(done.count, "link")}`
+                : done.kind === "sections"
+                  ? `Added ${plural(done.count, "section")}`
+                  : "Edited"}{" "}
+              · <Updated at={done.at} />
+            </span>
+          )}
+        </span>
+      </div>
+    </li>
   );
 }

@@ -267,4 +267,45 @@ describe("cobalt redesign contracts", () => {
     });
     await request(server()).get("/api/v1/discover/guides?limit=13").expect(400);
   });
+
+  it("says what each person did on profiles and who else shapes the owner's rows", async () => {
+    const curator = await person("profile-owner");
+    const helper = await person("profile-helper");
+    const created = await capture(curator, {
+      collectionTitle: "Feeding your soil",
+      links: [{ url: link() }],
+    }).expect(201);
+    const id = created.body.data.collectionId as string;
+    await auth(request(server()).post(`/api/v1/collections/${id}/shares`), curator)
+      .send({ email: helper.email, role: "contributor" })
+      .expect(201);
+    for (let added = 0; added < 3; added++)
+      await capture(helper, { destination: id, links: [{ url: link() }] }).expect(201);
+
+    const profile = async (who: Person) =>
+      (await request(server()).get(`/api/v1/people/${who.id}`).expect(200)).body.data;
+    const helped = await profile(helper);
+    expect(helped.contributionCount).toBe(1);
+    expect(helped.collections[0]).toMatchObject({ id, contribution: { kind: "links", count: 3 } });
+    const made = await profile(curator);
+    expect(made.collections[0].contribution).toMatchObject({ kind: "created" });
+
+    const hubId =
+      created.body.data.hubId ??
+      (await prisma.collection.findUniqueOrThrow({ where: { id } })).hubId;
+    const rows = (
+      await auth(request(server()).get(`/api/v1/hubs/${hubId}/collections`), curator).expect(200)
+    ).body.data as Array<{
+      id: string;
+      contributors?: { people: Array<{ userId: string }>; total: number };
+    }>;
+    expect(rows.find((row) => row.id === id)?.contributors).toMatchObject({
+      people: [{ userId: helper.id }],
+      total: 1,
+    });
+    // Visitors' listings carry no contributor summary.
+    const visible = (await request(server()).get(`/api/v1/hubs/${hubId}/collections`).expect(200))
+      .body.data as Array<{ id: string; contributors?: unknown }>;
+    expect(visible.find((row) => row.id === id)?.contributors).toBeUndefined();
+  });
 });

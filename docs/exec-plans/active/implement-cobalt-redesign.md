@@ -76,7 +76,9 @@ communities (opt-in), and private-collection allowances (monetization).
   its `/about?item=` links, landing questions removed, header About link and
   Start a collection; the Guides worth following ranking (completeness, then
   saves, then latest update; owner decision 15 October 2026) in `PRODUCT.md`
-  Discover requirements.
+  Discover requirements; the footer removal (supersedes ADR-0063's footer
+  link); the API hub mark (DESIGN.md palette and an ADR); Discover, hub and
+  profile layouts (`web-product-experience.md`, PRODUCT.md §6.6).
 - [ ] M4 Collection reader (desktop and phone).
 - [ ] M5 Start a collection, sign in and sign up.
 - [ ] M6 Save a link dialog and the Edit workspace.
@@ -121,6 +123,17 @@ communities (opt-in), and private-collection allowances (monetization).
   Evidence: `apps/api/src/modules/collections/capture.service.ts`.
 
 ## Decision Log
+
+- Decision (owner, 15 October 2026): a hub's picture is a generated mark
+  only: four tiles from a fixed palette, seeded by the hub's immutable ID,
+  served by the API at `GET /api/v1/hubs/:hubId/avatar` like person avatars,
+  so no client reimplements it and no media is stored. Gravatar stays for
+  people: most owners have one email, and Gravatar pictures people, not hubs.
+  Pasted image URLs and fetched favicons are out (visitor IP leaks, breakage,
+  caching third-party media).
+- Decision (owner, 15 October 2026): no site footer. No board has one and
+  About now sits in the header, so the footer's single About / Join link
+  (ADR-0063) is removed.
 
 - Decision: Start a collection replaces Save your first link. The visitor names
   the collection; a blank name falls back to the dated default ("Saved links,

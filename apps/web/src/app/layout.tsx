@@ -9,7 +9,6 @@ import { PrimaryLinks } from "../components/primary-links";
 import { ResourceNavigationProvider } from "../components/resource-navigation";
 import { RouteCodePreload } from "../components/route-code-preload";
 import { SessionNav } from "../components/session-nav";
-import { SiteFooter } from "../components/site-footer";
 import { TimeZoneProvider } from "../components/time-zone";
 import { readResourceNewTab } from "../lib/device-preferences";
 import { routeChunksUrl } from "../lib/route-chunks-server";
@@ -59,7 +58,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
               <a className="skip-link" href="#main">
                 Skip to content
               </a>
-              <header className="topbar">
+              <header className={session ? "topbar" : "topbar signed-out"}>
                 <nav aria-label="Main navigation" className="shell">
                   <a
                     className="wordmark"
@@ -82,7 +81,6 @@ export default async function Layout({ children }: { children: ReactNode }) {
                 <RouteCodePreload manifest={routeChunksUrl()} />
                 {children}
               </main>
-              <SiteFooter signedIn={Boolean(session)} />
             </TimeZoneProvider>
           </ResourceNavigationProvider>
         </ApiOriginProvider>

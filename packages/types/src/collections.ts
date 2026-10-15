@@ -17,6 +17,8 @@ export interface Collection {
   /** canManage: the owner; canEdit: a contributor (owner or contributor). */
   capabilities?: { canManage: boolean; canEdit: boolean };
   restriction?: { reason: import("./operations.js").OperationReason; supportUrl: string };
+  /** Public profiles: what that person did here, and when they last did it. */
+  contribution?: Contribution;
   /** Listings (Discover, hub pages): how many sections and resources it holds. */
   sectionCount?: number;
   resourceCount?: number;
@@ -32,6 +34,16 @@ export interface Collection {
   version: number;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
+}
+
+/**
+ * A person's part in a collection: they created it, or else added `count`
+ * links or sections, or else edited it. `at` is their latest change.
+ */
+export interface Contribution {
+  kind: "created" | "links" | "sections" | "edited";
+  count: number;
+  at: IsoTimestamp;
 }
 
 export interface SharedCollection extends Collection {

@@ -191,7 +191,7 @@ export async function measureProduction({
         await measure("navigate-collection", "warm-browser", async (p) => {
           await Promise.all([
             p.waitForURL(/\/@|\/c\//, { waitUntil: "load" }),
-            p.locator("main .collection-row:not([hidden]) h2 a").first().click(),
+            p.locator("main .collection-item a").first().click(),
           ]);
         });
         await resetBudget();

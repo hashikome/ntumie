@@ -213,3 +213,24 @@ describe("public account avatar HTTP resolution", () => {
     }
   });
 });
+
+describe("hub mark HTTP contract", () => {
+  it("serves a hub's generated mark as a safe SVG seeded by its ID", async () => {
+    const id = "019a0000-0000-7000-8000-000000000042";
+    const first = await request(app.getHttpServer()).get(`/api/v1/hubs/${id}/avatar`).expect(200);
+    expect(first.headers["content-type"]).toBe("image/svg+xml; charset=utf-8");
+    expect(first.headers["cache-control"]).toBe("public, max-age=86400");
+    expect(first.headers["content-security-policy"]).toContain("sandbox");
+    const svg = Buffer.isBuffer(first.body) ? first.body.toString() : first.text;
+    expect(svg).toContain('viewBox="0 0 24 24"');
+    expect(svg).toContain('width="64" height="64"');
+    expect(svg).not.toContain(id);
+    await request(app.getHttpServer())
+      .get(`/api/v1/hubs/${id}/avatar`)
+      .set("If-None-Match", first.headers.etag)
+      .expect(304);
+    await request(app.getHttpServer()).get(`/api/v1/hubs/${id}/avatar?size=128`).expect(200);
+    await request(app.getHttpServer()).get(`/api/v1/hubs/${id}/avatar?size=8`).expect(400);
+    await request(app.getHttpServer()).get("/api/v1/hubs/not-a-uuid/avatar").expect(400);
+  });
+});

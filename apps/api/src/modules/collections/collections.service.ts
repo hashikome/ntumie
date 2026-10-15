@@ -2,10 +2,12 @@ import { createHash, randomBytes } from "node:crypto";
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type {
   CollectionShareView,
+  Contribution,
   CursorMeta,
   HubPage,
   HubPerson,
   OperationReason,
+  PersonRef,
   SavedCollection,
   ShareDescriptor,
   SharedCollection,
@@ -603,12 +605,99 @@ export class CollectionsService {
     const isOwner = viewer !== null && (await this.hubs.isOwner(hubId, viewer.userId));
 
     // The owner sees every collection; everyone else sees the published subset.
-    return this.listCollectionsKeyset(query, {
+    const page = await this.listCollectionsKeyset(query, {
       hubId,
       ...(isOwner
         ? availableCollections(viewer?.userId)
         : { published: true, ...availableCollections() }),
     });
+    if (!isOwner || !viewer) return page;
+    // The owner's rows show who else shapes each collection.
+    const others = await this.contributorsOf(
+      page.items.map((item) => item.id),
+      viewer.userId,
+    );
+    return {
+      ...page,
+      items: page.items.map((item) => ({
+        ...item,
+        contributors: others.get(item.id) ?? { people: [], total: 0 },
+      })),
+    };
+  }
+
+  // Everyone but `except` who has shaped each collection's content, most recent
+  // first (up to five each), for a page of collections at once.
+  private async contributorsOf(collectionIds: string[], except: string) {
+    const groups = await this.prisma.auditLog.groupBy({
+      by: ["collectionId", "actorUserId"],
+      where: {
+        collectionId: { in: collectionIds },
+        actorUserId: { not: except },
+        category: "content",
+        action: { in: [...contentActions] },
+      },
+      _max: { createdAt: true },
+      orderBy: { _max: { createdAt: "desc" } },
+    });
+    const people = await personRefs(
+      this.prisma,
+      groups.map((group) => group.actorUserId),
+    );
+    const byCollection = new Map<string, PersonRef[]>();
+    for (const group of groups) {
+      const person = people.get(group.actorUserId ?? "");
+      if (!person || !group.collectionId) continue;
+      byCollection.set(group.collectionId, [
+        ...(byCollection.get(group.collectionId) ?? []),
+        person,
+      ]);
+    }
+    return new Map(
+      [...byCollection].map(([id, list]) => [id, { people: list.slice(0, 5), total: list.length }]),
+    );
+  }
+
+  // What one person did in each collection, for their public profile: created
+  // it, or else the links or sections they added, or else edits; with when.
+  private async contributionsOf(collectionIds: string[], userId: string) {
+    const groups = await this.prisma.auditLog.groupBy({
+      by: ["collectionId", "action"],
+      where: {
+        collectionId: { in: collectionIds },
+        actorUserId: userId,
+        category: "content",
+        action: { in: [...contentActions] },
+      },
+      _count: { _all: true },
+      _max: { createdAt: true },
+    });
+    const summary = new Map<string, Contribution>();
+    for (const id of collectionIds) {
+      const mine = groups.filter((group) => group.collectionId === id);
+      if (!mine.length) continue;
+      const count = (...actions: string[]) =>
+        mine
+          .filter((group) => actions.includes(group.action))
+          .reduce((total, group) => total + group._count._all, 0);
+      const at = mine
+        .map((group) => group._max.createdAt?.getTime() ?? 0)
+        .reduce((latest, time) => Math.max(latest, time), 0);
+      const links = count("item.link_added", "item.reference_added", "items.imported");
+      const sections = count("item.section_added");
+      summary.set(id, {
+        kind: count("collection.created")
+          ? "created"
+          : links
+            ? "links"
+            : sections
+              ? "sections"
+              : "edited",
+        count: links || sections,
+        at: new Date(at).toISOString(),
+      });
+    }
+    return summary;
   }
 
   async getById(id: string, viewer: AuthUser | null, shareToken?: string) {
@@ -878,11 +967,24 @@ export class CollectionsService {
       ORDER BY c.updated_at DESC, c.id DESC LIMIT ${limit + 1}
     `);
     const page = rows.slice(0, limit);
+    const [{ total }] = await this.prisma.$queryRaw<Array<{ total: number }>>(Prisma.sql`
+      SELECT COUNT(*)::int AS total
+      FROM collections c
+      JOIN hubs h ON h.id = c.hub_id JOIN users u ON u.id = h.owner_user_id
+      WHERE c.published AND u.account_state = 'active'
+        AND NOT EXISTS (SELECT 1 FROM collection_holds ch WHERE ch.collection_id = c.id AND ch.active)
+        AND EXISTS (SELECT 1 FROM audit_logs a WHERE a.category = 'content' AND a.collection_id = c.id
+          AND a.actor_user_id = ${userId}::uuid AND a.action IN (${Prisma.join([...contentActions])}))
+    `);
     const found = await this.prisma.collection.findMany({
       where: { id: { in: page.map((row) => row.id) }, published: true, ...availableCollections() },
       include: { ...collectionTags, hub: { select: { id: true, handle: true, name: true } } },
     });
     const byId = new Map(found.map((row) => [row.id, row]));
+    const contributions = await this.contributionsOf(
+      found.map((row) => row.id),
+      userId,
+    );
     const last = page.at(-1);
     return {
       items: page.flatMap((row) => {
@@ -892,10 +994,14 @@ export class CollectionsService {
               {
                 ...this.toPublicCollection(item),
                 hub: item.hub,
+                ...(contributions.has(item.id)
+                  ? { contribution: contributions.get(item.id) as Contribution }
+                  : {}),
               },
             ]
           : [];
       }),
+      total,
       meta: {
         limit,
         nextCursor:

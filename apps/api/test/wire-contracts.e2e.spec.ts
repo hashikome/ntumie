@@ -68,6 +68,16 @@ const collectionShape = {
   version: number,
   createdAt: iso,
   updatedAt: iso,
+  contribution: (v: unknown) =>
+    v === undefined ||
+    (typeof v === "object" &&
+      v !== null &&
+      "kind" in v &&
+      ["created", "links", "sections", "edited"].includes(String(v.kind)) &&
+      "count" in v &&
+      number(v.count) &&
+      "at" in v &&
+      iso(v.at)),
   sectionCount: (v: unknown) => v === undefined || number(v),
   resourceCount: (v: unknown) => v === undefined || number(v),
 } satisfies Shape<Collection>;
@@ -82,6 +92,7 @@ const profileShape = {
   handleChangeAvailableAt: nullableString,
   hubId: (v) => v === null || uuid(v),
   hubName: nullableString,
+  hubCollectionCount: (v: unknown) => v === null || number(v),
   email: string,
   hubDescription: nullableString,
   image: nullableString,
@@ -170,6 +181,7 @@ function shape(
     "collectionHint",
     "creator",
     "contributors",
+    "contribution",
     "sectionCount",
     "resourceCount",
   ],

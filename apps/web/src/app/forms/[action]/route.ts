@@ -164,19 +164,6 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
       headers: { "Cache-Control": "private, no-store" },
     });
   }
-  if (action === "create-hub") {
-    const result = await formPost<{ hubId: string }>(request, "/api/v1/hubs", {});
-    if (result.ok) return redirectResponse(`/h/${result.data.hubId}`);
-    if (result.status === 401)
-      return resumeAfterSignIn({
-        path: "/api/v1/hubs",
-        body: {},
-        target: "/hub",
-        label: "create your hub",
-        issued: Date.now(),
-      });
-    return redirectResponse(`/hub?notice=${result.status === 429 ? "limited" : "unavailable"}`);
-  }
   if (action === "capture-save") {
     const id = form.get("draftId") ?? "";
     if (!isUuid(id)) return redirectResponse("/capture?notice=invalid");

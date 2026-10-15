@@ -34,23 +34,47 @@ export class AvatarsController {
   ) {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(seed)) throw new BadRequestException();
     const { svg, etag } = this.avatars.render(seed, query.size);
-    res.set({
-      "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=31536000, immutable",
-      ETag: etag,
-      "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy": "default-src 'none'; sandbox",
-    });
-    // GET/HEAD use weak comparison; clients may send a list or wildcard.
-    const matches = req
-      .get("if-none-match")
-      ?.split(",")
-      .some((candidate) => {
-        const value = candidate.trim();
-        return value === "*" || value.replace(/^W\//, "") === etag;
-      });
-    return matches ? res.status(304).end() : res.status(200).send(svg);
+    return sendSvg(req, res, svg, etag, "public, max-age=31536000, immutable");
   }
+}
+
+// A hub's generated mark (no media is stored). Not immutable: a hub may later
+// gain another picture source behind this same address.
+@ApiTags("avatars")
+@Controller("api/v1/hubs")
+export class HubAvatarController {
+  constructor(private readonly avatars: AvatarsService) {}
+
+  @Get(":hubId/avatar")
+  @ApiProduces("image/svg+xml")
+  get(
+    @Param("hubId", new ParseUUIDPipe()) hubId: string,
+    @Query() query: AvatarQueryDto,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const { svg, etag } = this.avatars.renderHubMark(hubId.toLowerCase(), query.size);
+    return sendSvg(req, res, svg, etag, "public, max-age=86400");
+  }
+}
+
+function sendSvg(req: Request, res: Response, svg: string, etag: string, cache: string) {
+  res.set({
+    "Content-Type": "image/svg+xml; charset=utf-8",
+    "Cache-Control": cache,
+    ETag: etag,
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; sandbox",
+  });
+  // GET/HEAD use weak comparison; clients may send a list or wildcard.
+  const matches = req
+    .get("if-none-match")
+    ?.split(",")
+    .some((candidate) => {
+      const value = candidate.trim();
+      return value === "*" || value.replace(/^W\//, "") === etag;
+    });
+  return matches ? res.status(304).end() : res.status(200).send(svg);
 }
 
 @ApiTags("avatars")

@@ -61,6 +61,7 @@ describe("people and optional hubs", () => {
       person: { userId: person.id, username: person.username, name: "Profile name", bio: null },
       hub: null,
       collections: [],
+      contributionCount: 0,
     });
     expect(JSON.stringify(publicView.body)).not.toContain(person.email);
     expect(

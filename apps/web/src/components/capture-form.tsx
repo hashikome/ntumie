@@ -53,6 +53,8 @@ export async function CaptureForm({
       collections.unshift(targetCollection.data);
   }
   const id = draft?.id ?? randomUUID();
+  const namedFirst =
+    profile.ok && Boolean(draft?.collectionTitle ?? queryValue(query.title, 255)?.trim());
   return (
     <section className="reader account-flow capture-page" data-reader>
       <h1>{profile.ok ? "Save a link" : "Save your first link"}</h1>
@@ -122,8 +124,20 @@ export async function CaptureForm({
               <input
                 type="hidden"
                 name="destination"
-                value={draft?.destination === "new" ? "new" : "first"}
+                value={draft?.destination === "new" || namedFirst ? "new" : "first"}
               />
+              {/* "Start a collection" prompts carry the idea's name here. */}
+              {namedFirst && (
+                <>
+                  <label htmlFor="collectionTitle">Name for the new collection</label>
+                  <input
+                    id="collectionTitle"
+                    name="collectionTitle"
+                    maxLength={255}
+                    defaultValue={draft?.collectionTitle ?? queryValue(query.title, 255)}
+                  />
+                </>
+              )}
               <label>
                 Publish new collection
                 <select name="published" defaultValue={String(draft?.published ?? true)}>

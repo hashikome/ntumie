@@ -48,10 +48,6 @@ export async function importRequest<T>(
 }
 export async function importForm(action: string, request: Request, form: URLSearchParams) {
   if (!action.startsWith("import-")) return null;
-  if (action === "import-hub") {
-    const result = await importRequest(request, "/api/v1/hubs", {});
-    return redirectResponse(result.ok ? home : `${home}?notice=${notice(result.status)}`);
-  }
   const id = form.get("id"),
     version = Number(form.get("version"));
   if (!isUuid(id) || !Number.isInteger(version) || version < 1)

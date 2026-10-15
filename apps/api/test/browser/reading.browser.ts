@@ -517,9 +517,7 @@ describe("explore to resource: production browser journey", () => {
           .getByRole("link", { name: "Discover", exact: true })
           .click();
         await browserExpect(page).toHaveURL(`${origin}/discover`);
-        await browserExpect(page.locator("h1")).toHaveText(
-          "Someone already found your next good read.",
-        );
+        await browserExpect(page.locator("h1")).toHaveText("Discover");
         await page.locator(".wordmark").click();
         await browserExpect(page).toHaveURL(`${origin}/`);
         await page
@@ -614,7 +612,6 @@ describe("explore to resource: production browser journey", () => {
           for (const selector of [
             ".comment-compose > summary",
             ".comment-actions .text-button",
-            ".footer-nav a",
             ".tag-overflow summary",
           ]) {
             const sizes = await page.locator(selector).evaluateAll((elements) =>
@@ -640,7 +637,7 @@ describe("explore to resource: production browser journey", () => {
               expect(tagRows[3]).toBe(tagRows[0]);
               await toggle.click();
             }
-            await page.getByRole("contentinfo").scrollIntoViewIfNeeded();
+            await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
             expect(
               await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
@@ -663,7 +660,7 @@ describe("explore to resource: production browser journey", () => {
     }
   }, 60000);
 
-  it("lays out home and About as cobalt brand pages with the labelled sample and right footer links", async () => {
+  it("lays out home and About as cobalt brand pages with the labelled sample and no footer", async () => {
     for (const js of [true, false]) {
       const { page, close } = await freshPage(js);
       try {
@@ -693,23 +690,19 @@ describe("explore to resource: production browser journey", () => {
           ]) {
             await page.setViewportSize({ width, height });
             const bounds = await page.evaluate(() => {
-              const footer = document.querySelector(".footer-nav a")?.getBoundingClientRect();
-              const content = document.querySelector(".footer-content")?.getBoundingClientRect();
               const band = document.querySelector(".brand-band")?.getBoundingClientRect();
-              if (!footer || !content || !band) throw new Error("Missing brand layout");
-              return {
-                width: document.documentElement.scrollWidth,
-                right: footer.right - content.right,
-                bandTop: band.top,
-              };
+              if (!band) throw new Error("Missing brand layout");
+              return { width: document.documentElement.scrollWidth, bandTop: band.top };
             });
             expect(bounds.width).toBeLessThanOrEqual(width);
-            expect(Math.abs(bounds.right)).toBeLessThan(2);
+            // The boards have no footer: About lives in the header.
+            await browserExpect(page.getByRole("contentinfo")).toHaveCount(0);
           }
           // The header joins the band: both use the primary fill.
           const colors = await page.evaluate(() => [
             getComputedStyle(document.querySelector(".topbar") as Element).backgroundColor,
-            getComputedStyle(document.querySelector(".brand-band") as Element).backgroundColor,
+            // The band paints through its border image; band-solid text uses the same fill.
+            getComputedStyle(document.querySelector(".button.band-solid") as Element).color,
           ]);
           expect(colors[0]).toBe(colors[1]);
         }
@@ -719,7 +712,7 @@ describe("explore to resource: production browser journey", () => {
     }
   }, 60000);
 
-  it("keeps footer roles aligned at every width and hides an unavailable Google provider", async () => {
+  it("keeps the wordmark and header at every width without a footer and hides an unavailable Google provider", async () => {
     googleMethodsDisabled = true;
     try {
       for (const js of [true, false]) {
@@ -735,43 +728,22 @@ describe("explore to resource: production browser journey", () => {
                   "A guide is more than a pile of links.",
                 );
               }
-              const footer = page.getByRole("contentinfo");
-              await footer.scrollIntoViewIfNeeded();
-              const link = footer.getByRole("link");
-              await browserExpect(link).toHaveText(
-                path === "/about" ? "Join ntumie." : "About ntumie.",
-              );
-              await browserExpect(footer.locator(".footer-tagline")).toHaveCount(0);
+              await browserExpect(page.getByRole("contentinfo")).toHaveCount(0);
               await browserExpect(page.locator("header .theme-picker")).toHaveCount(0);
               const wordmark = page.locator(".wordmark");
               expect(
                 await wordmark.evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize)),
               ).toBe(width < 640 ? 24 : 28);
-              expect(
-                await link.evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize)),
-              ).toBe(18);
               await browserExpect(
                 page.getByRole("button", { name: "Continue with Google" }),
               ).toHaveCount(0);
-              const geometry = await footer.evaluate((element) => {
-                const content = element.querySelector(".footer-content")?.getBoundingClientRect();
-                const nav = element.querySelector(".footer-nav")?.getBoundingClientRect();
-                if (!content || !nav) throw new Error("Missing footer layout");
-                return {
-                  right: content.right - nav.right,
-                  overflow: document.documentElement.scrollWidth > innerWidth,
-                };
-              });
-              expect(Math.abs(geometry.right)).toBeLessThan(2);
-              expect(geometry.overflow).toBe(false);
+              expect(
+                await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+              ).toBe(false);
               const output = process.env.FOOTER_REVIEW_DIR;
               if (output && js) {
                 await mkdir(output, { recursive: true });
                 const name = path === "/" ? "home" : path.slice(1);
-                await page.evaluate(() => {
-                  (document.activeElement as HTMLElement | null)?.blur();
-                  window.scrollTo(0, 0);
-                });
                 await page.screenshot({
                   path: join(output, `${name}-${width}.png`),
                   fullPage: true,
@@ -782,20 +754,6 @@ describe("explore to resource: production browser journey", () => {
                   fullPage: true,
                 });
                 await page.emulateMedia({ colorScheme: "light" });
-                if (path === "/sign-in" && width === 390) {
-                  await link.hover();
-                  await footer.screenshot({ path: join(output, "footer-hover.png") });
-                  await link.focus();
-                  await page.keyboard.press("Tab");
-                  await page.keyboard.press("Shift+Tab");
-                  await browserExpect(link).toBeFocused();
-                  await footer.screenshot({ path: join(output, "footer-focus.png") });
-                  await link.hover();
-                  await page.mouse.down();
-                  await footer.screenshot({ path: join(output, "footer-pressed.png") });
-                  await page.mouse.move(0, 0);
-                  await page.mouse.up();
-                }
               }
             }
           }
@@ -808,21 +766,18 @@ describe("explore to resource: production browser journey", () => {
     }
   }, 60000);
 
-  it("connects About, joining and useful links through native footer navigation", async () => {
+  it("connects About, starting a collection and help through the header and About page", async () => {
     for (const js of [true, false]) {
       const { page, close } = await freshPage(js);
       try {
         await ready(page, "/");
-        const footer = page.getByRole("contentinfo");
-        await browserExpect(footer.getByRole("link")).toHaveCount(1);
-        await browserExpect(footer.locator(".footer-tagline")).toHaveCount(0);
-        await footer.getByRole("link", { name: "About ntumie." }).click();
+        const main = page.getByRole("navigation", { name: "Main navigation" });
+        await main.getByRole("link", { name: "About", exact: true }).click();
         await browserExpect(page).toHaveTitle("About ntumie. · ntumie.");
-        await browserExpect(footer.getByRole("link", { name: "Join ntumie." })).toHaveAttribute(
-          "href",
-          "/sign-up",
+        await browserExpect(main.getByRole("link", { name: "About", exact: true })).toHaveAttribute(
+          "aria-current",
+          "page",
         );
-        await browserExpect(footer.locator(".footer-tagline")).toHaveCount(0);
         const help = page.getByRole("region", { name: "Help and the person behind ntumie." });
         const support = help.getByRole("link", { name: "Open Support", exact: true });
         const maker = help.getByRole("link", { name: "namestarlit.com", exact: true });
@@ -830,23 +785,9 @@ describe("explore to resource: production browser journey", () => {
         await browserExpect(maker).toHaveAttribute("href", "https://namestarlit.com");
         await support.click();
         await browserExpect(page).toHaveURL(`${origin}/support`);
-        await browserExpect(footer.locator(".footer-tagline")).toHaveCount(0);
-        await footer.getByRole("link", { name: "About ntumie." }).click();
-        await footer.getByRole("link", { name: "Join ntumie." }).click();
-        await browserExpect(page).toHaveURL(`${origin}/sign-up`);
-        await ready(page, "/about");
-        const [name, ...value] = cookie.split("=");
-        await page.context().addCookies([{ name, value: value.join("="), url: origin }]);
-        await page.reload();
-        await browserExpect(footer.getByRole("link", { name: "Join ntumie." })).toHaveCount(0);
-        await browserExpect(footer.getByRole("link")).toHaveCount(0);
-        await browserExpect(footer.getByRole("navigation")).toHaveCount(0);
-        await page
-          .getByRole("navigation", { name: "Main navigation" })
-          .getByRole("link", { name: "Discover", exact: true })
-          .click();
-        await browserExpect(page).toHaveURL(`${origin}/discover`);
-        await browserExpect(footer.getByRole("link", { name: "About ntumie." })).toBeVisible();
+        await main.getByRole("link", { name: "About", exact: true }).click();
+        await browserExpect(page).toHaveURL(`${origin}/about`);
+        await browserExpect(page.getByRole("contentinfo")).toHaveCount(0);
       } finally {
         await close();
       }
@@ -866,13 +807,12 @@ describe("explore to resource: production browser journey", () => {
           .getByRole("navigation", { name: "Main navigation" })
           .getByRole("link", { name: "Discover", exact: true }),
       ).toHaveAttribute("href", "/discover");
-      const footer = page.getByRole("contentinfo");
-      await browserExpect(footer.locator(".footer-tagline")).toHaveCount(0);
-      await browserExpect(footer.getByRole("link")).toHaveCount(1);
-      await browserExpect(footer.getByRole("link", { name: "About ntumie." })).toHaveAttribute(
-        "href",
-        "/about",
-      );
+      await browserExpect(page.getByRole("contentinfo")).toHaveCount(0);
+      await browserExpect(
+        page
+          .getByRole("navigation", { name: "Main navigation" })
+          .getByRole("link", { name: "About", exact: true }),
+      ).toHaveAttribute("href", "/about");
       await browserExpect(page.locator('a[href="/status"]')).toHaveCount(0);
       const response = await page.goto(`${origin}/status`);
       expect(response?.status()).toBe(404);
@@ -1003,7 +943,10 @@ describe("explore to resource: production browser journey", () => {
       await browserExpect(page.locator("html")).toHaveAttribute("data-theme", "dark");
       expect(await page.evaluate(() => performance.timeOrigin)).toBe(documentId);
       await page.unroute("**/forms/theme");
-      await page.getByRole("contentinfo").getByRole("link", { name: "About ntumie." }).click();
+      await page
+        .getByRole("navigation", { name: "Main navigation" })
+        .getByRole("link", { name: "About", exact: true })
+        .click();
       await browserExpect(page).toHaveURL(`${origin}/about`);
       expect(await page.evaluate(() => performance.timeOrigin)).toBe(documentId);
       expect(
@@ -1034,21 +977,21 @@ describe("explore to resource: production browser journey", () => {
         await ready(page, `/@${handle}?view=public&s=discovery-must-ignore-this`);
         await browserExpect(page.locator("h1")).toHaveText(publicHubName);
         await browserExpect(page).toHaveTitle(`${publicHubName} · ntumie.`);
-        await browserExpect(page.locator(".hub-identity")).toHaveText(`@${handle} by Reader`);
-        await browserExpect(page.locator(".hub-collections-heading .meta")).toHaveText("25");
-        await browserExpect(page.locator(".hub-heading time")).toHaveCount(0);
-        await browserExpect(page.locator(".hub-heading")).not.toContainText("Created");
-        await browserExpect(page.locator(".hub-heading")).not.toContainText("Updated");
+        await browserExpect(page.locator(".band-handle")).toHaveText(`@${handle} by Reader`);
+        await browserExpect(page.locator(".band-section-head .meta")).toHaveText("25");
+        await browserExpect(page.locator(".hub-band time")).toHaveCount(0);
+        await browserExpect(page.locator(".hub-band")).not.toContainText("Created");
+        await browserExpect(page.locator(".hub-band")).not.toContainText("Updated");
         if (!session)
           await page.screenshot({ path: "/tmp/public-hub-metadata-mobile.png", fullPage: true });
         await browserExpect(
           page.getByText("References for curious readers.", { exact: false }),
         ).toBeVisible();
-        await browserExpect(page.locator(".collection-row")).toHaveCount(20);
-        const more = page.getByRole("link", { name: "More collections", exact: true });
+        await browserExpect(page.locator(".collection-item")).toHaveCount(20);
+        const more = page.getByRole("link", { name: "Show more collections", exact: true });
         await more.focus();
         await more.press("Enter");
-        await browserExpect(page.locator(".collection-row")).toHaveCount(25);
+        await browserExpect(page.locator(".collection-item")).toHaveCount(25);
         await browserExpect(
           page.getByRole("link", { name: "All collections loaded" }),
         ).toBeFocused();
@@ -1069,7 +1012,7 @@ describe("explore to resource: production browser journey", () => {
         await browserExpect(page.locator("h1")).toHaveText(
           session === otherCookie ? "Other reader" : "This hub isn't available.",
         );
-        await browserExpect(page.locator(".collection-row")).toHaveCount(0);
+        await browserExpect(page.locator(".collection-item")).toHaveCount(0);
         await browserExpect(page.locator("body")).not.toContainText("Other private");
         if (!session) {
           for (const colorScheme of ["light", "dark"] as const) {
@@ -1112,15 +1055,15 @@ describe("explore to resource: production browser journey", () => {
       for (const path of [`/h/${hubId}`, `/@${handle}`]) {
         await ready(page, `${path}?cursor=${encodeURIComponent(cursor)}`);
         await browserExpect(
-          page.getByRole("heading", { name: "Your collections", exact: true }),
+          page.getByRole("heading", { name: "My collections", exact: true }),
         ).toBeVisible();
-        await browserExpect(page.locator(".collection-row")).toHaveCount(second.body.data.length);
-        await browserExpect(page.locator(".collection-row").first()).toContainText(
+        await browserExpect(page.locator(".collection-item")).toHaveCount(second.body.data.length);
+        await browserExpect(page.locator(".collection-item").first()).toContainText(
           second.body.data[0].title,
         );
       }
       await ready(page, `/h/${hubId}?view=public`);
-      const more = page.getByRole("link", { name: "More collections", exact: true });
+      const more = page.getByRole("link", { name: "Show more collections", exact: true });
       await browserExpect(more).toHaveAttribute("href", /view=public/);
       await more.click();
       await browserExpect(
@@ -1143,7 +1086,7 @@ describe("explore to resource: production browser journey", () => {
         for (const path of [`/h/${hubId}`, `/@${handle}`]) {
           await ready(page, path);
           await browserExpect(page.locator("h1")).toHaveText(publicHubName);
-          await browserExpect(page.locator(".hub-identity")).toHaveText(`@${handle}`);
+          await browserExpect(page.locator(".band-handle")).toHaveText(`@${handle}`);
           await browserExpect(page.locator("body")).not.toContainText(user.email);
         }
       }
@@ -1169,8 +1112,8 @@ describe("explore to resource: production browser journey", () => {
           await page.setViewportSize({ width: 390, height: 844 });
           await page.screenshot({ path: "/tmp/w3-hub-phone.png" });
         } else {
-          await page.getByRole("link", { name: "More collections", exact: true }).click();
-          await browserExpect(page.locator(".collection-row")).toHaveCount(5);
+          await page.getByRole("link", { name: "Show more collections", exact: true }).click();
+          await browserExpect(page.locator(".collection-item")).toHaveCount(5);
           await ready(page, `/@${handle}`);
         }
         const collection = page.getByRole("link", { name: longTitle, exact: true });
@@ -1231,9 +1174,9 @@ describe("explore to resource: production browser journey", () => {
           }),
         { times: 1 },
       );
-      await page.getByRole("link", { name: "More collections", exact: true }).click();
+      await page.getByRole("link", { name: "Show more collections", exact: true }).click();
       await browserExpect(page.getByRole("button", { name: /Try again in/ })).toBeDisabled();
-      await browserExpect(page.locator(".collection-row")).toHaveCount(20);
+      await browserExpect(page.locator(".collection-item")).toHaveCount(20);
       await page.route(
         pattern,
         async (route) => {
@@ -1246,7 +1189,7 @@ describe("explore to resource: production browser journey", () => {
       await browserExpect(
         page.getByText("Couldn't load more. Your current results are still here."),
       ).toBeVisible({ timeout: 12000 });
-      await browserExpect(page.locator(".collection-row")).toHaveCount(20);
+      await browserExpect(page.locator(".collection-item")).toHaveCount(20);
       await page.route(
         pattern,
         async (route) => {
@@ -1258,7 +1201,7 @@ describe("explore to resource: production browser journey", () => {
         { times: 1 },
       );
       await page.getByRole("button", { name: "Try again", exact: true }).click();
-      await browserExpect(page.locator(".collection-row")).toHaveCount(25);
+      await browserExpect(page.locator(".collection-item")).toHaveCount(25);
       await browserExpect(page.locator('p[aria-live="polite"]')).toHaveText(
         "5 more collections loaded.",
       );
@@ -1273,10 +1216,10 @@ describe("explore to resource: production browser journey", () => {
           }),
         { times: 1 },
       );
-      await page.getByRole("link", { name: "More collections", exact: true }).click();
+      await page.getByRole("link", { name: "Show more collections", exact: true }).click();
       await page.getByRole("link", { name: "Reload list", exact: true }).click();
       expect(new URL(page.url()).pathname).toBe(`/@${handle}`);
-      await browserExpect(page.locator(".collection-row")).toHaveCount(20);
+      await browserExpect(page.locator(".collection-item")).toHaveCount(20);
       await ready(page, `/@${handle}?cursor=invalid`);
       await browserExpect(page.locator("h1")).toHaveText("This list has changed.");
       await page.getByRole("link", { name: "Reload collections", exact: true }).click();
@@ -1420,8 +1363,8 @@ describe("explore to resource: production browser journey", () => {
       requestBudgetKey("read", source, process.env.BETTER_AUTH_SECRET ?? "");
     const first = "127.0.0.2";
     const second = "127.0.0.3";
-    expect(await documentFrom(first)).toContain('class="collection-row"');
-    expect(await documentFrom(second)).toContain('class="collection-row"');
+    expect(await documentFrom(first)).toContain("collection-item");
+    expect(await documentFrom(second)).toContain("collection-item");
     expect(await prisma.requestBudget.findUnique({ where: { key: key(first) } })).toMatchObject({
       count: 1,
     });
@@ -1433,8 +1376,8 @@ describe("explore to resource: production browser journey", () => {
       "x-forwarded-for": second,
       "x-web-read-source": "forged-proof",
     });
-    expect(denied).not.toContain('class="collection-row"');
-    expect(await documentFrom(second)).toContain('class="collection-row"');
+    expect(denied).not.toContain("collection-item");
+    expect(await documentFrom(second)).toContain("collection-item");
     expect(await prisma.requestBudget.findUnique({ where: { key: key(second) } })).toMatchObject({
       count: 2,
     });
@@ -1442,7 +1385,7 @@ describe("explore to resource: production browser journey", () => {
     // header still cannot impersonate another visitor.
     expect(
       await documentFrom("127.0.0.1", { "x-forwarded-for": `${second}, ${first}` }),
-    ).not.toContain('class="collection-row"');
+    ).not.toContain("collection-item");
     await prisma.requestBudget.deleteMany();
     await request(app.getHttpServer())
       .get("/api/v1/discover")
@@ -1457,46 +1400,33 @@ describe("explore to resource: production browser journey", () => {
       .expect(429);
   });
 
-  it("fits desktop collection pages to the frame and keeps mobile scrolling", async () => {
+  it("lays Discover out as cards that scroll with the page and show more on request", async () => {
     const { page, close } = await freshPage();
     try {
       await page.setViewportSize({ width: 1280, height: 900 });
       await ready(page);
-      const rows = page.locator(".collection-row:visible"),
-        main = page.locator("main");
-      const footer = page.getByRole("contentinfo"),
-        initialFooter = await footer.boundingBox();
-      await browserExpect(page.getByRole("button", { name: "Next", exact: true })).toBeVisible();
-      const count = await rows.count();
-      expect(count).toBeGreaterThan(0);
-      expect(count).toBeLessThan(20);
-      expect(await main.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
-      const title = await rows.first().textContent();
-      await page.getByRole("button", { name: "Next", exact: true }).click();
-      expect(await rows.first().textContent()).not.toBe(title);
-      await page.getByRole("button", { name: "Previous", exact: true }).click();
-      expect(await rows.first().textContent()).toBe(title);
-      expect(await footer.boundingBox()).toEqual(initialFooter);
-      await page.screenshot({ path: "/tmp/explore-frame-desktop.png" });
-      await page.setViewportSize({ width: 1280, height: 660 });
-      await browserExpect.poll(() => rows.count()).toBeLessThan(count);
-      expect(await main.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+      const cards = page.locator(".collection-item");
+      // Every card of the first page shows, two to a row; the page scrolls.
+      await browserExpect(cards).toHaveCount(20);
+      const [first, second] = await Promise.all([
+        cards.nth(0).boundingBox(),
+        cards.nth(1).boundingBox(),
+      ]);
+      expect(first?.y).toBe(second?.y);
+      expect(await page.getByRole("button", { name: "Next", exact: true }).count()).toBe(0);
+      expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight)).toBe(
+        true,
+      );
+      await page.screenshot({ path: "/tmp/discover-cards-desktop.png" });
       await page.setViewportSize({ width: 390, height: 844 });
-      await browserExpect(
-        page.getByRole("link", { name: "More collections", exact: true }),
-      ).toBeVisible();
-      await main.focus();
-      await page.keyboard.press("PageDown");
-      await browserExpect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
-      await page.getByRole("link", { name: "More collections", exact: true }).click();
-      await browserExpect(page.locator(".collection-row")).toHaveCount(25);
-      await browserExpect(footer).not.toBeInViewport();
-      await footer.scrollIntoViewIfNeeded();
-      await browserExpect(footer).toBeInViewport();
-      await page.screenshot({ path: "/tmp/explore-frame-phone.png" });
-      await page.setViewportSize({ width: 844, height: 390 });
-      await footer.scrollIntoViewIfNeeded();
-      await browserExpect(footer).toBeInViewport();
+      const [narrowFirst, narrowSecond] = await Promise.all([
+        cards.nth(0).boundingBox(),
+        cards.nth(1).boundingBox(),
+      ]);
+      expect(narrowSecond?.y ?? 0).toBeGreaterThan(narrowFirst?.y ?? 0);
+      await page.getByRole("link", { name: "Show more collections", exact: true }).click();
+      await browserExpect(cards).toHaveCount(25);
+      await page.screenshot({ path: "/tmp/discover-cards-phone.png" });
     } finally {
       await close();
     }
@@ -1507,11 +1437,11 @@ describe("explore to resource: production browser journey", () => {
     try {
       await page.setViewportSize({ width: 390, height: 844 });
       await ready(page);
-      await browserExpect(page.locator(".collection-row")).toHaveCount(20);
-      const more = page.getByRole("link", { name: "More collections", exact: true });
+      await browserExpect(page.locator(".collection-item")).toHaveCount(20);
+      const more = page.getByRole("link", { name: "Show more collections", exact: true });
       await more.focus();
       await more.press("Enter");
-      await browserExpect(page.locator(".collection-row")).toHaveCount(25);
+      await browserExpect(page.locator(".collection-item")).toHaveCount(25);
       await browserExpect(page.getByRole("link", { name: "All collections loaded" })).toBeFocused();
       await browserExpect(page.locator('p[aria-live="polite"]')).toHaveText(
         "5 more collections loaded.",
@@ -1524,8 +1454,8 @@ describe("explore to resource: production browser journey", () => {
     const plain = await freshPage(false);
     try {
       await ready(plain.page);
-      await plain.page.getByRole("link", { name: "More collections", exact: true }).click();
-      await browserExpect(plain.page.locator(".collection-row")).toHaveCount(5);
+      await plain.page.getByRole("link", { name: "Show more collections", exact: true }).click();
+      await browserExpect(plain.page.locator(".collection-item")).toHaveCount(5);
       await ready(plain.page, `/c/${sourceId}`);
       await plain.page.getByRole("link", { name: "More resources", exact: true }).click();
       await browserExpect(plain.page.locator(".resource-row")).toHaveCount(2);
@@ -1849,12 +1779,12 @@ describe("explore to resource: production browser journey", () => {
           }),
         { times: 1 },
       );
-      await page.getByRole("link", { name: "More collections", exact: true }).click();
-      await browserExpect(page.locator(".collection-row")).toHaveCount(20);
+      await page.getByRole("link", { name: "Show more collections", exact: true }).click();
+      await browserExpect(page.locator(".collection-item")).toHaveCount(20);
       await browserExpect(page.getByRole("button", { name: /Try again in/ })).toBeDisabled();
       await browserExpect(page.locator("body")).not.toContainText("PRIVATE RAW ERROR");
       await page.getByRole("button", { name: "Try again", exact: true }).click();
-      await browserExpect(page.locator(".collection-row")).toHaveCount(25);
+      await browserExpect(page.locator(".collection-item")).toHaveCount(25);
     } finally {
       await close();
     }
@@ -2094,7 +2024,7 @@ describe("explore to resource: production browser journey", () => {
       await browserExpect(page.locator("body")).not.toContainText("PRIVATE INTERNAL DETAIL");
       discoverMode = "normal";
       await page.getByRole("button", { name: "Try again", exact: true }).click();
-      await browserExpect(page.locator(".collection-row")).toHaveCount(20);
+      await browserExpect(page.locator(".collection-item")).toHaveCount(20);
     } finally {
       discoverMode = "normal";
       await close();
@@ -3123,11 +3053,11 @@ describe("account shell and appearance", () => {
         for (const path of [`/h/${hub.id}`, `/@${hub.handle}`, `/h/${hub.id}?view=public`]) {
           await ready(page, path);
           await browserExpect(page.locator("h1")).toHaveText("Independent Hub");
-          await browserExpect(page.locator(".hub-identity")).not.toContainText("Named Owner");
+          await browserExpect(page.locator(".band-handle")).not.toContainText("Named Owner");
         }
         await ready(page, `/${user.username}`);
         await browserExpect(page.locator("h1")).toHaveText("Named Owner");
-        await browserExpect(page.locator(".hub-identity")).toHaveText(user.username);
+        await browserExpect(page.locator(".band-handle")).toHaveText(user.username);
         await browserExpect(
           page.getByRole("button", { name: "Create hub", exact: true }),
         ).toHaveCount(0);
@@ -3149,21 +3079,18 @@ describe("account shell and appearance", () => {
           ).toBe(true);
         }
         await ready(page, `/h/${hub.id}?view=public`);
-        await browserExpect(page.locator(".hub-identity")).toHaveText(
+        await browserExpect(page.locator(".band-handle")).toHaveText(
           `@${hub.handle} by Named Owner`,
         );
-        await browserExpect(page.locator(".hub-identity a")).toHaveAttribute(
+        await browserExpect(page.locator(".band-handle a")).toHaveAttribute(
           "href",
           `/${user.username}`,
         );
         await ready(page, `/${user.username}`);
-        await browserExpect(page.locator(".hub-identity")).toHaveText(
+        await browserExpect(page.locator(".band-handle")).toHaveText(
           `${user.username} of Independent Hub`,
         );
-        await browserExpect(page.locator(".hub-identity a")).toHaveAttribute(
-          "href",
-          `/h/${hub.id}`,
-        );
+        await browserExpect(page.locator(".band-handle a")).toHaveAttribute("href", `/h/${hub.id}`);
       } finally {
         await close();
       }
@@ -3315,13 +3242,13 @@ describe("account shell and appearance", () => {
       await page.getByRole("link", { name: "View your public hub", exact: true }).click();
       await browserExpect(page).toHaveURL(`${origin}/h/${hub.id}?view=public`);
       await browserExpect(page.locator("h1")).toHaveText("The Reference Shelf");
-      await browserExpect(page.locator(".page-heading .description")).toHaveText(
+      await browserExpect(page.locator(".hub-band .band-lead")).toHaveText(
         "Resources for curious readers.",
       );
       await browserExpect(page).toHaveTitle("The Reference Shelf · ntumie.");
       await ready(page, `/@${hub.handle}`);
       await browserExpect(page.locator("h1")).toHaveText("The Reference Shelf");
-      await browserExpect(page.locator(".page-heading .description")).toHaveText(
+      await browserExpect(page.locator(".hub-band .band-lead")).toHaveText(
         "Resources for curious readers.",
       );
       await ready(page, "/settings");
@@ -3454,13 +3381,14 @@ describe("account shell and appearance", () => {
         expect(account.hub?.description).toBe("A small library of useful references.");
         expect(account.hub?.handle).toBe(handle);
         await page.locator(".wordmark").click();
+        // A hub with no collections yet: its home prompts the first one.
         await browserExpect(
-          page.getByRole("heading", { name: "Your collections", level: 2 }),
+          page.getByRole("heading", { name: "Start your first collection", level: 2 }),
         ).toBeVisible();
         await browserExpect(page.locator("h1")).toHaveText(account.hub?.name ?? "Your hub");
-        await browserExpect(page.locator(".hub-identity")).toContainText(`@${handle}`);
-        await browserExpect(page.locator(".hub-identity")).toContainText("Mina Reader");
-        await browserExpect(page.locator(".hub-introduction .description")).toHaveText(
+        await browserExpect(page.locator(".band-handle")).toContainText(`@${handle}`);
+        await browserExpect(page.locator(".band-handle")).toContainText("Mina Reader");
+        await browserExpect(page.locator(".hub-band .band-lead")).toHaveText(
           "A small library of useful references.",
         );
         await browserExpect(
@@ -3958,12 +3886,12 @@ it("[critical] saves a first private link through email, preserves retries, then
       await page.locator(".context a").first().click();
       await browserExpect(page).toHaveURL(`${origin}/h/${account.hub.id}`);
       await browserExpect(
-        page.getByRole("heading", { name: "Your collections", exact: true }),
+        page.getByRole("heading", { name: "My collections", exact: true }),
       ).toBeVisible();
       await browserExpect(page.getByRole("link", { name: /^Saved links, / })).toBeVisible();
       await ready(page, `/@${account.hub.handle}`);
       await browserExpect(
-        page.getByRole("heading", { name: "Your collections", exact: true }),
+        page.getByRole("heading", { name: "My collections", exact: true }),
       ).toBeVisible();
       await ready(page, `/h/${account.hub.id}?view=public`);
       await browserExpect(page.getByRole("link", { name: /^Saved links, / })).toHaveCount(0);
@@ -4050,13 +3978,14 @@ it("[critical] saves a first private link through email, preserves retries, then
       await page.screenshot({ path: `/tmp/first-link-saved-${js}.png`, fullPage: true });
       await page.locator(".wordmark").click();
       await browserExpect(
-        page.getByRole("heading", { name: "Your collections", level: 2 }),
+        page.getByRole("heading", { name: "My collections", level: 2 }),
       ).toBeVisible();
-      await browserExpect(page.locator(".collection-row")).toContainText("A useful little library");
-      await browserExpect(page.getByRole("button", { name: "Previous", exact: true })).toHaveCount(
-        0,
+      await browserExpect(page.locator(".collection-item")).toContainText(
+        "A useful little library",
       );
-      await browserExpect(page.getByRole("button", { name: "Next", exact: true })).toHaveCount(0);
+      await browserExpect(
+        page.getByRole("link", { name: "Show more collections", exact: true }),
+      ).toHaveCount(0);
       if (js) {
         await ready(page, "/capture");
         const draftId = await page.locator('input[name="draftId"]').inputValue();
@@ -4251,13 +4180,12 @@ it("shows collection descriptions and hub attribution without repeated separator
       })
       .expect(201);
     await ready(page, "/discover");
-    const row = page.locator(".collection-row").first();
-    await browserExpect(row.locator(".preview")).toContainText("Collected notes");
-    await browserExpect(row.locator(".row-meta a")).toHaveAttribute(
-      "href",
-      `/h/${profile.body.data.hubId}`,
-    );
-    await browserExpect(row.locator("time")).toBeVisible();
+    const row = page.locator(".collection-item").first();
+    await browserExpect(row.locator("p")).toContainText("Collected notes");
+    // Cards name the hub (by its mark and name) and how much the guide holds.
+    await browserExpect(row.locator(".card-hub")).toHaveText(profile.body.data.hubName);
+    await browserExpect(row.locator(".card-hub .hub-mark")).toBeVisible();
+    await browserExpect(row).toContainText("0 sections · 0 resources");
     expect(await row.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe("0px");
     expect(await page.locator("main").evaluate((el) => getComputedStyle(el).overflowY)).toBe(
       "visible",
@@ -4884,7 +4812,12 @@ it("edits a hubless person's username and profile without creating a hub", async
         .click();
       await browserExpect(page).toHaveURL(`${origin}/${username}`);
       await browserExpect(page.locator("h1")).toHaveText("Rowan Reader");
-      await browserExpect(page.locator("main")).toContainText("No public contributions yet.");
+      // Own profile, nothing yet: the prompt replaces the empty list; a bio is set,
+      // so no bio hint.
+      await browserExpect(
+        page.getByRole("heading", { name: "Start your first collection", exact: true }),
+      ).toBeVisible();
+      await browserExpect(page.getByRole("heading", { name: "Say who you are" })).toHaveCount(0);
       await browserExpect(page.locator(".person-bio")).toHaveText(bio);
       await browserExpect(page.locator(".person-bio useful")).toHaveCount(0);
       expect(
@@ -4898,11 +4831,18 @@ it("edits a hubless person's username and profile without creating a hub", async
         .getByRole("navigation", { name: "Account navigation" })
         .getByRole("link", { name: "Hub", exact: true })
         .click();
-      await browserExpect(page).toHaveURL(`${origin}/hub`);
-      await browserExpect(page.locator("h1")).toHaveText("Your hub");
+      // ADR-0069: no hub to create; /hub leads to the profile's Start a collection prompt.
+      await browserExpect(page).toHaveURL(`${origin}/${username}`);
       await browserExpect(
-        page.getByRole("button", { name: "Create hub", exact: true }),
+        page.getByRole("heading", { name: "Start your first collection", exact: true }),
       ).toBeVisible();
+      await browserExpect(page.getByRole("button", { name: "Create hub" })).toHaveCount(0);
+      await page.getByLabel("What is it about?", { exact: true }).fill("Reading lists");
+      await page.getByRole("button", { name: "Start a collection", exact: true }).click();
+      await browserExpect(page).toHaveURL(/\/capture\?title=Reading\+lists/);
+      await browserExpect(page.getByLabel("Name for the new collection")).toHaveValue(
+        "Reading lists",
+      );
       await page.screenshot({ path: `/tmp/optional-hub-entry-${js}.png`, fullPage: true });
       expect(await prisma.hub.count({ where: { ownerUserId: person.id } })).toBe(0);
       await ready(page, "/settings");
@@ -4916,7 +4856,7 @@ it("edits a hubless person's username and profile without creating a hub", async
       await ready(page, `/${username}`);
       await browserExpect(page.locator(".person-bio")).toHaveCount(0);
       await browserExpect(page.locator("h1")).toHaveText("Rowan Reader");
-      await browserExpect(page.locator(".page-heading .meta").first()).toHaveText(username);
+      await browserExpect(page.locator(".band-handle")).toHaveText(username);
       const bounds = await page.evaluate(() => ({
         width: document.documentElement.clientWidth,
         scroll: document.documentElement.scrollWidth,
@@ -4925,10 +4865,10 @@ it("edits a hubless person's username and profile without creating a hub", async
       await browserExpect(
         page.locator("main").getByRole("link", { name: "Edit profile", exact: true }),
       ).toHaveCount(0);
-      await ready(page, "/hub");
-      await page.getByRole("button", { name: "Create hub", exact: true }).click();
-      await browserExpect(page).toHaveURL(/\/h\/[a-f0-9-]+$/);
-      const hub = await prisma.hub.findUniqueOrThrow({ where: { ownerUserId: person.id } });
+      // A hub whose collections are all gone stays, hidden (ADR-0069).
+      const hub = await prisma.hub.create({
+        data: { ownerUserId: person.id, handle: username, name: "Rowan's reading" },
+      });
       expect(await prisma.collection.count({ where: { hubId: hub.id } })).toBe(0);
       await ready(page, `/${username}`);
       // ADR-0069: an empty hub is hidden, so the profile shows no hub byline yet.
@@ -5121,14 +5061,14 @@ it("sizes discussion by its own content within the reader frame", async () => {
           const sheet = rect(".collection-sheet");
           const discussion = rect(".comments");
           const layout = rect(".reader-layout");
-          const footer = rect(".site-footer");
+          const main = rect("main");
           return {
             sheetHeight: sheet.height,
             sheetBottom: sheet.bottom,
             discussionHeight: discussion.height,
             discussionBottom: discussion.bottom,
             layoutBottom: layout.bottom,
-            footerTop: footer.top,
+            mainBottom: main.bottom,
           };
         });
       const empty = await bounds();
@@ -5155,7 +5095,7 @@ it("sizes discussion by its own content within the reader frame", async () => {
       expect(Math.abs(busy.sheetHeight - short.sheetHeight)).toBeLessThanOrEqual(1);
       expect(busy.discussionBottom).toBeGreaterThan(busy.sheetBottom + 100);
       expect(Math.abs(busy.discussionBottom - busy.layoutBottom)).toBeLessThanOrEqual(1);
-      expect(busy.discussionBottom).toBeLessThan(busy.footerTop);
+      expect(busy.discussionBottom).toBeLessThanOrEqual(busy.mainBottom);
       const body = page.locator(".comments-body");
       const headingTop = await page
         .locator(".comments-heading")
@@ -6892,21 +6832,17 @@ it("adopts a hub created in another tab during a profile save while preserving n
       });
       await name.fill("Earlier profile name");
       await waiting;
-      const otherTab = await page.context().newPage();
-      await ready(otherTab, "/hub");
-      await otherTab.getByRole("button", { name: "Create hub", exact: true }).click();
-      await browserExpect(otherTab).toHaveURL(/\/h\/[a-f0-9-]+$/);
+      // The hub arrives elsewhere (another tab's first collection) mid-save.
       const person = await prisma.user.findUniqueOrThrow({ where: { email } });
-      const hub = await prisma.hub.update({
-        where: { ownerUserId: person.id },
+      const hub = await prisma.hub.create({
         data: {
+          ownerUserId: person.id,
           name: "Newly created hub",
           handle: `sync-${crypto.randomUUID().slice(0, 8)}`,
           description: "Created in another tab",
           showOwner: false,
         },
       });
-      await otherTab.close();
       if (newerEdit) await name.fill("Newer profile name");
       release();
       await browserExpect(page.locator(".profile-save-status.success")).toContainText("Saved");
@@ -8432,7 +8368,7 @@ it("reviews bookmark collection drafts, edits in place and imports in the backgr
   }
 }, 90000);
 
-it("requires explicit hub creation before uploading a text import and protects native uploads from foreign origins", async () => {
+it("creates the hub with a first text import and protects native uploads from foreign origins", async () => {
   for (const javascript of [true, false]) {
     const signed = await signInWithCode(app.getHttpServer(), {
       email: `hubless-import-${crypto.randomUUID()}@example.com`,
@@ -8445,11 +8381,9 @@ it("requires explicit hub creation before uploading a text import and protects n
         await page.context().addCookies([{ name, value: value.join("="), url: origin }]);
       }
       await ready(page, "/manage/import-export");
-      await browserExpect(
-        page.getByRole("heading", { name: "Bring your links together" }),
-      ).toBeVisible();
+      // ADR-0069: no hub to create first; the import brings it.
+      await browserExpect(page.getByRole("button", { name: "Create hub" })).toHaveCount(0);
       expect(await prisma.hub.count({ where: { ownerUserId: signed.body.user.id } })).toBe(0);
-      await page.getByRole("button", { name: "Create hub", exact: true }).click();
       await browserExpect(
         page.getByRole("heading", { name: "New import", exact: true, level: 1 }),
       ).toBeVisible();
@@ -8462,6 +8396,9 @@ it("requires explicit hub creation before uploading a text import and protects n
       });
       await page.screenshot({ path: `/tmp/import-text-start-${javascript}.png`, fullPage: true });
       await page.getByRole("button", { name: "Review file", exact: true }).click();
+      await browserExpect
+        .poll(() => prisma.hub.count({ where: { ownerUserId: signed.body.user.id } }))
+        .toBe(1);
       await page
         .locator(".import-drafts")
         .getByRole("link", { name: "Unfiled links", exact: true })

@@ -17,6 +17,8 @@ export interface Profile {
   handleChangeAvailableAt: IsoTimestamp | null;
   hubId: string | null;
   hubName: string | null;
+  /** Every collection in the hub, private ones included; null without a hub. */
+  hubCollectionCount: number | null;
   email: string;
   hubDescription: string | null;
   image: string | null;
@@ -47,6 +49,8 @@ export interface PersonProfile {
   person: import("./envelope.js").PersonRef & { name: string | null; bio: string | null };
   hub: { id: string; handle: string; name: string } | null;
   collections: import("./collections.js").Collection[];
+  /** How many public collections this person has contributed to. */
+  contributionCount: number;
 }
 export interface UsernameAvailability {
   username: string;

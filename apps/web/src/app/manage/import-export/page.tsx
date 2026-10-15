@@ -26,22 +26,7 @@ export default async function Page({
     redirect(
       `/sign-in?returnTo=${encodeURIComponent(`/manage/import-export${review ? "?tab=review" : ""}`)}`,
     );
-  if (!session.hubId)
-    return (
-      <section className="reader import-page">
-        <h1>Bring your links together</h1>
-        <p>
-          Create your hub before importing a library. You’ll review the links and choose their
-          collections before anything is saved.
-        </p>
-        <FormNotice code={queryValue(query.notice)} />
-        <NativeForm action="/forms/import-hub">
-          <button className="button primary" type="submit">
-            Create hub
-          </button>
-        </NativeForm>
-      </section>
-    );
+  // Starting an import creates the hub when there is none yet (ADR-0069).
   const result = await serverRead<ImportDraftView[]>("/api/v1/imports");
   if (!result.ok) return <OperatorFailure error={result} />;
   const collections = result.data.flatMap((d) =>

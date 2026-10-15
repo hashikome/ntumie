@@ -55,17 +55,6 @@ export function Tags({
   ) : null;
 }
 
-export function CollectionRow({ item, handle }: { item: Collection; handle?: string }) {
-  return (
-    <li className="collection-row">
-      <h2>
-        <a href={permalink(item.id)}>{item.title}</a>
-      </h2>
-      {item.description && <p className="preview">{item.description}</p>}
-      <CollectionMeta item={item} handle={handle} compact />
-    </li>
-  );
-}
 // People link to their own profile; hubs keep their separate @handle identity.
 export function Person({ person }: { person: PersonRef }) {
   return (

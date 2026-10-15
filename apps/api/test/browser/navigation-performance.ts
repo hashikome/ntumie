@@ -236,7 +236,9 @@ export async function benchmarkNavigation(input: {
         await start();
         let before = await page.evaluate(() => performance.timeOrigin);
         await click(
-          page.getByRole("contentinfo").getByRole("link", { name: "About ntumie.", exact: true }),
+          page
+            .getByRole("navigation", { name: "Main navigation" })
+            .getByRole("link", { name: "About", exact: true }),
         );
         await result("home-to-about", before, await contentReady(page, "/about", "main h1"));
 
