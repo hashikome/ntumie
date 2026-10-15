@@ -26,9 +26,9 @@ export default async function Page({
 }) {
   const query = await searchParams;
   const notice = queryValue(query.notice);
-  // Guides worth following come from Discover; the section is left out when
-  // there is nothing published or Discover is unavailable.
-  const guides = await serverRead<Collection[]>("/api/v1/discover?limit=3");
+  // Guides worth following are ranked by completeness, then saves (API); the
+  // section is left out when there is none or Discover is unavailable.
+  const guides = await serverRead<Collection[]>("/api/v1/discover/guides?limit=3");
   const featured = guides.ok ? guides.data.slice(0, 3) : [];
   return (
     <div className="brand-page" data-reader>

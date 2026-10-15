@@ -9,11 +9,18 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Rank home's "Guides worth following" by completeness, then saves, then the
+  latest update (`GET /api/v1/discover/guides`), instead of newest first.
+  Completeness scores a description, two or more sections, three or more links,
+  no empty section, notes on at least half the links, and fetched titles and
+  descriptions on at least half the links. The best available are shown with no
+  minimum score; collections without links are never recommended.
+
 - Rebuild home and About as cobalt brand pages: band hero with the route
-  diagram, "How to read a collection" built from the real collection preview,
-  Guides worth following from Discover, and About's saved-and-forgotten visual,
-  steps and help cards. The sample collection is now "Starting a kitchen garden"
-  with eight real links.
+  diagram, "How to read a collection" as the approved labelled sample,
+  Guides worth following with section counts, and About's saved-and-forgotten
+  visual, steps and help cards. The sample collection is now "Starting a kitchen
+  garden" with eight real links.
 
 - Add the redesign's backend contracts: notes on links (280 characters,
   editable and clearable), questions tied to a section and an attached item,

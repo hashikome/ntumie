@@ -74,7 +74,9 @@ communities (opt-in), and private-collection allowances (monetization).
   later): home/About copy and structure (supersedes parts of ADR-0063 and
   `web-product-experience.md` landing text), removal of the About collection and
   its `/about?item=` links, landing questions removed, header About link and
-  Start a collection.
+  Start a collection; the Guides worth following ranking (completeness, then
+  saves, then latest update; owner decision 15 October 2026) in `PRODUCT.md`
+  Discover requirements.
 - [ ] M4 Collection reader (desktop and phone).
 - [ ] M5 Start a collection, sign in and sign up.
 - [ ] M6 Save a link dialog and the Edit workspace.

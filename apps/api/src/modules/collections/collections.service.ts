@@ -470,6 +470,65 @@ export class CollectionsService {
     return this.listPublishedCollections(query, {});
   }
 
+  // Guides worth following: published collections ranked by how complete a
+  // guide they are, then by saves, then by the latest update. Completeness is
+  // one point each for a description, two or more sections, three or more
+  // links, no empty section, notes on at least half the links, and a fetched
+  // title and description on at least half the links (a link to another
+  // collection shows that collection's own). There is no minimum: the best
+  // available are shown. A collection with no links is never recommended.
+  async discoverGuides(limit: number) {
+    const ranked = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      WITH items AS (
+        SELECT r.collection_id, r.kind, r.note,
+               LEAD(r.kind) OVER (PARTITION BY r.collection_id ORDER BY r.position) AS next_kind,
+               r.kind = ${ResourceKind.COLLECTION_LINK} OR (
+                 m.state = 'ready'
+                 AND btrim(coalesce(m.title, '')) <> ''
+                 AND btrim(coalesce(m.description, '')) <> ''
+               ) AS described
+        FROM resources r
+        JOIN collections c ON c.id = r.collection_id AND c.published
+        LEFT JOIN link_metadata m ON m.url = r.url
+      ), stats AS (
+        SELECT collection_id,
+               COUNT(*) FILTER (WHERE kind = ${ResourceKind.HEADING}) AS sections,
+               COUNT(*) FILTER (WHERE kind <> ${ResourceKind.HEADING}) AS links,
+               COUNT(*) FILTER (WHERE kind <> ${ResourceKind.HEADING} AND btrim(coalesce(note, '')) <> '') AS noted,
+               COUNT(*) FILTER (WHERE kind <> ${ResourceKind.HEADING} AND described) AS described,
+               COUNT(*) FILTER (
+                 WHERE kind = ${ResourceKind.HEADING} AND (next_kind IS NULL OR next_kind = ${ResourceKind.HEADING})
+               ) AS empty_sections
+        FROM items
+        GROUP BY collection_id
+      )
+      SELECT c.id
+      FROM collections c
+      JOIN stats s ON s.collection_id = c.id
+      JOIN hubs h ON h.id = c.hub_id
+      JOIN users u ON u.id = h.owner_user_id AND u.account_state = 'active'
+      LEFT JOIN collection_holds hold ON hold.collection_id = c.id AND hold.active
+      WHERE c.published AND hold.collection_id IS NULL AND s.links > 0
+      ORDER BY
+        (btrim(coalesce(c.description, '')) <> '')::int
+          + (s.sections >= 2)::int
+          + (s.links >= 3)::int
+          + (s.sections > 0 AND s.empty_sections = 0)::int
+          + (s.noted * 2 >= s.links)::int
+          + (s.described * 2 >= s.links)::int DESC,
+        (SELECT COUNT(*) FROM collection_saves cs WHERE cs.collection_id = c.id) DESC,
+        c.updated_at DESC,
+        c.id DESC
+      LIMIT ${limit}
+    `;
+    const order = new Map(ranked.map(({ id }, index) => [id, index]));
+    const rows = await this.prisma.collection.findMany({
+      where: { id: { in: ranked.map(({ id }) => id) } },
+      include: collectionListingInclude,
+    });
+    return this.toListings(rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)));
+  }
+
   async getHubPage(hubId: string, query: CursorQueryDto, viewer: AuthUser | null = null) {
     const hub = await this.prisma.hub.findUnique({ where: { id: hubId } });
     return this.buildHubPage(hub, query, viewer);
@@ -914,21 +973,7 @@ export class CollectionsService {
             : []),
         ],
       },
-      include: {
-        ...collectionTags,
-        hub: {
-          select: {
-            id: true,
-            handle: true,
-            name: true,
-          },
-        },
-        _count: {
-          select: {
-            resources: true,
-          },
-        },
-      },
+      include: collectionListingInclude,
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       take: limit + 1,
     });
@@ -937,6 +982,10 @@ export class CollectionsService {
     const last = items[items.length - 1];
     const nextCursor =
       rows.length > limit && last ? encodeCursor({ u: last.updatedAt, id: last.id }) : null;
+    return { items: await this.toListings(items), meta: { limit, nextCursor } };
+  }
+
+  private async toListings(items: CollectionListingRow[]) {
     // Sections are heading items; everything else in the collection is a resource.
     const sections = new Map(
       (
@@ -947,20 +996,16 @@ export class CollectionsService {
         })
       ).map((row) => [row.collectionId, row._count._all]),
     );
-
-    return {
-      items: items.map((item) => ({
-        ...this.toPublicCollection(item),
-        sectionCount: sections.get(item.id) ?? 0,
-        resourceCount: item._count.resources - (sections.get(item.id) ?? 0),
-        hub: {
-          id: item.hub.id,
-          handle: item.hub.handle,
-          name: item.hub.name,
-        },
-      })),
-      meta: { limit, nextCursor },
-    };
+    return items.map((item) => ({
+      ...this.toPublicCollection(item),
+      sectionCount: sections.get(item.id) ?? 0,
+      resourceCount: item._count.resources - (sections.get(item.id) ?? 0),
+      hub: {
+        id: item.hub.id,
+        handle: item.hub.handle,
+        name: item.hub.name,
+      },
+    }));
   }
 
   private async requireCollection(
@@ -1010,3 +1055,11 @@ const collectionTags = {
   },
 };
 type CollectionWithTags = Collection & { tags: { tag: { name: string } }[] };
+const collectionListingInclude = {
+  ...collectionTags,
+  hub: { select: { id: true, handle: true, name: true } },
+  _count: { select: { resources: true } },
+} satisfies Prisma.CollectionInclude;
+type CollectionListingRow = Prisma.CollectionGetPayload<{
+  include: typeof collectionListingInclude;
+}>;

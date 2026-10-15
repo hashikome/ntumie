@@ -201,4 +201,70 @@ describe("cobalt redesign contracts", () => {
       collectionCount: 0,
     });
   });
+
+  it("ranks guides worth following by completeness, then saves", async () => {
+    const curator = await person("guide-curator");
+    // Each fixture replaces the captured first link with the given layout.
+    const guide = async (
+      title: string,
+      layout: Array<"section" | "link" | "noted">,
+      description?: string,
+      fetched = false,
+    ) => {
+      const created = await capture(curator, { collectionTitle: title, links: [{ url: link() }] });
+      const id = created.body.data.collectionId as string;
+      await prisma.resource.deleteMany({ where: { collectionId: id } });
+      await prisma.collection.update({ where: { id }, data: { description: description ?? null } });
+      const urls = layout.map(() => link());
+      if (fetched)
+        await prisma.linkMetadata.createMany({
+          data: urls.map((url) => ({
+            url,
+            state: "ready",
+            fetchedAt: new Date(),
+            title: "A fetched title",
+            description: "A fetched description.",
+          })),
+        });
+      await prisma.resource.createMany({
+        data: layout.map((kind, position) =>
+          kind === "section"
+            ? { collectionId: id, kind: "heading", titleOverride: `Step ${position}`, position }
+            : {
+                collectionId: id,
+                kind: "external_link",
+                url: urls[position],
+                position,
+                ...(kind === "noted" ? { note: "Why this one matters." } : {}),
+              },
+        ),
+      });
+      return id;
+    };
+    const full = ["section", "noted", "noted", "section", "noted"] as const;
+    const saved = await guide("Saved full guide", [...full], "Everything in order.");
+    const unsaved = await guide("Unsaved full guide", [...full], "Everything in order.");
+    const described = await guide("Described full guide", [...full], "Everything in order.", true);
+    const thin = await guide("Newest thin list", ["link", "link"]);
+    const empty = await guide("Only a heading", ["section"], "Nothing to follow yet.");
+    for (const who of [owner, reader])
+      await prisma.collectionSave.create({ data: { collectionId: saved, userId: who.id } });
+
+    const response = await request(server()).get("/api/v1/discover/guides?limit=12").expect(200);
+    const ids = (response.body.data as Array<{ id: string; sectionCount: number }>).map(
+      (item) => item.id,
+    );
+    expect(ids.indexOf(described)).toBeGreaterThanOrEqual(0);
+    // Fetched titles and descriptions add completeness, which outranks saves.
+    expect(ids.indexOf(described)).toBeLessThan(ids.indexOf(saved));
+    expect(ids.indexOf(saved)).toBeLessThan(ids.indexOf(unsaved));
+    // A newer, thinner list never outranks a complete guide; no links, no place.
+    if (ids.includes(thin)) expect(ids.indexOf(thin)).toBeGreaterThan(ids.indexOf(unsaved));
+    expect(ids).not.toContain(empty);
+    expect(response.body.data[ids.indexOf(saved)]).toMatchObject({
+      sectionCount: 2,
+      resourceCount: 3,
+    });
+    await request(server()).get("/api/v1/discover/guides?limit=13").expect(400);
+  });
 });
