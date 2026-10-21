@@ -200,6 +200,13 @@ time {
   background: var(--color-canvas);
   border-bottom: 1px solid var(--color-divider);
 }
+/* Every board draws the header full width with 24 px gutters (16 px on phones):
+   the logo sits 24 px outside the 48 px page gutter. Capped like the band pages
+   so that relation holds on very wide screens. */
+.topbar > nav.shell {
+  width: min(100%, 100rem);
+  padding-inline: 1.5rem;
+}
 .topbar > nav {
   min-height: 4rem;
   display: flex;
@@ -1856,9 +1863,11 @@ body:is(:has(.brand-page), :has(.topbar.signed-out):has(.band-page)) .topbar :fo
 main:has(> .brand-page) {
   padding-top: 0;
 }
-/* Brand pages use the wider 80rem column of their designs, header included. */
+/* Brand pages follow their boards: 48 px gutters (content 1344 px at
+   1440 px), capped at 100rem on very wide screens. */
 body:has(.brand-page) {
-  --shell: 80rem;
+  --shell: 100rem;
+  --gutter: 3rem;
 }
 /* Full-bleed colour without widening the page: the border image paints one
    surface past the shell sideways (an outset adds no scroll width), so no
@@ -2545,9 +2554,11 @@ body:has(.brand-page) {
 
 /* ---------- Band pages: Discover, hubs and profiles ---------- */
 
-/* The designs' 80rem column; signed out, the header joins the band (above). */
+/* The boards' 48 px gutters, capped at 100rem; signed out, the header
+   joins the band (above). */
 body:has(.band-page) {
-  --shell: 80rem;
+  --shell: 100rem;
+  --gutter: 3rem;
 }
 main:has(> .band-page) {
   padding-top: 0;
@@ -2940,6 +2951,8 @@ main .action-form.search-box input[type="search"]:focus {
 }
 .band-section-head > a {
   font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 .collection-cards.cards-3,
 .hub-cards.cards-3 {
@@ -3969,6 +3982,13 @@ main .ops-filters select {
   :root {
     --gutter: 1.25rem;
     --row-inset: 0.75rem;
+  }
+  body:has(.band-page),
+  body:has(.brand-page) {
+    --gutter: 1rem;
+  }
+  .topbar > nav.shell {
+    padding-inline: 1rem 0.75rem;
   }
   main {
     padding-block: 1.75rem 2.5rem;

@@ -4939,6 +4939,9 @@ it("edits a hubless person's username and profile without creating a hub", async
         page.getByRole("heading", { name: "Start your first collection", exact: true }),
       ).toBeVisible();
       await browserExpect(page.getByRole("button", { name: "Create hub" })).toHaveCount(0);
+      // Type into a settled page: the client redirect from /hub may still be
+      // committing its render and would replace a field filled during it.
+      await ready(page, `/${username}`);
       await page.getByLabel("What is it about?", { exact: true }).fill("Reading lists");
       await page.getByRole("button", { name: "Start a collection", exact: true }).click();
       await browserExpect(page).toHaveURL(/\/capture\?title=Reading\+lists/);
