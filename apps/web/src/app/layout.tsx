@@ -2,6 +2,7 @@ import { webServerConfig } from "@ntumie/config/web-server";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
+import { Analytics } from "../components/analytics";
 import { ApiOriginProvider } from "../components/api-origin";
 import { AppNavigation } from "../components/app-navigation";
 import { FocusMode } from "../components/focus-mode";
@@ -38,7 +39,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
     readTheme(),
     readResourceNewTab(),
   ]);
-  const { authOrigin, publicOrigin } = webServerConfig();
+  const { authOrigin, publicOrigin, analyticsToken } = webServerConfig();
   const theme = session ? savedTheme : "system";
   return (
     <html
@@ -49,6 +50,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
       className={brandFont.variable}
     >
       <body>
+        {analyticsToken && <Analytics token={analyticsToken} />}
         <ApiOriginProvider origin={authOrigin}>
           <ResourceNavigationProvider initialNewTab={resourceNewTab} publicOrigin={publicOrigin}>
             <TimeZoneProvider

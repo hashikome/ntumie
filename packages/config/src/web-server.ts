@@ -49,9 +49,15 @@ export function webServerConfig(env: Record<string, string | undefined> = proces
   const supportEmail = env.SUPPORT_EMAIL?.trim() || undefined;
   if (supportEmail && !/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(supportEmail))
     throw new Error("SUPPORT_EMAIL must be an email address");
+  // Product analytics (PostHog, US Cloud): the public project token that the
+  // browser sends with events. Off when unset (tests and local development).
+  const analyticsToken = env.POSTHOG_PROJECT_TOKEN?.trim() || undefined;
+  if (analyticsToken && !/^phc_[A-Za-z0-9]{20,}$/.test(analyticsToken))
+    throw new Error("POSTHOG_PROJECT_TOKEN must be a PostHog project token (phc_…)");
   return {
     publicOrigin,
     authOrigin,
+    analyticsToken,
     apiOrigin: url.origin,
     sourceSecret,
     trustedProxies,

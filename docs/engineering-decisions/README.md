@@ -153,3 +153,4 @@ Current implementation guidance lives in the linked design documents.
 - [0067 — Cobalt visual system](0067-cobalt-visual-system.md): one cobalt hue per theme with separate fill and link roles, pill controls and orange only for annotation; partially supersedes 0063.
 - [0068 — Partner hub credit](0068-partner-hub-credit.md): one owning hub credits partner hubs on a collection after they accept; display only, no access; narrows 0017.
 - [0069 — Hubs come with the first collection](0069-hubs-come-with-the-first-collection.md): no empty hubs; a hub is created only with a first collection; sign-up hub and Create hub removed; partially supersedes 0044 and 0018.
+- [0070 — Product analytics and fake doors](0070-product-analytics-and-fake-doors.md): unbuilt designed features record interest (`feature_interest`) and say they are coming; PostHog (US Cloud) in the web client when its token is set, cookieless, no replay.

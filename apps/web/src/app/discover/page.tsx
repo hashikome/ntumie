@@ -85,7 +85,11 @@ export default async function Page({
             placeholder="Search collections, topics or tags"
             maxLength={200}
           />
-          <button type="submit" className="button primary">
+          <button
+            type="submit"
+            className="button primary"
+            data-ph-capture-attribute-feature="search"
+          >
             Search
           </button>
         </NativeForm>

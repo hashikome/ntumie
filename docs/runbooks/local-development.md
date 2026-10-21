@@ -147,6 +147,16 @@ codes expire after five minutes; delivery stops after expiry. Run the worker
 for cleanup even during provider/Redis outages. Retention and endpoint contracts
 are in [auth delivery](../design-docs/auth-delivery-integration.md).
 
+## Product analytics
+
+Analytics are off unless the web server has `POSTHOG_PROJECT_TOKEN` (the public
+`phc_` token of PostHog project 666423, US Cloud). Leave it unset locally so
+development does not mix with real traffic; set it in the production
+deployment inputs. Events go through `/ingest` on the site. Demand for
+features on the way (fake doors) is in the database:
+`SELECT feature, count(*) FROM feature_interest GROUP BY feature`. See
+[ADR-0070](../engineering-decisions/0070-product-analytics-and-fake-doors.md).
+
 ## Web development
 
 Open `http://localhost:3004` after `bun run dev` for the landing page. `/discover`

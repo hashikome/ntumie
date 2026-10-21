@@ -13,6 +13,18 @@ export default function config(): NextConfig {
       return config;
     },
     logging: { incomingRequests: false },
+    // Analytics (PostHog, US Cloud) through this origin: no third-party
+    // origin in the page and fewer blocked events. See components/analytics.tsx.
+    skipTrailingSlashRedirect: true,
+    async rewrites() {
+      return [
+        {
+          source: "/ingest/static/:path*",
+          destination: "https://us-assets.i.posthog.com/static/:path*",
+        },
+        { source: "/ingest/:path*", destination: "https://us.i.posthog.com/:path*" },
+      ];
+    },
     experimental: { serverComponentsHmrCache: false },
     async headers() {
       return [

@@ -15,6 +15,7 @@
     "@ntumie/types": "workspace:*",
     "@simplewebauthn/browser": "13.2.2",
     "next": "16.3.8",
+    "posthog-js": "^1.438.10",
     "proxy-addr": "2.0.7",
     "qrcode": "1.5.4",
     "react": "19.3.0",

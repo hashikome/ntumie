@@ -80,6 +80,8 @@ services:
       WEB_SOURCE_SECRET_FILE: /run/secrets/web_source
       WEB_TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS}
       SUPPORT_EMAIL: ${SUPPORT_EMAIL:?SUPPORT_EMAIL_required}
+      # Public PostHog project token (sent to browsers); unset turns analytics off.
+      POSTHOG_PROJECT_TOKEN: ${POSTHOG_PROJECT_TOKEN:-}
     secrets: [web_source]
     networks: [ingress, frontend]
     read_only: true

@@ -33,6 +33,7 @@ export function FakeDoor({
         type="submit"
         className={className}
         aria-current={current ? "page" : undefined}
+        data-ph-capture-attribute-feature={feature}
         {...(switchLabelledBy
           ? { role: "switch", "aria-checked": false, "aria-labelledby": switchLabelledBy }
           : {})}

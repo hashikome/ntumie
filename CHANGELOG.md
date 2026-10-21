@@ -9,6 +9,11 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Add PostHog product analytics (US Cloud) to the web client, on only when
+  `POSTHOG_PROJECT_TOKEN` is set: page views and clicks through the site's
+  `/ingest` rewrite, no cookies, no session recordings; fake-door clicks carry
+  their feature (ADR-0070).
+
 - Complete the Discover, hub and profile screens as designed. Discover has
   search, popular tags (filtering by tag), and Everything / Popular / Newest /
   Hubs tabs: Popular this month (saves over 30 days), Hubs worth subscribing

@@ -67,6 +67,7 @@ export function environment(previous: string, release: Release, migration = fals
     "EMAIL_SUPPORT_URL",
     "EMAIL_FROM_ADDRESS",
     "SUPPORT_EMAIL",
+    "POSTHOG_PROJECT_TOKEN",
     "BOOTSTRAP_ADMIN_EMAIL",
     "GOOGLE_AUTH_ENABLED",
     "DATABASE_URL_SECRET",
