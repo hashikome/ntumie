@@ -21,6 +21,8 @@ type Props = {
   publicHub?: { handle: string; preview?: boolean };
   /** The page's own query (a tab or tag) that its no-JavaScript links keep. */
   pageParams?: Record<string, string>;
+  /** The reader's address for an item's "Discuss". */
+  discussBase?: string;
 } & (
   | {
       kind: "collections";
@@ -144,33 +146,32 @@ export function PaginatedList(props: Props) {
     setAnnouncement(`${additions.length} more ${props.kind} loaded.`);
   }, [cursor, items, props.kind, props.path, props.publicHub, props.token]);
   const automaticCursor = useRef<string | null>(null);
+  // The reader scrolls the page: on wide screens the next page loads as the end
+  // of the list comes into view. One automatic attempt per cursor; failures
+  // keep the explicit retry, so scrolling can never loop requests.
   useEffect(() => {
     if (props.kind !== "resources" || !cursor || error) return;
-    const body = continuation.current?.closest<HTMLElement>(".sheet-body");
-    if (!body) return;
+    const end = continuation.current;
+    if (!end) return;
     const media = matchMedia("(min-width: 1024px) and (min-height: 600px)");
-    let previousTop = body.scrollTop;
-    const onScroll = () => {
-      const top = body.scrollTop;
-      const movingDown = top > previousTop;
-      previousTop = top;
-      if (
-        !movingDown ||
-        !media.matches ||
-        document.hidden ||
-        document.documentElement.dataset.revalidating ||
-        active.current ||
-        automaticCursor.current === cursor ||
-        body.scrollHeight - top - body.clientHeight > 192
-      )
-        return;
-      // One automatic attempt per cursor. Failures keep the explicit retry,
-      // and a repeated cursor cannot turn a scroll gesture into a request loop.
-      automaticCursor.current = cursor;
-      void more();
-    };
-    body.addEventListener("scroll", onScroll, { passive: true });
-    return () => body.removeEventListener("scroll", onScroll);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (
+          !entry?.isIntersecting ||
+          !media.matches ||
+          document.hidden ||
+          document.documentElement.dataset.revalidating ||
+          active.current ||
+          automaticCursor.current === cursor
+        )
+          return;
+        automaticCursor.current = cursor;
+        void more();
+      },
+      { rootMargin: "0px 0px 200px 0px" },
+    );
+    observer.observe(end);
+    return () => observer.disconnect();
   }, [cursor, error, more, props.kind]);
   const viewParams = {
     ...props.pageParams,
@@ -188,6 +189,7 @@ export function PaginatedList(props: Props) {
           collectionId={props.collectionId}
           canEdit={props.canEdit}
           selectedItem={props.selectedItem}
+          discussBase={props.discussBase}
         />
       ) : (
         <ul className={props.layout === "cards" ? "collection-cards" : "collection-rows"}>

@@ -139,7 +139,8 @@ it("bounds discussion reads independently of question count", async () => {
   expect(many.value.data.comments).toHaveLength(20);
   expect(many.value.data.comments.every((row) => row.replies[0]?.accepted)).toBe(true);
   expect(many.count).toBe(one.count);
-  expect(many.count).toBeLessThanOrEqual(11);
+  // 12: one statement counts the whole discussion (All / Answered filter).
+  expect(many.count).toBeLessThanOrEqual(12);
   console.log("SQL discussion", one.count, many.count);
 });
 

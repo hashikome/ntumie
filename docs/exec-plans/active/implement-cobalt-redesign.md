@@ -92,7 +92,21 @@ communities (opt-in), and private-collection allowances (monetization).
   Discover requirements; the footer removal (supersedes ADR-0063's footer
   link); the API hub mark (DESIGN.md palette and an ADR); Discover, hub and
   profile layouts (`web-product-experience.md`, PRODUCT.md §6.6).
-- [ ] M4 Collection reader (desktop and phone).
+- [x] (2026-10-22) M4 Collection reader (desktop and phone), to the "Collection",
+  "Discussion: comment states" and phone boards: full-width page with the hub
+  tree sidebar (sections follow the reading position; Search this hub is a fake
+  door), cobalt band (crumb on phones, tags then "+N more", contributor stack,
+  "Updated · N sections · N resources", Share and Edit), sections that read
+  straight through (no folding; sticky chips on phones), open items with the
+  note card, "Added by … on …", Copy link and Discuss, the Next in hub card and
+  "Made with ntumie.", and a sticky Discussion with All / Answered, a one-line
+  prompt that opens in place, avatars, "On <section>", About (follows the
+  section in view), the attached item and a counter near 2,000. Backend: one
+  `GET /collections/:id/outline` read (hub, collections in order with
+  sections, next; visitors see published ones plus the current), discussion
+  `total` / `answered` counts and `?answered=true`, collection section and
+  resource counts. Fixed the copied-item reload that sometimes landed closed:
+  `replaceState` now passes null state so Next.js keeps its router in sync.
 - [ ] M5 Start a collection, sign in and sign up.
 - [ ] M6 Save a link dialog and the Edit workspace.
 - [ ] M7 Audit, browser acceptance, docs and release (push only here).

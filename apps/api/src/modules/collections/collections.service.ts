@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type {
+  CollectionOutline,
   CollectionShareView,
   Contribution,
   CursorMeta,
@@ -925,6 +926,59 @@ export class CollectionsService {
     return this.readCollectionView(collection, viewer, shareToken);
   }
 
+  // The reader's map (CollectionOutline). Reading the collection proves access
+  // to it; everything else shown is public or the viewer's own.
+  async outline(
+    id: string,
+    viewer: AuthUser | null,
+    shareToken?: string,
+  ): Promise<CollectionOutline> {
+    const collection = await this.requireCollection(id);
+    const access = await this.policy.requireRead(collection, viewer, shareToken);
+    const hub = await this.prisma.hub.findFirst({
+      where: { id: collection.hubId, owner: { accountState: "active" } },
+      select: { id: true, handle: true, name: true, publishedCollectionCount: true },
+    });
+    const visible = Boolean(hub && (access.isOwner || hub.publishedCollectionCount > 0));
+    const siblings = visible
+      ? await this.prisma.collection.findMany({
+          where: {
+            hubId: collection.hubId,
+            ...(access.isOwner
+              ? availableCollections(viewer?.userId)
+              : { OR: [{ id }, { published: true, ...availableCollections() }] }),
+          },
+          select: { id: true, title: true },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          take: 100,
+        })
+      : [{ id: collection.id, title: collection.title }];
+    if (!siblings.some((row) => row.id === id))
+      siblings.push({ id: collection.id, title: collection.title });
+    const headings = await this.prisma.resource.findMany({
+      where: {
+        collectionId: { in: siblings.map((row) => row.id) },
+        kind: ResourceKind.HEADING,
+      },
+      select: { id: true, collectionId: true, titleOverride: true },
+      orderBy: { position: "asc" },
+    });
+    const at = siblings.findIndex((row) => row.id === id);
+    const next = visible ? siblings[at + 1] : undefined;
+    return {
+      hub: visible && hub ? { id: hub.id, handle: hub.handle, name: hub.name } : null,
+      collections: siblings.map((row) => ({
+        id: row.id,
+        title: row.title,
+        current: row.id === id,
+        sections: headings
+          .filter((heading) => heading.collectionId === row.id)
+          .map((heading) => ({ id: heading.id, title: heading.titleOverride ?? "" })),
+      })),
+      next: next ? { id: next.id, title: next.title } : null,
+    };
+  }
+
   // Resolving a share address must not remember a link grant or assemble content.
   async getShareContext(id: string, viewer: AuthUser | null, shareToken?: string) {
     const collection = await this.requireCollection(id);
@@ -963,11 +1017,19 @@ export class CollectionsService {
           select: { id: true, username: true },
         })
       : null;
-    const contributors = await this.contributors(collection.id);
+    const [contributors, items, sectionCount] = await Promise.all([
+      this.contributors(collection.id),
+      this.prisma.resource.count({ where: { collectionId: collection.id } }),
+      this.prisma.resource.count({
+        where: { collectionId: collection.id, kind: ResourceKind.HEADING },
+      }),
+    ]);
     return {
       collection: {
         ...this.toPublicCollection(collection),
         contributors,
+        sectionCount,
+        resourceCount: items - sectionCount,
         creator: creator ? { userId: creator.id, username: creator.username } : null,
         capabilities: { canManage: access.isOwner, canEdit: access.canWriteContent },
         ...(reason

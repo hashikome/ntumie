@@ -40,6 +40,10 @@ export interface CommentThreads {
   enabled: boolean;
   // The viewer may post (signed in, has access, comments on, not on hold).
   canComment: boolean;
+  /** Every comment the viewer can see, replies included. */
+  total: number;
+  /** Questions with an answer the viewer can see (the Answered filter). */
+  answered: number;
 }
 
 export interface CreateCommentRequest {

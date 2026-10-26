@@ -282,7 +282,18 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
       "comment-post": [
         `/api/v1/collections/${id}/comments${scoped}`,
         "POST",
-        { body, ...(isUuid(parentId) ? { parentId } : {}) } satisfies CreateCommentRequest,
+        {
+          body,
+          ...(isUuid(parentId)
+            ? { parentId }
+            : {
+                // A question may be about a section and carry an attached item.
+                ...(isUuid(form.get("sectionId"))
+                  ? { sectionId: form.get("sectionId") as string }
+                  : {}),
+                ...(isUuid(form.get("itemId")) ? { itemId: form.get("itemId") as string } : {}),
+              }),
+        } satisfies CreateCommentRequest,
         "comment-posted",
       ],
       "comment-edit": [

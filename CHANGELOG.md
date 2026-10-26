@@ -9,6 +9,17 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Redesign the collection reader to its board: full-width page with the hub's
+  collections and sections in a sidebar (a menu on phones), a cobalt band with
+  the hub, tags, contributors, counts, Share and Edit, sections that read
+  straight through with sticky section chips on phones, open items with the
+  adder's note, "Added by … on …", Copy link and Discuss, a "Next in <hub>"
+  card, and a sticky discussion with All / Answered, an "About" section picker
+  that follows your reading, attached items and a counter near the limit. Adds
+  `GET /api/v1/collections/:id/outline`, discussion counts with an answered
+  filter and collection counts. Fixes copied item addresses occasionally
+  reloading with the item closed. Sections no longer collapse.
+
 - Add PostHog product analytics (US Cloud) to the web client, on only when
   `POSTHOG_PROJECT_TOKEN` is set: page views and clicks through the site's
   `/ingest` rewrite, no cookies, no session recordings; fake-door clicks carry

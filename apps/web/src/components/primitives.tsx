@@ -1,8 +1,7 @@
-import type { Collection, PersonRef } from "@ntumie/types";
-import { hubPath, permalink } from "../lib/http";
+import type { PersonRef } from "@ntumie/types";
+import { permalink } from "../lib/http";
 import { ItemDetails } from "./item-details";
 import { ItemDisclosure } from "./item-disclosure";
-import { Updated } from "./local-time";
 import { ResourceLink } from "./resource-navigation";
 import type { ResourcePresentation } from "./resource-presentation";
 
@@ -27,9 +26,7 @@ export function Tags({
               </span>
             ))}
           </span>
-          <span className="tags-more">
-            +{remaining} {remaining === 1 ? "tag" : "tags"}
-          </span>
+          <span className="tags-more">+{remaining} more</span>
           <span className="tags-less">Fewer tags</span>
         </summary>
         {/* biome-ignore lint/a11y/noNoninteractiveTabindex: Overflowing tags need keyboard scrolling. */}
@@ -63,69 +60,20 @@ export function Person({ person }: { person: PersonRef }) {
     </a>
   );
 }
-export function CollectionMeta({
-  item,
-  handle,
-  compact = false,
-  preview = false,
-}: {
-  item: Collection;
-  handle?: string;
-  compact?: boolean;
-  preview?: boolean;
-}) {
-  const owner = item.hub;
-  const creator =
-    // Only when the owner is known and the creator is someone else.
-    !compact && item.hub?.owner && item.creator && item.creator.userId !== item.hub.owner.userId
-      ? item.creator
-      : null;
-  return (
-    <div className="row-meta">
-      {preview && (owner || handle) ? (
-        <span className="person-handle">@{owner?.handle ?? handle}</span>
-      ) : owner ? (
-        <a className="person" href={`/h/${encodeURIComponent(owner.id)}`}>
-          <span className="person-handle">@{owner.handle}</span>
-        </a>
-      ) : (
-        handle && (
-          <a className="person" href={hubPath(handle)}>
-            <span className="person-handle">@{handle}</span>
-          </a>
-        )
-      )}
-      {creator && (
-        <span>Created by {preview ? creator.username : <Person person={creator} />}</span>
-      )}
-
-      <span>
-        Updated <Updated at={item.updatedAt} />
-      </span>
-      {compact && !item.published && <span className="row-badge">Private</span>}
-      {compact && item.tags.length > 0 && (
-        <span className="row-tags">
-          {item.tags
-            .slice(0, 3)
-            .map((tag) => `#${tag}`)
-            .join(" ")}
-        </span>
-      )}
-    </div>
-  );
-}
 export function ResourceRow({
   item,
   itemBase,
   expanded = false,
   onExpandedChange,
   preview = false,
+  discussBase,
 }: {
   item: ResourcePresentation;
   itemBase?: string | null;
   expanded?: boolean;
   preview?: boolean;
   onExpandedChange?: (open: boolean) => void;
+  discussBase?: string;
 }) {
   const ResourceTitle = preview ? "h4" : "h3";
   // The demo links back to its own selectable example, never a fictional record.
@@ -195,7 +143,6 @@ export function ResourceRow({
                 <>
                   {item.collectionHint && <span className="resource-kind">Collection</span>}
                   <span>{url.hostname.replace(/^www\./, "")}</span>
-                  <ExternalIcon />
                 </>
               )
             )}
@@ -205,6 +152,7 @@ export function ResourceRow({
         <ItemDetails
           preview={preview}
           item={item}
+          discussHref={discussHref(discussBase, item.id)}
           permalink={
             itemBase === null
               ? undefined
@@ -215,23 +163,13 @@ export function ResourceRow({
     </li>
   );
 }
-// One stroke-icon family (1.5px, round joins) shared with the header controls.
-function ExternalIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M7 17 17 7M9 7h8v8" />
-    </svg>
-  );
+// "Discuss" opens the reader's comment box with this item attached.
+function discussHref(base: string | undefined, itemId: string) {
+  if (!base) return undefined;
+  const url = new URL(base, "http://local.invalid");
+  url.searchParams.set("compose", "comment");
+  url.searchParams.set("attach", itemId);
+  return `${url.pathname}${url.search}#comment-composer`;
 }
 function CollectionIcon() {
   return (

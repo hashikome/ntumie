@@ -114,16 +114,6 @@ async function freshPage(js = true, timezoneId?: string) {
   page.setDefaultNavigationTimeout(10000);
   return { page, close };
 }
-async function sidebarAlignment(page: Page) {
-  return page.locator(".reader-side").evaluate((el) => {
-    const summary = el.querySelector(".sidebar-summary")?.getBoundingClientRect();
-    const discussion = el.querySelector(".comments")?.getBoundingClientRect();
-    if (!summary || !discussion) throw new Error("Sidebar summary or discussion missing");
-    return Math.abs(
-      discussion.top - summary.bottom - Number.parseFloat(getComputedStyle(el).rowGap),
-    );
-  });
-}
 // The harness sets a 2 s resend gap. Without JavaScript the button only
 // enables on a fresh render after the gap, so wait it out and reload.
 async function waitForResend(page: Page) {
@@ -610,15 +600,18 @@ describe("explore to resource: production browser journey", () => {
             page.getByRole("textbox", { name: "Add to the discussion" }),
           ).toBeVisible();
           for (const selector of [
-            ".comment-compose > summary",
+            ".comment-filter a",
             ".comment-actions .text-button",
-            ".tag-overflow summary",
+            ".reader-band .tags-more",
+            ".comment-buttons .button",
           ]) {
             const sizes = await page.locator(selector).evaluateAll((elements) =>
-              elements.map((el) => ({
-                width: el.getBoundingClientRect().width,
-                height: el.getBoundingClientRect().height,
-              })),
+              elements
+                .filter((el) => el.checkVisibility())
+                .map((el) => ({
+                  width: el.getBoundingClientRect().width,
+                  height: el.getBoundingClientRect().height,
+                })),
             );
             expect(sizes.length).toBeGreaterThan(0);
             for (const size of sizes) {
@@ -626,7 +619,10 @@ describe("explore to resource: production browser journey", () => {
               expect(size.height).toBeGreaterThanOrEqual(44);
             }
           }
-          await compose.tap();
+          await page
+            .getByRole("button", { name: "Cancel", exact: true })
+            .or(page.locator(".comment-buttons").getByRole("link", { name: "Cancel", exact: true }))
+            .tap();
           for (const width of [320, 390, 768, 1280, 1440]) {
             await page.setViewportSize({ width, height: 900 });
             if (width >= 768) {
@@ -641,9 +637,13 @@ describe("explore to resource: production browser journey", () => {
             expect(
               await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
-            const support = page
-              .getByRole("navigation", { name: "Main navigation" })
-              .getByRole("link", { name: "About", exact: true });
+            // Up to 820 px the reader's header keeps a menu (board), which holds About.
+            const support =
+              width <= 820
+                ? page.getByLabel("Menu: Discover, About, collections in this hub")
+                : page
+                    .getByRole("navigation", { name: "Main navigation" })
+                    .getByRole("link", { name: "About", exact: true });
             await support.focus();
             await page.keyboard.press("Shift+Tab");
             await page.keyboard.press("Tab");
@@ -836,7 +836,10 @@ describe("explore to resource: production browser journey", () => {
         release = resolve;
       });
       delayedDocument = { path: `/c/${targetId}`, started, released };
-      await page.getByRole("link", { name: "A useful collection", exact: true }).click();
+      await page
+        .locator(".reader-content")
+        .getByRole("link", { name: "A useful collection", exact: true })
+        .click();
       await waiting;
       await browserExpect(page.locator("h1")).toHaveText(longTitle);
       await browserExpect(page.locator("h1")).toBeVisible();
@@ -1142,11 +1145,18 @@ describe("explore to resource: production browser journey", () => {
         await page.getByRole("link", { name: "More resources", exact: true }).click();
         await browserExpect(page.locator(".resource-row")).toHaveCount(js ? 22 : 2);
         await ready(page, `/c/${sourceId}`);
-        await page.getByRole("link", { name: "A useful collection", exact: true }).click();
+        await page
+          .locator(".reader-content")
+          .getByRole("link", { name: "A useful collection", exact: true })
+          .click();
         await browserExpect(page).toHaveURL(new RegExp(`/c/${targetId}(\\?|$)`));
         await browserExpect(page.locator("h1")).toHaveText("A useful collection");
-        await page.getByRole("link", { name: `@${handle}`, exact: true }).click();
-        await page.getByRole("link", { name: longTitle }).click();
+        await page
+          .locator(".reader-sidebar .tree-home, .reader-band .reader-crumb")
+          .filter({ visible: true })
+          .first()
+          .click();
+        await page.locator("main").getByRole("link", { name: longTitle }).first().click();
         const popupPromise = page.waitForEvent("popup");
         await page
           .getByRole("link", { name: "Open the reference (opens in a new tab)", exact: true })
@@ -1264,9 +1274,11 @@ describe("explore to resource: production browser journey", () => {
       ).toHaveAttribute("href", `/c/${sourceId}`);
       await ready(page, `/c/${sourceId}`);
       await browserExpect(page.locator("h1")).toHaveText("Renamed reading guide");
-      await browserExpect(
-        page.getByRole("link", { name: `@${renamed}`, exact: true }),
-      ).toBeVisible();
+      // The reader names the hub (sidebar), linked by its stable ID.
+      await browserExpect(page.locator(".reader-sidebar .tree-home")).toHaveAttribute(
+        "href",
+        `/h/${hubId}`,
+      );
       for (const path of [`/@${handle}/reading-guide`, `/@${renamed}/reading-guide`]) {
         const response = await page.goto(`${origin}${path}`);
         expect(response?.status()).toBe(404);
@@ -1309,9 +1321,8 @@ describe("explore to resource: production browser journey", () => {
       await browserExpect(page.locator("body")).not.toContainText("PRIVATE HUB DETAIL");
       await ready(page, `/c/${sourceId}`);
       await browserExpect(page.locator("h1")).toHaveText(longTitle);
-      await browserExpect(page.getByRole("link", { name: `@${handle}`, exact: true })).toHaveCount(
-        0,
-      );
+      // The reader does not depend on the hub page read; its outline names the hub.
+      await browserExpect(page.locator(".reader-content .resource-row").first()).toBeVisible();
       hubMode = "timeout";
       await ready(page, `/@${handle}`);
       await browserExpect(page.locator("h1")).toHaveText("We couldn't load this page.");
@@ -1328,21 +1339,31 @@ describe("explore to resource: production browser journey", () => {
     const { page, close } = await freshPage();
     try {
       await ready(page, `/c/${sourceId}`);
-      await page.getByRole("link", { name: `@${handle}`, exact: true }).click();
+      await page
+        .locator(".reader-sidebar .tree-home, .reader-band .reader-crumb")
+        .filter({ visible: true })
+        .first()
+        .click();
       await change(sourceId, "unpublish");
       await page.goBack();
       await browserExpect(page.locator("h1")).toHaveText("This collection isn't available.");
       await ready(page, `/c/${sourceId}?s=${linkToken}`);
       await browserExpect(page.locator("h1")).toHaveText(longTitle);
       await browserExpect(
-        page.getByRole("link", { name: `@${handle}`, exact: true }),
+        page
+          .locator(".reader-sidebar .tree-home, .reader-band .reader-crumb")
+          .filter({ visible: true })
+          .first(),
       ).toHaveAttribute("href", `/h/${hubId}`);
       expect(
         hubReads
           .filter((read) => !read.path.includes("/collections/"))
           .every((read) => !read.token && !read.path.includes("s=")),
       ).toBe(true);
-      await page.getByRole("link", { name: "A useful collection", exact: true }).click();
+      await page
+        .locator(".reader-content")
+        .getByRole("link", { name: "A useful collection", exact: true })
+        .click();
       await browserExpect(page.locator("h1")).toHaveText("A useful collection");
       expect(new URL(page.url()).searchParams.get("s")).toBeNull();
       const previousToken = linkToken;
@@ -1506,7 +1527,6 @@ describe("explore to resource: production browser journey", () => {
         expect(await title.evaluate((el) => getComputedStyle(el).color)).toBe(blue);
         await row.locator(".resource-meta").click();
         await browserExpect(row.locator(".resource-disclosure")).not.toHaveAttribute("open", "");
-        const body = page.locator(".sheet-body");
         const more = page.getByRole("link", { name: "More resources", exact: true });
         if (width < 1024) {
           await more.scrollIntoViewIfNeeded();
@@ -1527,17 +1547,17 @@ describe("explore to resource: production browser journey", () => {
           await more.click();
         } else {
           await browserExpect(rows).toHaveCount(20);
-          await body.focus();
-          const before = await body.evaluate((el) => {
-            el.scrollTop = el.scrollHeight - el.clientHeight - 96;
-            return el.scrollTop;
+          // The page scrolls; the next page loads as the list's end comes into
+          // view, without moving the reader.
+          const before = await page.evaluate(() => {
+            const end = document.querySelector(".reader-content > .continuation");
+            if (!end) throw new Error("Missing continuation");
+            window.scrollTo(0, window.scrollY + end.getBoundingClientRect().top - innerHeight + 40);
+            return window.scrollY;
           });
           await browserExpect(rows).toHaveCount(22);
-          expect(await body.evaluate((el) => el.scrollTop)).toBe(before);
-          await browserExpect(body).toBeFocused();
-          await body.evaluate((el) => {
-            el.scrollTop = el.scrollHeight;
-          });
+          expect(await page.evaluate(() => window.scrollY)).toBe(before);
+          await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
           await page.screenshot({
             path: join(
               process.env.BROWSER_ARTIFACT_DIR ?? "/tmp",
@@ -1583,17 +1603,11 @@ describe("explore to resource: production browser journey", () => {
           body: JSON.stringify({ error: { code: "too_many_requests", message: "Slow down" } }),
         });
       });
-      const body = page.locator(".sheet-body");
       const scrollEnd = () =>
-        body.evaluate((el) => {
-          el.scrollTop = el.scrollHeight;
-        });
-      await body.focus();
+        page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       await scrollEnd();
       await browserExpect(page.getByRole("link", { name: "Loading…", exact: true })).toBeVisible();
-      await body.evaluate((el) => {
-        el.scrollTop -= 40;
-      });
+      await page.evaluate(() => window.scrollBy(0, -40));
       await scrollEnd();
       expect(requests).toBe(1);
       await page.screenshot({
@@ -1602,9 +1616,7 @@ describe("explore to resource: production browser journey", () => {
       release();
       await browserExpect(page.getByRole("button", { name: /Try again in/ })).toBeDisabled();
       await browserExpect(page.locator(".resource-row")).toHaveCount(20);
-      await body.evaluate((el) => {
-        el.scrollTop = 0;
-      });
+      await page.evaluate(() => window.scrollTo(0, 0));
       await scrollEnd();
       await browserExpect(
         page.getByRole("button", { name: "Try again", exact: true }),
@@ -1641,9 +1653,7 @@ describe("explore to resource: production browser journey", () => {
       await browserExpect(page.locator('p[aria-live="polite"]')).toHaveText(
         "0 more resources loaded.",
       );
-      await body.evaluate((el) => {
-        el.scrollTop = 0;
-      });
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.waitForTimeout(50);
       await scrollEnd();
       await page.waitForTimeout(100);
@@ -1668,10 +1678,10 @@ describe("explore to resource: production browser journey", () => {
     try {
       await ready(page, `/c/${sourceId}`);
       await browserExpect(page.locator(".resource-row")).toHaveCount(20);
-      await browserExpect(page.locator(".collection-heading .tag-overflow summary")).toContainText(
-        "+1 tag",
-      );
-      await browserExpect(page.locator(".sheet-body")).not.toContainText("late-page-tag");
+      // Up to five collection tags show in the band before "+N more" (board).
+      await browserExpect(page.locator(".reader-band .tags li")).toHaveCount(4);
+      await browserExpect(page.locator(".reader-band .tag-overflow")).toHaveCount(0);
+      await browserExpect(page.locator(".reader-content")).not.toContainText("late-page-tag");
       for (const width of [320, 390, 768, 1280, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         expect(
@@ -1742,9 +1752,12 @@ describe("explore to resource: production browser journey", () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.screenshot({ path: "/tmp/w3-reader-phone.png", fullPage: true });
       await browserExpect(
-        page.locator(".sheet-body").getByText("reference-tag", { exact: true }),
+        page.locator(".reader-content").getByText("reference-tag", { exact: true }),
       ).toBeVisible();
-      await page.getByRole("link", { name: "A useful collection", exact: true }).click();
+      await page
+        .locator(".reader-content")
+        .getByRole("link", { name: "A useful collection", exact: true })
+        .click();
       await browserExpect(page.locator("h1")).toHaveText("A useful collection");
       await browserExpect(page.getByText("No resources in this collection yet.")).toBeVisible();
       await ready(page, `/c/${sourceId}`);
@@ -1825,7 +1838,9 @@ describe("explore to resource: production browser journey", () => {
       await page.context().addCookies([{ name, value: value.join("="), url: origin }]);
       await ready(page, `/c/${guideId}`);
       await browserExpect(
-        page.getByRole("link", { name: "Private title should never leak", exact: true }),
+        page
+          .locator(".reader-content")
+          .getByRole("link", { name: "Private title should never leak", exact: true }),
       ).toHaveAttribute("href", `/c/${privateId}`);
     } finally {
       await request(app.getHttpServer())
@@ -1920,9 +1935,12 @@ describe("explore to resource: production browser journey", () => {
           .getAttribute("href"),
       ).not.toContain(linkToken);
       await browserExpect(
-        page.locator(".sheet-body").getByText("reference-tag", { exact: true }),
+        page.locator(".reader-content").getByText("reference-tag", { exact: true }),
       ).toBeVisible();
-      await page.getByRole("link", { name: "A useful collection", exact: true }).click();
+      await page
+        .locator(".reader-content")
+        .getByRole("link", { name: "A useful collection", exact: true })
+        .click();
       await browserExpect(page.locator("h1")).toHaveText("A useful collection");
       expect(new URL(page.url()).searchParams.get("s")).toBeNull();
       await request(app.getHttpServer())
@@ -3631,7 +3649,9 @@ describe("account shell and appearance", () => {
         .auth(timezoneToken, { type: "bearer" })
         .expect(200)
     ).body.data;
-    const at = "2026-10-14T09:00:00.000Z";
+    // Items show the day they were added (board), so a late UTC time lands on
+    // different days in the account zone (UTC+3) and a device zone (UTC-7).
+    const at = "2026-10-14T22:30:00.000Z";
     const demoTime = `.item-context time[datetime="${at}"]`;
     // A published collection with one link added at a fixed time; its item
     // address opens the details that show the time.
@@ -3695,7 +3715,7 @@ describe("account shell and appearance", () => {
             }
           }
           await ready(page, datedPath);
-          await browserExpect(page.locator(demoTime).first()).toHaveText("14 Oct 2026, 12:00");
+          await browserExpect(page.locator(demoTime).first()).toHaveText("15 October 2026");
           // A second device with no JS proves the preference arrives in SSR,
           // independent of both device timezone and browser-local storage.
           const second = await browser.newContext({
@@ -3707,7 +3727,7 @@ describe("account shell and appearance", () => {
             await second.addCookies([savedCookie]);
             const other = await second.newPage();
             await ready(other, datedPath);
-            await browserExpect(other.locator(demoTime).first()).toHaveText("14 Oct 2026, 12:00");
+            await browserExpect(other.locator(demoTime).first()).toHaveText("15 October 2026");
           } finally {
             await closeSecond();
           }
@@ -3724,8 +3744,7 @@ describe("account shell and appearance", () => {
             )
             .toBeNull();
           await ready(page, datedPath);
-          if (js)
-            await browserExpect(page.locator(demoTime).first()).toHaveText("14 Oct 2026, 02:00");
+          if (js) await browserExpect(page.locator(demoTime).first()).toHaveText("14 October 2026");
           else
             await browserExpect(page.locator(".item-context noscript time").first()).toContainText(
               "10:00 UTC",
@@ -3738,8 +3757,7 @@ describe("account shell and appearance", () => {
             .expect(200);
           await context.clearCookies();
           await ready(page, datedPath);
-          if (js)
-            await browserExpect(page.locator(demoTime).first()).toHaveText("14 Oct 2026, 02:00");
+          if (js) await browserExpect(page.locator(demoTime).first()).toHaveText("14 October 2026");
         } finally {
           await closeContext();
         }
@@ -3887,7 +3905,11 @@ it("[critical] saves a first private link through email, preserves retries, then
       expect(collections[0].published).toBe(false);
       expect(collections[0].linkSharingEnabled).toBe(false);
       const id = collections[0].id;
-      await page.locator(".context a").first().click();
+      await page
+        .locator(".reader-sidebar .tree-home, .reader-band .reader-crumb")
+        .filter({ visible: true })
+        .first()
+        .click();
       await browserExpect(page).toHaveURL(`${origin}/h/${account.hub.id}`);
       await browserExpect(page.getByRole("link", { name: /^My collections/ })).toBeVisible();
       await browserExpect(page.getByRole("link", { name: /^Saved links, / })).toBeVisible();
@@ -3897,14 +3919,13 @@ it("[critical] saves a first private link through email, preserves retries, then
       await browserExpect(page.getByRole("link", { name: /^Saved links, / })).toHaveCount(0);
       await ready(page, `/c/${id}`);
       await request(app.getHttpServer()).get(`/api/v1/collections/${id}`).expect(404);
-      await browserExpect(page.locator(".context a").first()).toHaveAttribute(
-        "href",
-        `/h/${account.hub.id}`,
-      );
-      await browserExpect(page.locator(".row-meta a").first()).toHaveAttribute(
-        "href",
-        `/h/${account.hub.id}`,
-      );
+      // The hub link: the sidebar tree on desktop, the band's crumb on phones.
+      await browserExpect(
+        page
+          .locator(".reader-sidebar .tree-home, .reader-band .reader-crumb")
+          .filter({ visible: true })
+          .first(),
+      ).toHaveAttribute("href", `/h/${account.hub.id}`);
       await page.getByRole("link", { name: "Edit", exact: true }).click();
       await browserExpect(page).toHaveURL(`${origin}/c/${id}/edit`);
       await browserExpect(page.locator("h1")).toHaveText("Edit collection");
@@ -3942,10 +3963,10 @@ it("[critical] saves a first private link through email, preserves retries, then
       await browserExpect(page).toHaveURL(new RegExp(`/c/${id}(\\?|$)`));
       await browserExpect(page.locator(".toast")).toContainText("Collection saved");
       await browserExpect(page.locator("h1")).toHaveText("A useful little library");
-      await browserExpect(page.locator(".page-heading .description")).toHaveText(
+      await browserExpect(page.locator(".reader-description")).toHaveText(
         "Useful references for everyday projects.",
       );
-      await browserExpect(page.locator(".page-heading > .tags")).toHaveCount(0);
+      await browserExpect(page.locator(".reader-band .tags")).toHaveCount(0);
       await page
         .locator(".collection-actions")
         .getByRole("link", { name: "Edit", exact: true })
@@ -4243,7 +4264,7 @@ describe("collection discussion", () => {
         if (js) await browserExpect(page.getByLabel("Add to the discussion")).toBeFocused();
         await browserExpect(page.getByLabel("Add to the discussion")).toHaveAttribute(
           "placeholder",
-          "Ask a question or add a note…",
+          "Ask a question or add what you know",
         );
         await browserExpect(discussion.locator(".comments-heading a")).toHaveCount(0);
         await page.getByLabel("Add to the discussion").fill(`Where do I start? (${js})`);
@@ -4325,9 +4346,12 @@ describe("collection discussion", () => {
         await prompt.click();
         if (js) await browserExpect(composer).toBeFocused();
         await composer.fill("Draft retained while browsing");
-        await prompt.click();
-        await browserExpect(composer).toBeHidden();
+        // The open box replaces the one-line prompt (board); Cancel closes it
+        // and keeps the draft.
+        await browserExpect(prompt).toBeHidden();
         if (js) {
+          await discussion.getByRole("button", { name: "Cancel", exact: true }).click();
+          await browserExpect(composer).toBeHidden();
           // A window-switch modifier must not turn pointer focus into a ring.
           await page.keyboard.press("Alt");
           await prompt.focus();
@@ -4336,35 +4360,9 @@ describe("collection discussion", () => {
           await page.keyboard.press("Tab");
           await prompt.focus();
           expect(await prompt.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe("solid");
+          await prompt.click();
+          await browserExpect(composer).toHaveValue("Draft retained while browsing");
         }
-        await prompt.click();
-        await browserExpect(composer).toHaveValue("Draft retained while browsing");
-        const discussionBody = page.locator(".comments-body");
-        const positions = () =>
-          page.locator(".reader-side").evaluate((el) => ({
-            heading: el.querySelector(".comments-heading")?.getBoundingClientRect().top,
-          }));
-        const fixed = await positions();
-        if (js) {
-          await browserExpect.poll(() => sidebarAlignment(page)).toBeLessThanOrEqual(1);
-          const layoutBottom = await page
-            .locator(".reader-layout")
-            .evaluate((el) => el.getBoundingClientRect().bottom);
-          const discussionBottom = await discussion.evaluate(
-            (el) => el.getBoundingClientRect().bottom,
-          );
-          expect(discussionBottom).toBeLessThanOrEqual(layoutBottom + 1);
-        }
-        await discussionBody.focus();
-        await discussionBody.press("End");
-        await browserExpect
-          .poll(() => discussionBody.evaluate((el) => el.scrollTop))
-          .toBeGreaterThan(0);
-        expect(await positions()).toEqual(fixed);
-        expect(await page.locator(".sheet-body").evaluate((el) => el.scrollTop)).toBe(0);
-        await discussionBody.press("Home");
-        await browserExpect(composer).toBeInViewport();
-        await browserExpect(composer).toHaveValue("Draft retained while browsing");
         await composer.fill("");
 
         // The contributor (owner) marks the reader's reply as the answer.
@@ -4381,11 +4379,11 @@ describe("collection discussion", () => {
           .send({ body: `From the contributor (${js})` })
           .expect(201);
         await page.reload();
-        // "username · Contributor", then the age leads the actions.
+        // "username Contributor 5d": the age sits with the author (board).
         const mine = discussion.locator(".comment", { hasText: `From the contributor (${js})` });
         await browserExpect(mine.locator(".comment-head .comment-role")).toHaveText("Contributor");
         await browserExpect(mine.locator(".comment-head")).not.toContainText("Curator");
-        await browserExpect(mine.locator(".comment-actions .comment-time")).toHaveText(
+        await browserExpect(mine.locator(".comment-head .comment-time")).toHaveText(
           /^(now|\d+s|\d+m)$/,
         );
         if (js) await mine.screenshot({ path: "/tmp/comment-contributor.png" });
@@ -4550,119 +4548,123 @@ it("continues replies on an older question page with the share token and answer 
   }
 }, 30000);
 
-it("folds the collection introduction before scrolling links", async () => {
-  for (const reducedMotion of ["no-preference", "reduce"] as const) {
-    const { page, close } = await freshPage();
+it("discusses an item from the reader: attached item, its section, the Answered filter and the hub search door", async () => {
+  await prisma.requestBudget.deleteMany();
+  const email = `discuss-item-${crypto.randomUUID()}@example.com`;
+  const signed = await signInHubOwner(app.getHttpServer(), { email, name: "Item talker" });
+  const token = signed.headers["set-auth-token"] as string;
+  const created = await request(app.getHttpServer())
+    .post("/api/v1/capture")
+    .auth(token, { type: "bearer" })
+    .send({
+      operationId: crypto.randomUUID(),
+      startedAt: Date.now(),
+      destination: "new",
+      collectionTitle: "Talking guide",
+      links: [{ url: `https://fixture-links.dev/${crypto.randomUUID()}` }],
+    })
+    .expect(201);
+  const id = created.body.data.collectionId as string;
+  const [link] = await prisma.resource.findMany({ where: { collectionId: id } });
+  const heading = await request(app.getHttpServer())
+    .post(`/api/v1/collections/${id}/resources/heading`)
+    .auth(token, { type: "bearer" })
+    .send({
+      title: "Getting started",
+      firstItemId: link.id,
+      firstItemVersion: Number(link.version),
+    })
+    .expect(201);
+  for (const js of [true, false]) {
+    const { page, close } = await freshPage(js);
     try {
-      await page.emulateMedia({ reducedMotion });
-      await page.setViewportSize({ width: 1280, height: 900 });
-      await ready(page, `/c/${sourceId}`);
-      const heading = page.locator(".collection-heading");
-      const overview = heading.locator(".collection-overview");
-      const body = page.locator(".sheet-body");
-      await browserExpect(overview).toBeVisible();
-      const titleStyle = await heading.locator("h1").evaluate((el) => ({
-        size: getComputedStyle(el).fontSize,
-        weight: getComputedStyle(el).fontWeight,
-      }));
-      await page.locator(".reader-side").evaluate((el) => el.dispatchEvent(new Event("scroll")));
-      await browserExpect(overview).toBeVisible();
-      await body.focus();
-      const before = await body.evaluate((el) => el.clientHeight);
-      const discussionTop = await page
-        .locator(".comments")
-        .evaluate((el) => el.getBoundingClientRect().top);
-      await body.hover();
-      if (reducedMotion === "no-preference") {
-        const motion = await overview.evaluate((el) => {
-          const expanded = el.getBoundingClientRect().height;
-          el.dispatchEvent(
-            new WheelEvent("wheel", { deltaY: 60, bubbles: true, cancelable: true }),
-          );
-          const animations = el.getAnimations();
-          for (const animation of animations) {
-            animation.pause();
-            animation.currentTime = 80;
-          }
-          const midway = el.getBoundingClientRect().height;
-          const body = el.closest(".collection-sheet")?.querySelector(".sheet-body");
-          // Continued input waits for the collapse instead of moving links early.
-          el.dispatchEvent(
-            new WheelEvent("wheel", { deltaY: 100, bubbles: true, cancelable: true }),
-          );
-          const scrollTop = body?.scrollTop;
-          for (const animation of animations) animation.play();
-          return { expanded, midway, scrollTop, count: animations.length };
-        });
-        expect(motion.count).toBeGreaterThan(0);
-        expect(motion.midway).toBeGreaterThan(0);
-        expect(motion.midway).toBeLessThan(motion.expanded);
-        expect(motion.scrollTop).toBe(0);
-      } else {
-        await page.mouse.wheel(0, 60);
-      }
-      await browserExpect(heading).toHaveAttribute("data-folded", "true");
-      await browserExpect(overview).toBeHidden();
-      await browserExpect.poll(() => sidebarAlignment(page)).toBeLessThanOrEqual(1);
-      expect(await page.locator(".comments").evaluate((el) => el.getBoundingClientRect().top)).toBe(
-        discussionTop,
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await browserSignIn(page, email);
+      await ready(page, `/c/${id}?item=${link.id}`);
+      const row = page.locator(`#item-${link.id}`);
+      await browserExpect(row.locator(".item-context")).toBeVisible();
+      await row.getByRole("link", { name: "Discuss", exact: true }).click();
+      const composer = page.getByLabel("Add to the discussion");
+      await browserExpect(composer).toBeVisible();
+      await browserExpect(page.locator(".comment-attached")).toBeVisible();
+      await browserExpect(page.getByLabel("What this comment is about")).toHaveValue(
+        heading.body.data.id,
       );
-      await browserExpect(heading.locator("h1")).toBeVisible();
-      await browserExpect(heading.locator(".row-meta")).toBeVisible();
-      await browserExpect(heading.locator(":scope > .tag-overflow summary")).toBeVisible();
-      await browserExpect(body).toBeFocused();
-      expect(await body.evaluate((el) => el.clientHeight)).toBeGreaterThan(before);
-      if (reducedMotion === "reduce") {
-        expect(await body.evaluate((el) => el.scrollTop)).toBe(0);
-        await page.mouse.wheel(0, 100);
-      }
-      await browserExpect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-      expect(
-        await heading.locator("h1").evaluate((el) => ({
-          size: getComputedStyle(el).fontSize,
-          weight: getComputedStyle(el).fontWeight,
-        })),
-      ).toEqual(titleStyle);
-      await page.screenshot({ path: `/tmp/collection-fold-${reducedMotion}.png` });
-      await body.press("Home");
-      await browserExpect(overview).toBeVisible();
-      await body.press("ArrowDown");
-      await browserExpect(overview).toBeHidden();
-      await browserExpect.poll(() => sidebarAlignment(page)).toBeLessThanOrEqual(1);
-      expect(await page.locator(".comments").evaluate((el) => el.getBoundingClientRect().top)).toBe(
-        discussionTop,
-      );
-      expect(await body.evaluate((el) => el.scrollTop)).toBe(0);
-      await page.mouse.wheel(0, -60);
-      await browserExpect(overview).toBeVisible();
-      // Even a list that fits after folding must remain folded at scrollTop 0.
-      await body.evaluate((el) => {
-        el.querySelectorAll(".resource-row").forEach((row, index) => {
-          if (index > 2) (row as HTMLElement).style.display = "none";
-        });
+      await composer.fill(`Which part first? (${js})`);
+      await page.getByRole("button", { name: "Post", exact: true }).click();
+      await browserExpect(page.locator(".toast")).toContainText("Comment posted");
+      const posted = await prisma.collectionComment.findFirstOrThrow({
+        where: { body: `Which part first? (${js})` },
       });
-      await page.mouse.wheel(0, 60);
-      await browserExpect(overview).toBeHidden();
-      await browserExpect.poll(() => sidebarAlignment(page)).toBeLessThanOrEqual(1);
-      expect(await page.locator(".comments").evaluate((el) => el.getBoundingClientRect().top)).toBe(
-        discussionTop,
+      expect(posted).toMatchObject({ sectionId: heading.body.data.id, itemId: link.id });
+      const comment = page.locator(`#comment-${posted.id}`);
+      await browserExpect(comment.locator(".comment-scope")).toHaveText("On Getting started");
+      // Answered shows only questions with an answer.
+      const filter = page.getByRole("navigation", { name: "Show", exact: true });
+      await filter.getByRole("link", { name: /^Answered/ }).click();
+      await browserExpect(page.locator(".comments-empty")).toHaveText("No answered questions yet.");
+      await browserExpect(filter.getByRole("link", { name: /^Answered/ })).toHaveAttribute(
+        "aria-current",
+        "true",
       );
-      await page.setViewportSize({ width: 390, height: 844 });
-      await browserExpect(overview).toBeVisible();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-        true,
+      // Searching the hub is on the way: it records interest.
+      const searches = await prisma.featureInterest.count({ where: { feature: "search" } });
+      await page.getByRole("button", { name: /Search this hub/ }).click();
+      await browserExpect(page.locator(".toast")).toContainText("Search is on the way");
+      expect(await prisma.featureInterest.count({ where: { feature: "search" } })).toBe(
+        searches + 1,
       );
+      if (js) await page.screenshot({ path: "/tmp/reader-discuss-item.png" });
     } finally {
       await close();
     }
   }
-  const { page, close } = await freshPage(false);
+}, 60000);
+
+it("lays the reader out like its board: hub tree, band, sections, next and phone menu", async () => {
+  const { page, close } = await freshPage();
   try {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await ready(page, `/c/${sourceId}`);
-    await page.locator(".sheet-body").evaluate((el) => {
-      el.scrollTop = 400;
-    });
-    await browserExpect(page.locator(".collection-overview")).toBeVisible();
+    const tree = page.getByRole("navigation", { name: "Collections in this hub" });
+    // The current collection is open in the tree and marked as the page.
+    await browserExpect(tree.locator('a[aria-current="page"]')).toHaveText(longTitle);
+    await browserExpect(page.locator(".reader-band h1")).toHaveText(longTitle);
+    await browserExpect(page.locator(".reader-stats")).toContainText(
+      /Updated .* · \d+ sections? · \d+ resources?/,
+    );
+    await browserExpect(page.locator(".made-with")).toContainText("Made with ntumie.");
+    await browserExpect(page.getByRole("button", { name: /Search this hub/ })).toBeVisible();
+    const sections = tree.locator("a[data-section-link]");
+    if ((await sections.count()) > 0) {
+      const last = sections.last();
+      await last.click();
+      await browserExpect(last).toHaveAttribute("aria-current", "location");
+    }
+    for (const width of [320, 390, 768, 1024, 1280, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+    }
+    await page.screenshot({ path: "/tmp/reader-1440.png" });
+    // Beside a long list the discussion stays in view while the page scrolls.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.evaluate(() => window.scrollTo(0, 1500));
+    await browserExpect
+      .poll(() => page.locator(".comments").evaluate((el) => el.getBoundingClientRect().top))
+      .toBeGreaterThanOrEqual(64);
+    // Phones: the tree moves into the header menu.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await browserExpect(tree).toBeHidden();
+    const menu = page.getByLabel("Menu: Discover, About, collections in this hub");
+    await menu.click();
+    const phoneMenu = page.getByRole("navigation", { name: "Reader menu" });
+    await browserExpect(
+      phoneMenu.getByRole("link", { name: "Discover", exact: true }),
+    ).toBeVisible();
+    await browserExpect(phoneMenu.locator('a[aria-current="page"]')).toHaveText(longTitle);
+    await page.screenshot({ path: "/tmp/reader-phone-menu.png" });
   } finally {
     await close();
   }
@@ -4719,20 +4721,12 @@ describe("activity and attribution", () => {
     try {
       await browserSignIn(page, editor.email, `/c/${id}`);
       await browserExpect(page.locator("h1")).toHaveText("Shared guide");
-      await browserExpect(page.locator(".collection-contributors .contributors-count")).toHaveText(
-        "2",
-      );
-      for (const username of ["hana-owner", "eli-editor"]) {
-        const person = page
-          .locator(".contributor-list")
-          .getByRole("link", { name: username, exact: true });
-        await browserExpect(person).toHaveAttribute("href", `/${username}`);
-        await browserExpect(person.locator("img")).toBeVisible();
-        await browserExpect(person).toHaveText(username);
-      }
+      // The band: an avatar stack and how many shaped the collection (board).
+      await browserExpect(page.locator(".reader-people")).toContainText("2 contributors");
+      await browserExpect(page.locator(".reader-people .avatar")).toHaveCount(2);
       const addedItem = page.locator(`#item-${firstItem.body.data.id}`);
       await addedItem.locator(".resource-meta").click();
-      const attribution = addedItem.locator(".item-context > .meta").last();
+      const attribution = addedItem.locator(".item-context .item-added");
       await browserExpect(attribution).toContainText("Added by eli-editor");
       await browserExpect(
         attribution.getByRole("link", { name: "eli-editor", exact: true }),
@@ -5156,38 +5150,18 @@ it("sizes discussion by its own content within the reader frame", async () => {
     try {
       await page.setViewportSize({ width: 1280, height: 900 });
       await browserSignIn(page, email, `/c/${id}`);
-      const bounds = () =>
-        page.evaluate(() => {
-          const rect = (selector: string) => {
-            const element = document.querySelector(selector);
-            if (!element) throw new Error(`Missing layout element: ${selector}`);
-            return element.getBoundingClientRect();
-          };
-          const sheet = rect(".collection-sheet");
-          const discussion = rect(".comments");
-          const layout = rect(".reader-layout");
-          const main = rect("main");
-          return {
-            sheetHeight: sheet.height,
-            sheetBottom: sheet.bottom,
-            discussionHeight: discussion.height,
-            discussionBottom: discussion.bottom,
-            layoutBottom: layout.bottom,
-            mainBottom: main.bottom,
-          };
-        });
-      const empty = await bounds();
-      expect(empty.sheetHeight).toBeGreaterThan(600);
-      expect(empty.discussionHeight).toBeLessThan(250);
+      // Desktop: the discussion sits in the right column, sticky and capped to
+      // the window; it scrolls on its own when long (board).
+      const panel = page.locator(".comments");
+      const height = () => panel.evaluate((el) => el.getBoundingClientRect().height);
+      const empty = await height();
+      expect(empty).toBeLessThan(250);
       await page.screenshot({ path: `/tmp/discussion-empty-${js}.png` });
       await page.locator(".comment-compose > summary").click();
       await browserExpect(page.getByLabel("Add to the discussion")).toBeVisible();
-      expect((await bounds()).discussionHeight).toBeGreaterThan(empty.discussionHeight);
-      await page.locator(".comment-compose > summary").click();
+      expect(await height()).toBeGreaterThan(empty);
 
       await prisma.resource.deleteMany({ where: { collectionId: id, position: { gt: 0 } } });
-      await ready(page, `/c/${id}`);
-      const short = await bounds();
       await prisma.collectionComment.createMany({
         data: Array.from({ length: 20 }, (_, index) => ({
           collectionId: id,
@@ -5196,26 +5170,24 @@ it("sizes discussion by its own content within the reader frame", async () => {
         })),
       });
       await ready(page, `/c/${id}`);
-      const busy = await bounds();
-      expect(Math.abs(busy.sheetHeight - short.sheetHeight)).toBeLessThanOrEqual(1);
-      expect(busy.discussionBottom).toBeGreaterThan(busy.sheetBottom + 100);
-      expect(Math.abs(busy.discussionBottom - busy.layoutBottom)).toBeLessThanOrEqual(1);
-      expect(busy.discussionBottom).toBeLessThanOrEqual(busy.mainBottom);
-      const body = page.locator(".comments-body");
-      const headingTop = await page
-        .locator(".comments-heading")
-        .evaluate((el) => el.getBoundingClientRect().top);
-      await body.focus();
-      await body.press("End");
-      await browserExpect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-      expect(
-        await page.locator(".comments-heading").evaluate((el) => el.getBoundingClientRect().top),
-      ).toBe(headingTop);
+      const fits = await panel.evaluate((el) => ({
+        height: el.getBoundingClientRect().height,
+        scrolls: el.scrollHeight > el.clientHeight + 1,
+      }));
+      expect(fits.height).toBeLessThanOrEqual(900);
+      expect(fits.scrolls).toBe(true);
+      // Scrolling over the discussion scrolls it, not the page.
+      const box = await panel.boundingBox();
+      if (!box) throw new Error("Missing discussion");
+      await page.mouse.move(box.x + box.width / 2, box.y + 200);
+      await page.mouse.wheel(0, 400);
+      await browserExpect.poll(() => panel.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
       expect(await page.evaluate(() => window.scrollY)).toBe(0);
       await page.screenshot({ path: `/tmp/discussion-busy-short-collection-${js}.png` });
 
+      // Phones: it flows with the page.
       await page.setViewportSize({ width: 390, height: 844 });
-      expect(await body.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+      expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
@@ -5833,7 +5805,10 @@ it("uses action dialogs and owner collection operations with native fallback", a
       await browserExpect(page.getByText("The action is complete.", { exact: true })).toBeVisible();
       expect((await prisma.collection.findUniqueOrThrow({ where: { id } })).published).toBe(true);
       await ready(page, `/c/${id}`);
-      await page.locator(".sheet-bar").getByRole("link", { name: "Share", exact: true }).click();
+      await page
+        .locator(".reader-actions")
+        .getByRole("link", { name: "Share", exact: true })
+        .click();
       await browserExpect(page.getByLabel("Collection link", { exact: true })).toHaveValue(
         `${origin}/c/${id}`,
       );
@@ -6405,7 +6380,6 @@ describe("item details routes", () => {
           const query = new URLSearchParams({ s: token, cursor });
           await ready(page, `${base}?${query}`);
           const sectionGroup = page.locator(".resource-section");
-          const sectionToggle = sectionGroup.locator("summary").first();
           const row = page.locator(`#item-${link.id}`);
           const details = row.locator(".item-context");
           await browserExpect(page.getByRole("dialog")).toHaveCount(0);
@@ -6509,18 +6483,12 @@ describe("item details routes", () => {
           expect(selected.searchParams.get("item")).toBe(link.id);
           expect(selected.searchParams.get("s")).toBe(token);
           expect(selected.searchParams.get("cursor")).toBe(cursor);
-          await sectionToggle.click();
-          await browserExpect(row).not.toBeVisible();
+          // Sections read straight through (board): no folding, context shown.
           await browserExpect(
             sectionGroup.getByText("Context stays visible when this section is collapsed."),
           ).toBeVisible();
-          await sectionToggle.click();
-          if (js) await browserExpect(details).not.toBeVisible();
-          else await browserExpect(details).toBeVisible();
-          await browserExpect(
-            page.getByRole("button", { name: /^(Expand|Collapse)$/ }),
-          ).toHaveCount(0);
-          if (js) await row.locator(".resource-meta").click();
+          await browserExpect(sectionGroup.locator("details.section-disclosure")).toHaveCount(0);
+          await browserExpect(details).toBeVisible();
           // Native exclusive disclosure groups keep exactly one item open.
           const another = page.locator(`.resource-row:not(#item-${link.id})`).first();
           await another.locator(".resource-meta").click();
@@ -6537,12 +6505,12 @@ describe("item details routes", () => {
           else
             await details.getByRole("link", { name: "Open item link to copy its address" }).click();
           await browserExpect(details).toBeVisible();
-          await page.reload();
-          await browserExpect(details).toBeVisible();
-          await browserExpect(sectionGroup.locator("details.section-disclosure")).toHaveAttribute(
-            "open",
-            "",
-          );
+          // Reloading a copied item address keeps it open (several times: this
+          // was intermittent while sections folded).
+          for (let attempt = 0; attempt < 3; attempt++) {
+            await page.reload();
+            await browserExpect(details).toBeVisible();
+          }
           await row.locator("summary").focus();
           await page.keyboard.press("Space");
           await browserExpect(details).not.toBeVisible();
@@ -6587,25 +6555,7 @@ describe("item details routes", () => {
             await page.goto(`${origin}${base}?s=${token}&item=${insidePageId}`);
             const insidePage = page.locator(`#item-${insidePageId}`);
             await browserExpect(insidePage.locator(".item-context")).toBeVisible();
-            // Wait for the header fold before judging the final scroll destination.
-            await browserExpect(page.locator(".collection-heading")).toHaveAttribute(
-              "data-folded",
-              "true",
-            );
-            await browserExpect
-              .poll(() =>
-                insidePage.locator("summary").evaluate((element) => {
-                  const body = element.closest(".sheet-body");
-                  if (!body) return false;
-                  const rect = element.getBoundingClientRect(),
-                    area = body.getBoundingClientRect();
-                  return (
-                    rect.top >= Math.max(0, area.top) &&
-                    rect.bottom <= Math.min(window.innerHeight, area.bottom)
-                  );
-                }),
-              )
-              .toBe(true);
+            await browserExpect(insidePage.locator("summary")).toBeInViewport();
           }
           await page.goto(`${origin}${base}?s=${token}&item=${crypto.randomUUID()}`);
           await browserExpect(
@@ -7113,15 +7063,13 @@ describe("section authoring", () => {
         await browserExpect(description).toHaveText(
           "Read the introduction.\nThen choose a reference.",
         );
-        await group.locator("summary").first().click();
-        await browserExpect(row).not.toBeVisible();
+        // Sections read straight through (board): context and items both show.
         await browserExpect(description).toBeVisible();
+        await browserExpect(row).toBeVisible();
         if (js) {
           await page.getByRole("link", { name: "More resources", exact: true }).click();
           await browserExpect(page.locator(".resource-row")).toHaveCount(24);
           await browserExpect(group).toHaveCount(1);
-          await browserExpect(row).not.toBeVisible();
-          await group.locator("summary").first().click();
           await browserExpect(row).toBeVisible();
           await browserExpect(row.locator(".item-context")).not.toBeVisible();
         } else {
@@ -7508,7 +7456,7 @@ it("shows public Gravatar pictures and links Settings to Support with native fal
           }
         }
       await ready(page, `/c/${collection.body.data.id}`);
-      await loaded(".contributor-list .avatar", 1);
+      await loaded(".reader-people .avatar", 1);
       await browserSignIn(page, email, "/settings");
       const help = page.getByRole("link", { name: "How do I update my profile picture?" });
       await browserExpect(help).toHaveAttribute("href", "/support#profile-picture");
@@ -9710,7 +9658,7 @@ it("preloads only the next route's code on link intent and reuses it on navigati
     const before = await page.evaluate(() => performance.timeOrigin);
     await link.click();
     await page.waitForURL(`${origin}/c/${sourceId}`);
-    await browserExpect(page.locator(".collection-sheet h1")).toBeVisible();
+    await browserExpect(page.locator(".reader-band h1")).toBeVisible();
     expect(await page.evaluate(() => performance.timeOrigin)).toBe(before);
     // The navigation's script request for the page chunk is an HTTP cache hit.
     await browserExpect.poll(() => fromCache.has(chunk)).toBe(true);

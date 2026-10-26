@@ -396,4 +396,115 @@ describe("cobalt redesign contracts", () => {
     await prisma.collection.update({ where: { id }, data: { published: false } });
     expect(await profile()).toMatchObject({ saved: [], savedCount: 0 });
   });
+
+  it("maps a collection for its reader without revealing what the reader cannot open", async () => {
+    const curator = await person("outline-owner");
+    const first = await capture(curator, {
+      collectionTitle: "First guide",
+      links: [{ url: link() }],
+    }).expect(201);
+    const firstId = first.body.data.collectionId as string;
+    const second = await capture(curator, {
+      collectionTitle: "Second guide",
+      links: [{ url: link() }],
+    }).expect(201);
+    const secondId = second.body.data.collectionId as string;
+    const hidden = await capture(curator, {
+      collectionTitle: "Private notes",
+      published: false,
+      links: [{ url: link() }],
+    }).expect(201);
+    const hiddenId = hidden.body.data.collectionId as string;
+    const [firstItem] = await prisma.resource.findMany({ where: { collectionId: firstId } });
+    await auth(request(server()).post(`/api/v1/collections/${firstId}/resources/heading`), curator)
+      .send({
+        title: "Getting started",
+        firstItemId: firstItem.id,
+        firstItemVersion: Number(firstItem.version),
+      })
+      .expect((r) => expect([200, 201]).toContain(r.status));
+
+    const outline = async (id: string, who?: Person, token?: string) =>
+      (
+        await auth(
+          request(server())
+            .get(`/api/v1/collections/${id}/outline`)
+            .set(token ? { "X-Share-Token": token } : {}),
+          who,
+        ).expect(200)
+      ).body.data;
+
+    // A visitor: published collections in a stable order, sections, next.
+    const visitor = await outline(firstId);
+    expect(visitor.hub).toMatchObject({ name: expect.any(String) });
+    expect(visitor.collections.map((c: { id: string }) => c.id)).toEqual([firstId, secondId]);
+    expect(visitor.collections[0]).toMatchObject({
+      current: true,
+      sections: [{ title: "Getting started" }],
+    });
+    expect(visitor.next).toEqual({ id: secondId, title: "Second guide" });
+    expect((await outline(secondId)).next).toBeNull();
+
+    // The owner also sees the private collection.
+    const own = await outline(firstId, curator);
+    expect(own.collections.map((c: { id: string }) => c.id)).toEqual([firstId, secondId, hiddenId]);
+
+    // A private collection read through its share link shows itself, never the
+    // owner's other private work.
+    const sharing = await auth(
+      request(server()).put(`/api/v1/collections/${hiddenId}/link-sharing`),
+      curator,
+    )
+      .send({ enabled: true })
+      .expect(200);
+    const viaLink = await outline(hiddenId, undefined, sharing.body.data.token);
+    expect(viaLink.collections.map((c: { id: string }) => c.id)).toEqual([
+      firstId,
+      secondId,
+      hiddenId,
+    ]);
+    await request(server()).get(`/api/v1/collections/${hiddenId}/outline`).expect(404);
+
+    // A hub with nothing published (ADR-0069) is not shown to a link reader.
+    for (const id of [firstId, secondId])
+      await auth(request(server()).post(`/api/v1/collections/${id}/unpublish`), curator).expect(
+        (r) => expect([200, 201]).toContain(r.status),
+      );
+    const lonely = await outline(hiddenId, undefined, sharing.body.data.token);
+    expect(lonely).toMatchObject({ hub: null, next: null });
+    expect(lonely.collections.map((c: { id: string }) => c.id)).toEqual([hiddenId]);
+
+    // The collection read carries its counts.
+    const read = (
+      await auth(request(server()).get(`/api/v1/collections/${firstId}`), curator).expect(200)
+    ).body.data;
+    expect(read).toMatchObject({ sectionCount: 1, resourceCount: 1 });
+  });
+
+  it("counts the discussion and filters to answered questions", async () => {
+    const created = await capture(owner, {
+      collectionTitle: "Discussed guide",
+      links: [{ url: link() }],
+    }).expect(201);
+    const id = created.body.data.collectionId as string;
+    const ask = (who: Person, body: Record<string, unknown>) =>
+      auth(request(server()).post(`/api/v1/collections/${id}/comments`), who)
+        .send(body)
+        .expect(201);
+    const answeredQuestion = (await ask(reader, { body: "Which index first?" })).body.data.id;
+    await ask(reader, { body: "Still open?" });
+    const reply = (await ask(owner, { body: "The composite one.", parentId: answeredQuestion }))
+      .body.data.id;
+    await auth(request(server()).post(`/api/v1/comments/${reply}/accept`), owner).expect(200);
+
+    const all = (await request(server()).get(`/api/v1/collections/${id}/comments`).expect(200)).body
+      .data;
+    expect(all).toMatchObject({ total: 3, answered: 1 });
+    expect(all.comments).toHaveLength(2);
+    const answered = (
+      await request(server()).get(`/api/v1/collections/${id}/comments?answered=true`).expect(200)
+    ).body.data;
+    expect(answered.comments.map((c: { id: string }) => c.id)).toEqual([answeredQuestion]);
+    expect(answered).toMatchObject({ total: 3, answered: 1 });
+  });
 });

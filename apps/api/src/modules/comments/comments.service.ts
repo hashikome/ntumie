@@ -67,7 +67,13 @@ export class CommentsService {
     collectionId: string,
     viewer: AuthUser | null,
     token: string | undefined,
-    query: { cursor?: string; limit?: number; replyTo?: string; replyCursor?: string },
+    query: {
+      cursor?: string;
+      limit?: number;
+      replyTo?: string;
+      replyCursor?: string;
+      answered?: boolean;
+    },
   ): Promise<{ data: CommentThreads; nextCursor: string | null }> {
     const collection = await this.collection(collectionId);
     const { moderator, canComment } = await this.viewerAccess(collection, viewer, token);
@@ -81,10 +87,28 @@ export class CommentsService {
         Number.isNaN(Date.parse(cursor.t)))
     )
       throw appError("invalid_cursor");
+    const states = moderator ? ["visible", "hidden"] : ["visible"];
+    // A question counts as answered when a reply the viewer can see is marked.
+    const hasAnswer = { replies: { some: { accepted: true, state: { in: states } } } };
+    // Both Discussion counts in one statement.
+    const [{ total, answered }] = await this.prisma.$queryRaw<
+      Array<{ total: number; answered: number }>
+    >`
+      SELECT COUNT(*)::int AS total,
+        COUNT(*) FILTER (
+          WHERE c.parent_id IS NULL AND EXISTS (
+            SELECT 1 FROM collection_comments r
+            WHERE r.parent_id = c.id AND r.accepted AND r.state IN (${Prisma.join(states)})
+          )
+        )::int AS answered
+      FROM collection_comments c
+      WHERE c.collection_id = ${collectionId}::uuid AND c.state IN (${Prisma.join(states)})
+    `;
     const top = await this.prisma.collectionComment.findMany({
       where: {
         collectionId,
         parentId: null,
+        ...(query.answered ? hasAnswer : {}),
         ...(cursor
           ? {
               OR: [
@@ -137,7 +161,7 @@ export class CommentsService {
       ];
     });
     return {
-      data: { comments, enabled: collection.commentsEnabled, canComment },
+      data: { comments, enabled: collection.commentsEnabled, canComment, total, answered },
       nextCursor,
     };
   }

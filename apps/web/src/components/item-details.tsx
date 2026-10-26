@@ -1,33 +1,48 @@
 "use client";
 import { useEffect, useId, useState } from "react";
+import { Avatar } from "./avatar";
 import { LocalTime } from "./local-time";
 import type { ResourcePresentation } from "./resource-presentation";
 
 // Inline context beneath the item's disclosure; the API authorizes every field.
+// Board order: what the link is, why it is here (the adder's note), who added
+// it and when, then Copy link and Discuss.
 export function ItemDetails({
   item,
   permalink,
   preview = false,
+  discussHref,
 }: {
   item: ResourcePresentation;
   permalink?: string;
   preview?: boolean;
+  discussHref?: string;
 }) {
   return (
     <div className="item-context">
-      {item.siteName && <p className="meta">{item.siteName}</p>}
       {item.description && <p className="description">{item.description}</p>}
       {item.kind === "collection_link" && !item.linkedCollection && (
         <p>This collection may be private or no longer available.</p>
       )}
+      {item.note && (
+        <figure className="item-note">
+          {item.addedBy && (
+            <figcaption>
+              <Avatar userId={item.addedBy.userId} />
+              {item.addedBy.username}
+            </figcaption>
+          )}
+          <blockquote>{item.note}</blockquote>
+        </figure>
+      )}
       {(item.createdAt || item.addedBy) && (
-        <p className="meta">
+        <p className="meta item-added">
           Added{" "}
           {item.addedBy && (
             <>
               by{" "}
               {preview ? (
-                <span>{item.addedBy.username}</span>
+                <b>{item.addedBy.username}</b>
               ) : (
                 <a className="person" href={`/${encodeURIComponent(item.addedBy.username)}`}>
                   {item.addedBy.username}
@@ -35,10 +50,23 @@ export function ItemDetails({
               )}{" "}
             </>
           )}
-          {item.createdAt && <LocalTime at={item.createdAt} />}
+          {item.createdAt && (
+            <>
+              on <LocalTime at={item.createdAt} variant="day" />
+            </>
+          )}
         </p>
       )}
-      {permalink && <ItemPermalink permalink={permalink} />}
+      {(permalink || discussHref) && (
+        <div className="item-actions">
+          {permalink && <ItemPermalink permalink={permalink} />}
+          {discussHref && (
+            <a className="button text-button item-discuss" href={discussHref}>
+              Discuss
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 }

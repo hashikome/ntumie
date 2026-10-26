@@ -3,7 +3,17 @@ import {
   maxCommentLength,
   type UpdateCommentRequest,
 } from "@ntumie/types";
-import { IsInt, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from "class-validator";
+import { Transform } from "class-transformer";
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+  MinLength,
+} from "class-validator";
 
 import { CursorQueryDto } from "src/common/dto/cursor-query.dto";
 
@@ -16,6 +26,12 @@ export class CommentQueryDto extends CursorQueryDto {
   @IsString()
   @MaxLength(1024)
   replyCursor?: string;
+
+  /** Only questions with an answer (the Discussion's Answered filter). */
+  @IsOptional()
+  @Transform(({ value }) => (value === "true" ? true : value === "false" ? false : value))
+  @IsBoolean()
+  answered?: boolean;
 }
 
 export class CreateCommentDto implements CreateCommentRequest {

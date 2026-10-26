@@ -9,7 +9,8 @@ function dropNoticeFromUrl() {
   if (!url.searchParams.has("notice")) return;
   url.searchParams.delete("notice");
   url.searchParams.delete("wait");
-  window.history.replaceState(window.history.state, "", url);
+  // Null state lets Next.js sync its router (see item-disclosure.tsx).
+  window.history.replaceState(null, "", url);
 }
 
 // A server-rendered confirmation (from a ?notice= code). It sits in the fixed

@@ -11,8 +11,11 @@ export function ResourceSections({
   canEdit = false,
   selectedItem,
   preview = false,
+  discussBase,
 }: {
   items: Resource[];
+  /** The reader's address for "Discuss" on an item (opens the comment box with it). */
+  discussBase?: string;
   preview?: boolean;
   section?: Resource;
   selectedItem?: Resource;
@@ -24,7 +27,6 @@ export function ResourceSections({
   const [selectedId, setSelectedId] = useState(selectedItem?.id);
   const select = (id: string, open: boolean) =>
     setSelectedId((current) => (open ? id : current === id ? undefined : current));
-  const [states, setStates] = useState<Record<string, boolean>>({});
   const groups: Array<{ section?: Resource; items: Resource[] }> = [];
   let current: { section?: Resource; items: Resource[] } = { section, items: [] };
   for (const item of items) {
@@ -47,6 +49,7 @@ export function ResourceSections({
                 item={selectedItem}
                 itemBase={itemBase}
                 preview={preview}
+                discussBase={discussBase}
                 expanded={selectedId === selectedItem.id}
                 onExpandedChange={(open) => select(selectedItem.id, open)}
               />
@@ -58,33 +61,20 @@ export function ResourceSections({
           group.section
             ? [
                 <li className="resource-section" key={group.section.id}>
-                  <details
-                    className="section-disclosure"
-                    open={states[group.section.id] ?? true}
-                    onToggle={(event) => {
-                      const open = event.currentTarget.open;
-                      if (!open) {
-                        for (const item of event.currentTarget.querySelectorAll<HTMLDetailsElement>(
-                          ".resource-disclosure[open]",
-                        ))
-                          item.open = false;
-                      }
-                      const id = group.section?.id;
-                      if (id)
-                        setStates((current) =>
-                          current[id] === open ? current : { ...current, [id]: open },
-                        );
-                    }}
+                  {/* Sections read straight through; the hub tree and the phone
+                      chips jump between them. */}
+                  <section
+                    className="reader-section"
+                    id={`section-${group.section.id}`}
+                    data-reader-section={group.section.id}
+                    aria-labelledby={`section-title-${group.section.id}`}
                   >
-                    <summary aria-labelledby={`section-title-${group.section.id}`}>
-                      <SectionTitle id={`section-title-${group.section.id}`}>
-                        {group.section.title}
-                      </SectionTitle>
-                      {group.section.description && (
-                        <p className="section-description">{group.section.description}</p>
-                      )}
-                      <span className="section-expand-hint">Show items</span>
-                    </summary>
+                    <SectionTitle id={`section-title-${group.section.id}`}>
+                      {group.section.title}
+                    </SectionTitle>
+                    {group.section.description && (
+                      <p className="section-description">{group.section.description}</p>
+                    )}
                     <ul className="resource-list">
                       {group.items.map((item) => (
                         <ResourceRow
@@ -92,12 +82,13 @@ export function ResourceSections({
                           item={item}
                           itemBase={itemBase}
                           preview={preview}
+                          discussBase={discussBase}
                           expanded={item.id === selectedId}
                           onExpandedChange={(open) => select(item.id, open)}
                         />
                       ))}
                     </ul>
-                  </details>
+                  </section>
                   {canEdit && collectionId && (
                     <a
                       className="section-edit"
@@ -114,6 +105,7 @@ export function ResourceSections({
                   item={item}
                   itemBase={itemBase}
                   preview={preview}
+                  discussBase={discussBase}
                   expanded={item.id === selectedId}
                   onExpandedChange={(open) => select(item.id, open)}
                 />

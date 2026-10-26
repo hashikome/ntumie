@@ -1,7 +1,10 @@
 import { type CommentThreads, type CommentView, maxCommentLength } from "@ntumie/types";
 import type { ReactNode } from "react";
 import { AppForm } from "./app-form";
+import { Avatar } from "./avatar";
+import { CommentCounter } from "./comment-counter";
 import { CommentFocus } from "./comment-focus";
+import { ComposerCancel } from "./composer-cancel";
 import { FormNotice } from "./form-notice";
 import { ShortTime } from "./local-time";
 import { Person } from "./primitives";
@@ -71,6 +74,8 @@ function Composer({
   );
 }
 
+export type DiscussionSection = { id: string; title: string };
+
 function Comment({
   comment,
   collectionId,
@@ -82,6 +87,7 @@ function Comment({
   returnTo: string;
   canReply: boolean;
 }) {
+  const scope = comment.section ?? comment.item;
   // Readers only need to know the reply comes from someone who maintains the
   // collection; owner and editors are all contributors to them.
   const role = comment.author?.role ? "Contributor" : null;
@@ -92,6 +98,7 @@ function Comment({
       id={`comment-${comment.id}`}
     >
       <header className="comment-head">
+        {comment.author && <Avatar userId={comment.author.userId} />}
         {comment.author ? (
           <Person person={comment.author} />
         ) : (
@@ -99,7 +106,20 @@ function Comment({
         )}
         {role && <span className="comment-role">{role}</span>}
         {comment.accepted && <span className="comment-answer">Answer</span>}
+        {/* The comment's age sits with its author ("5d"). */}
+        <span className="comment-time">
+          <ShortTime at={comment.createdAt} />
+          {comment.editedAt && " · edited"}
+        </span>
       </header>
+      {!comment.parentId && scope?.title && (
+        <p className="comment-scope">
+          On{" "}
+          <a href={comment.section ? `#section-${comment.section.id}` : `#item-${scope.id}`}>
+            {scope.title}
+          </a>
+        </p>
+      )}
       {comment.body !== null && comment.state !== "deleted" ? (
         <p className="comment-body">{comment.body}</p>
       ) : (
@@ -110,12 +130,7 @@ function Comment({
       {comment.state === "hidden" && comment.body !== null && (
         <p className="comment-note">Hidden from readers. Only contributors see it.</p>
       )}
-      {/* TikTok-style: the comment's age leads its actions ("53m  Reply"). */}
       <div className="comment-actions">
-        <span className="comment-time">
-          <ShortTime at={comment.createdAt} />
-          {comment.editedAt && " · edited"}
-        </span>
         {canReply && !comment.parentId && comment.state !== "deleted" && (
           <details className="comment-more">
             <summary className="text-button">Reply</summary>
@@ -124,7 +139,7 @@ function Comment({
               parentId={comment.id}
               returnTo={returnTo}
               label="Your reply"
-              placeholder="Write a reply…"
+              placeholder={`Reply to ${comment.author?.username ?? "this comment"}`}
             />
           </details>
         )}
@@ -203,6 +218,9 @@ export function Comments({
   olderHref,
   commentCursor,
   composerOpen = false,
+  sections = [],
+  attached,
+  answeredOnly = false,
 }: {
   collectionId: string;
   threads: CommentThreads | null;
@@ -212,17 +230,31 @@ export function Comments({
   olderHref?: string;
   commentCursor?: string;
   composerOpen?: boolean;
+  /** The collection's sections, for "About". */
+  sections?: DiscussionSection[];
+  /** An item attached from its Discuss action, with the section it sits in. */
+  attached?: { id: string; title: string; sectionId?: string };
+  answeredOnly?: boolean;
 }) {
-  const count = threads
-    ? threads.comments.reduce((total, c) => total + 1 + c.replies.length, 0)
-    : 0;
+  const join = returnTo.includes("?") ? "&" : "?";
   return (
     <section className="comments" id="comments" aria-labelledby="comments-title">
       <CommentFocus />
       <header className="comments-heading">
-        <h2 id="comments-title">
-          Discussion {count > 0 && <span className="comments-count">{count}</span>}
-        </h2>
+        <h2 id="comments-title">Discussion</h2>
+        {threads && threads.total > 0 && (
+          <nav className="comment-filter" aria-label="Show">
+            <a href={`${returnTo}#comments`} aria-current={answeredOnly ? undefined : "true"}>
+              All <span>{threads.total}</span>
+            </a>
+            <a
+              href={`${returnTo}${join}answered=1#comments`}
+              aria-current={answeredOnly ? "true" : undefined}
+            >
+              Answered <span>{threads.answered}</span>
+            </a>
+          </nav>
+        )}
       </header>
       {/* biome-ignore lint/a11y/noNoninteractiveTabindex: The desktop discussion scrolls independently and needs keyboard focus for scrolling. */}
       <section className="comments-body" aria-label="Discussion comments" tabIndex={0}>
@@ -233,12 +265,26 @@ export function Comments({
           <p className="comments-state">Comments are turned off for this collection.</p>
         ) : threads.canComment ? (
           <details className="comment-compose" id="comment-composer" open={composerOpen}>
-            <summary>Add a comment</summary>
-            <Composer
+            <summary>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M4 5h16v11H9l-5 4z" />
+              </svg>
+              Ask a question or add what you know
+            </summary>
+            <QuestionComposer
               collectionId={collectionId}
               returnTo={returnTo}
-              label="Add to the discussion"
-              placeholder="Ask a question or add a note…"
+              sections={sections}
+              attached={attached}
             />
           </details>
         ) : signedIn ? (
@@ -292,7 +338,9 @@ export function Comments({
         )}
         {threads?.enabled && threads.comments.length === 0 && (
           <p className="comments-empty">
-            No comments yet. Questions about these links are welcome.
+            {answeredOnly
+              ? "No answered questions yet."
+              : "No comments yet. Questions about these links are welcome."}
           </p>
         )}
         {olderHref && (
@@ -302,5 +350,107 @@ export function Comments({
         )}
       </section>
     </section>
+  );
+}
+
+// A new question: about the whole guide or a section (following the section in
+// view until chosen), optionally with the item it came from attached.
+function QuestionComposer({
+  collectionId,
+  returnTo,
+  sections,
+  attached,
+}: {
+  collectionId: string;
+  returnTo: string;
+  sections: DiscussionSection[];
+  attached?: { id: string; title: string; sectionId?: string };
+}) {
+  const field = "comment-body-new";
+  const join = returnTo.includes("?") ? "&" : "?";
+  return (
+    <ActionForm
+      action="comment-post"
+      id={collectionId}
+      returnTo={returnTo}
+      className="comment-form"
+    >
+      {attached && (
+        <div className="comment-attached">
+          <input type="hidden" name="itemId" value={attached.id} />
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+          </svg>
+          <b>{attached.title}</b>
+          <a href={`${returnTo}${join}compose=comment#comment-composer`}>
+            <span className="sr-only">Remove the attached item</span>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </a>
+        </div>
+      )}
+      <label htmlFor={field} className="sr-only">
+        Add to the discussion
+      </label>
+      <textarea
+        id={field}
+        name="body"
+        required
+        maxLength={maxCommentLength}
+        rows={4}
+        placeholder={
+          attached
+            ? "What would you like to ask or add about this link?"
+            : "Ask a question or add what you know"
+        }
+      />
+      <div className="comment-bar">
+        {sections.length > 0 && (
+          <label className="comment-about">
+            About
+            <select
+              name="sectionId"
+              aria-label="What this comment is about"
+              defaultValue={attached?.sectionId ?? ""}
+              data-follows-section={attached ? undefined : ""}
+            >
+              <option value="">The whole guide</option>
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <CommentCounter fieldId={field} />
+      </div>
+      <div className="comment-buttons">
+        <ComposerCancel href={`${returnTo}#comments`} />
+        <button type="submit" className="button primary">
+          Post
+        </button>
+      </div>
+    </ActionForm>
   );
 }

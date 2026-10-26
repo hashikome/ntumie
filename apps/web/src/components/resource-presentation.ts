@@ -7,7 +7,10 @@ export type ResourcePresentation = Pick<
   "id" | "collectionId" | "title" | "description" | "tags" | "url"
 > &
   Partial<
-    Pick<Resource, "createdAt" | "addedBy" | "siteName" | "linkedCollection" | "collectionHint">
+    Pick<
+      Resource,
+      "createdAt" | "addedBy" | "siteName" | "linkedCollection" | "collectionHint" | "note"
+    >
   > & {
     kind: Resource["kind"] | "site_link";
   };

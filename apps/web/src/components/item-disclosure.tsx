@@ -37,7 +37,9 @@ export function ItemDisclosure({
         else if (url.searchParams.get("item") === itemId) url.searchParams.delete("item");
         else return;
         if (url.hash.startsWith("#item-")) url.hash = "";
-        window.history.replaceState(window.history.state, "", url);
+        // Null state lets Next.js sync its router with the new address; passing
+        // its own state back makes it keep (and later rewrite) the old one.
+        window.history.replaceState(null, "", url);
       }}
       onClick={(event) => {
         const target = event.target;

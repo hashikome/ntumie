@@ -2,7 +2,7 @@
 import { internationalTime, relativeTime, shortTime } from "../lib/time";
 import { useTimeZone } from "./time-zone";
 
-type Variant = "datetime" | "date";
+type Variant = "datetime" | "date" | "day";
 const formats: Record<Variant, Intl.DateTimeFormatOptions> = {
   datetime: {
     day: "numeric",
@@ -12,6 +12,8 @@ const formats: Record<Variant, Intl.DateTimeFormatOptions> = {
     minute: "2-digit",
   },
   date: { day: "numeric", month: "short", year: "numeric" },
+  // "7 October 2026" (day first, in every locale): when an item was added.
+  day: { day: "numeric", month: "long", year: "numeric" },
 };
 
 // Explicit account choices render on the server. Automatic waits for the
@@ -27,7 +29,10 @@ export function LocalTime({
   const format = (zone: string | undefined, language: string | undefined) =>
     variant === "international"
       ? internationalTime(at, zone)
-      : new Date(at).toLocaleString(language, { ...formats[variant], timeZone: zone });
+      : new Date(at).toLocaleString(variant === "day" ? "en-GB" : language, {
+          ...formats[variant],
+          timeZone: zone,
+        });
   return ready ? (
     <time dateTime={at}>{format(timeZone, locale)}</time>
   ) : (

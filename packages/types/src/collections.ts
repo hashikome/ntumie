@@ -170,3 +170,20 @@ export interface DiscoverOverview {
   newest: Collection[];
   tags: PopularTag[];
 }
+
+/**
+ * The reader's map: the hub (when the viewer may see it), its collections in
+ * a stable order with their sections, and the collection after this one.
+ * Visitors get published collections plus the one they are reading; owners
+ * get every collection; a hub that is not public is left out entirely.
+ */
+export interface CollectionOutline {
+  hub: { id: string; handle: string; name: string } | null;
+  collections: Array<{
+    id: string;
+    title: string;
+    current: boolean;
+    sections: Array<{ id: string; title: string }>;
+  }>;
+  next: { id: string; title: string } | null;
+}

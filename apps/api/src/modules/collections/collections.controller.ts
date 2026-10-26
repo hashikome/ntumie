@@ -167,6 +167,18 @@ export class CollectionsController {
     return apiOk(await this.collectionsService.unsave(id, user));
   }
 
+  // The reader's map: hub, sibling collections with their sections, and next.
+  @UseGuards(OptionalAuthGuard)
+  @Get(":id/outline")
+  async outline(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @CurrentUser() user: AuthUser | null,
+    @Headers("x-share-token") headerToken?: string,
+    @Req() req?: Request,
+  ) {
+    return apiOk(await this.collectionsService.outline(id, user, shareTokenFrom(headerToken, req)));
+  }
+
   // The immutable collection ID resolves current ownership and authorization.
   @UseGuards(OptionalAuthGuard)
   @Get(":id")
