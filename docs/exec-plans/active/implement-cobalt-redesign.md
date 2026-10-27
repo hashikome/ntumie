@@ -123,13 +123,16 @@ communities (opt-in), and private-collection allowances (monetization).
 - Observation: the browser test "reader polish keeps tags, hierarchy and touch
   controls usable without JavaScript too" fails before any redesign change: at
   390 px with touch, `.comment-compose > summary` is "not visible" when tapped.
-  Fix it with the reader rebuild in M4.
+  Resolved in M4 (`dd25e6e`): the rebuilt discussion opens in place, Cancel
+  closes it, and touch targets are 44 px on coarse pointers.
   Evidence: fails identically on commit `f893576` with the M1 web changes
   stashed (`bun tooling/verify-browser.ts --test-name-pattern 'reader polish keeps'`).
 - Observation: "opens items beyond the first page at the ID address, preserves
   access and toggles inline (true)" fails intermittently before any M3 change:
   after `page.reload()` on a copied `?item=…#item-…` address, the item's details
-  stay closed. Fix it with the reader rebuild in M4.
+  stay closed. Resolved in M4 (`dd25e6e`): `history.replaceState` passed Next.js
+  its own state back, so its router kept (and later restored) the address
+  without `?item=`; passing `null` lets it sync. 6/6 repeats green after.
   Evidence: 15 October 2026, six repeats each: 2/6 failed with the M3 web
   changes, 1/6 failed with them stashed, all at the same step and with the same
   error (`.item-context` "hidden").
