@@ -23,6 +23,9 @@ const env = maskVerificationOverrides({ ...process.env, NODE_ENV: "test" });
 // capture provider; dotenv must not replace this explicit child environment.
 env.BETTER_AUTH_URL = "http://localhost:4004";
 env.EMAIL_PROVIDER = "capture";
+// Fixtures make many private collections for one account; the allowance
+// tests lower this to the product default themselves.
+env.FREE_PRIVATE_COLLECTIONS = "1000";
 env.EMAIL_SUPPRESSION_SECRET = "test-runner-suppression-secret-independent";
 env.QUEUE_NAMESPACE = `test-email-${crypto.randomUUID()}`;
 let child: ReturnType<typeof Bun.spawn> | undefined;

@@ -6,6 +6,10 @@ import { FormNotice } from "../../../../components/form-notice";
 import { ImportRefresh } from "../../../../components/import-refresh";
 import { ImportRows } from "../../../../components/import-review";
 import { OperatorFailure } from "../../../../components/operator-failure";
+import {
+  privateAllowanceText,
+  readPrivateAllowance,
+} from "../../../../components/private-allowance";
 import { type ApiPath, queryValue } from "../../../../lib/http";
 import { importStatusLabels } from "../../../../lib/import-presentation";
 import { serverRead } from "../../../../lib/server-api";
@@ -72,6 +76,8 @@ export default async function Page({
   const collection = draft.collections.find((c) => c.id === collectionId);
   if (!collection) notFound();
   const working = ["queued", "running"].includes(collection.jobState);
+  // A private import uses one of the free private collections.
+  const allowance = collection.saved ? null : await readPrivateAllowance();
   const total = Object.values(draft.counts).reduce((sum, n) => sum + n, 0);
   return (
     <section className="reader ops-page ops-list-page import-page import-review-page">
@@ -97,6 +103,11 @@ export default async function Page({
                 <option value="false">No</option>
               </select>
             </label>
+            {allowance && (
+              <p className="field-help">
+                {privateAllowanceText(allowance, true).replace(/^Only you\. /, "Private: ")}
+              </p>
+            )}
             <button
               form="import-collection"
               aria-label="Save publishing choice"

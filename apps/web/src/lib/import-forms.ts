@@ -133,7 +133,12 @@ export async function importForm(action: string, request: Request, form: URLSear
     return result.ok
       ? Response.json({ ok: true, data: result.data })
       : Response.json({ ok: false, code: result.code }, { status: result.status || 503 });
-  if (!result.ok) return redirectResponse(withNotice(notice(result.status)));
+  if (!result.ok)
+    return redirectResponse(
+      withNotice(
+        result.code === "private_allowance_reached" ? "private-allowance" : notice(result.status),
+      ),
+    );
   if (action === "import-discard") return redirectResponse(`${home}?tab=review&notice=done`);
   const next = result.data && ("draft" in result.data ? result.data.draft : result.data);
   if (collectionId && next && !next.collections.some((c) => c.id === collectionId))

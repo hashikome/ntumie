@@ -10,7 +10,8 @@ const plural = (count: number, one: string) => `${count} ${count === 1 ? one : `
 // and saves while there are none.
 export function CollectionCounts({ item }: { item: Collection }) {
   const parts = [
-    item.sectionCount !== undefined && plural(item.sectionCount, "section"),
+    // Like the reader, a count of none is left out.
+    Boolean(item.sectionCount) && plural(item.sectionCount ?? 0, "section"),
     item.resourceCount !== undefined && plural(item.resourceCount, "resource"),
     item.saveCount ? plural(item.saveCount, "save") : false,
   ].filter(Boolean);

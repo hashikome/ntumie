@@ -7,6 +7,12 @@ import { readSession } from "../lib/session";
 import { FirstLinkField } from "./first-link-field";
 import { FormNotice } from "./form-notice";
 import { NativeForm } from "./native-form";
+import {
+  PrivateLimitHelp,
+  privateAllowanceText,
+  privateLeft,
+  readPrivateAllowance,
+} from "./private-allowance";
 import { StartSteps } from "./start-steps";
 
 // Start a collection (replaces "Save your first link"): one idea, its first
@@ -19,10 +25,12 @@ export async function StartCollection({
   draft?: CaptureDraft;
   query: Record<string, string | string[] | undefined>;
 }) {
-  const session = await readSession();
+  const [session, allowance] = await Promise.all([readSession(), readPrivateAllowance()]);
   const id = draft?.id ?? randomUUID();
   const first = draft?.links[0];
-  const published = draft?.published ?? session?.newCollectionPublished ?? true;
+  // At the limit Private can't be chosen (the API would refuse it anyway).
+  const full = Boolean(session) && privateLeft(allowance) === 0;
+  const published = full || (draft?.published ?? session?.newCollectionPublished ?? true);
   const title = draft?.collectionTitle ?? queryValue(query.title, 255) ?? "";
   return (
     <section className="auth-column start-collection" aria-labelledby="start-title">
@@ -73,10 +81,16 @@ export async function StartCollection({
             </span>
           </label>
           <label className="choice-card">
-            <input type="radio" name="published" value="false" defaultChecked={!published} />
+            <input
+              type="radio"
+              name="published"
+              value="false"
+              defaultChecked={!published}
+              disabled={full}
+            />
             <span>
               <b>Private</b>
-              <small>Only you.</small>
+              <small>{privateAllowanceText(allowance, Boolean(session))}</small>
             </span>
           </label>
         </fieldset>
@@ -84,6 +98,7 @@ export async function StartCollection({
           {session ? "Create collection" : "Continue"}
         </button>
       </NativeForm>
+      {full && <PrivateLimitHelp returnTo={draft ? `/start/${draft.id}` : "/start"} />}
       {!session && (
         <p className="auth-foot">Have an account already? You sign in on the next step.</p>
       )}

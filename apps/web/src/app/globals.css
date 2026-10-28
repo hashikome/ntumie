@@ -2001,6 +2001,7 @@ main .comment-about select {
 .comment-head .avatar {
   width: 1.625rem;
   height: 1.625rem;
+  flex-basis: 1.625rem;
 }
 .comment-head .person,
 .comment-author {
@@ -2058,6 +2059,17 @@ main .comment-about select {
 .comment.accepted .comment-head .avatar {
   width: 1.375rem;
   height: 1.375rem;
+  flex-basis: 1.375rem;
+}
+/* The board's answer head is name, role and Answer on one line; its time stays
+   for screen readers. */
+.comment.accepted .comment-time {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .comment-actions {
   display: flex;
@@ -6088,9 +6100,12 @@ main .import-page .import-start input[type="file"]::file-selector-button:hover {
 /* A new collection's owner prompts (until three links or a section). */
 .add-description {
   display: inline-flex;
+  align-items: center;
   align-self: start;
-  margin-top: 0.75rem;
-  padding: 0.375rem 0.875rem;
+  min-height: 2.5rem;
+  margin: 0 0 1.25rem;
+  padding: 0 0.875rem;
+  font-weight: 600;
   border: 1.5px dashed var(--color-on-primary-muted);
   border-radius: 999px;
   color: var(--color-on-primary);
@@ -6157,10 +6172,52 @@ main .import-page .import-start input[type="file"]::file-selector-button:hover {
   color: var(--color-muted);
   font-size: 0.9375rem;
 }
+/* Item titles read straight across the column (headings elsewhere balance). */
+.resource-disclosure h3,
+.collection-card-title {
+  text-wrap: pretty;
+}
+.keep-building .phone-label {
+  display: none;
+}
+/* Phones, to the journey board: the address then a full-width Copy link, and
+   the next two steps as full-width buttons. */
 @media (max-width: 40rem) {
-  .live-panel,
+  .live-panel {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.875rem;
+  }
+  .live-panel .copy-link,
+  .live-panel .copy-link .button,
+  .live-panel > .button {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+  }
+  .keep-building > p,
+  .keep-building li > span,
+  .keep-building li.keep-share,
+  .keep-building .desktop-label {
+    display: none;
+  }
+  .keep-building .phone-label {
+    display: inline;
+  }
+  .keep-building > h2 {
+    margin-bottom: 0.75rem;
+  }
   .keep-building li {
-    flex-wrap: wrap;
+    padding: 0 0 0.5rem;
+    border: 0;
+  }
+  .keep-building li > .button {
+    width: 100%;
+    min-height: 2.75rem;
+    justify-content: center;
+  }
+  .add-description {
+    min-height: 2.75rem;
   }
 }
 
@@ -6191,7 +6248,9 @@ body:has(.auth-stage):not(:has(.start-collection, .start-steps)) .session-nav .n
 .item-add-note > summary {
   display: inline-flex;
   align-items: center;
-  min-height: 2.75rem;
+  min-height: 2.5rem;
+  padding: 0 0.625rem;
+  color: var(--color-muted);
   font-weight: 600;
   cursor: pointer;
   list-style: none;
@@ -6209,4 +6268,40 @@ body:has(.auth-stage):not(:has(.start-collection, .start-steps)) .session-nav .n
 }
 .item-add-note .action-form > .button {
   justify-self: start;
+}
+
+/* The free private allowance, used up: Private can't be chosen, and the
+   deliberate ways on sit just below. */
+.choice-card:has(:disabled) {
+  cursor: not-allowed;
+  color: var(--color-muted);
+}
+.choice-card:has(:disabled) b {
+  color: var(--color-muted);
+}
+.private-limit {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+.private-limit p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+.auth-stage .private-limit .action-form > .button {
+  width: auto;
+}
+
+/* Phones: toasts sit at the foot of the screen so they never cover a page's
+   title while they show. */
+@media (max-width: 40rem) {
+  .toast-region {
+    top: auto;
+    bottom: 1rem;
+  }
 }

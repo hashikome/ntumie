@@ -266,7 +266,10 @@ export function Comments({
           <p className="comments-state">The discussion couldn't load. Reload to try again.</p>
         ) : !threads.enabled ? (
           <p className="comments-state">Comments are turned off for this collection.</p>
-        ) : threads.canComment ? (
+        ) : threads.canComment &&
+          // The owner's empty discussion is only its explanation (board);
+          // Discuss on a link still opens the box.
+          !(owner && threads.total === 0 && !composerOpen && !attached) ? (
           <details className="comment-compose" id="comment-composer" open={composerOpen}>
             <summary>
               <svg
@@ -290,7 +293,7 @@ export function Comments({
               attached={attached}
             />
           </details>
-        ) : signedIn ? (
+        ) : threads.canComment ? null : signedIn ? (
           <p className="comments-state">
             Comments are paused while this collection is under review.
           </p>
@@ -433,7 +436,10 @@ function QuestionComposer({
         {sections.length > 0 && (
           <label className="comment-about">
             About
+            {/* Keyed by the attached item: Discuss on another link reuses this
+                form, and a mounted select ignores a new defaultValue. */}
             <select
+              key={attached?.id ?? "guide"}
               name="sectionId"
               aria-label="What this comment is about"
               defaultValue={attached?.sectionId ?? ""}

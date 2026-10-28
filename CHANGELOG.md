@@ -9,6 +9,18 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Free accounts keep 3 private collections. The limit is enforced by the API on
+  every way a collection becomes private (create, Start, Save a link, making it
+  private, transfer, private imports), never by auto-publishing or deleting;
+  the screens show how many are left, and at the limit Private is closed with a
+  way to make another public or ask for more (`GET
+  /api/v1/collections/private-allowance`, `FREE_PRIVATE_COLLECTIONS`).
+- Match the boards more closely: a new collection opens at its title, item
+  titles use the full column, discussion avatars and answer heads follow the
+  board, recent adds read "just now", the phone landing matches its journey
+  board, and empty section counts are left out. Fix Discuss on a second link
+  keeping the first link's section.
+
 - Replace "Save your first link" with Start a collection (`/start`): name the
   idea, add the first link (its title appears as you type) with an optional
   note, choose Published or Private, then confirm your email; nothing is

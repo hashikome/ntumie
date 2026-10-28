@@ -17,10 +17,14 @@ export function ItemDisclosure({
   onExpandedChange?: (open: boolean) => void;
 }) {
   const element = useRef<HTMLDetailsElement>(null);
-  // Only a directly opened/mounted selection scrolls; ordinary clicks stay put.
+  // Only a directly opened/mounted selection scrolls, and only when it starts
+  // out of view: an item already near the top (a new collection's first link)
+  // leaves the page at its title. Ordinary clicks stay put.
   // biome-ignore lint/correctness/useExhaustiveDependencies: This is initial document selection, not every user toggle.
   useEffect(() => {
-    if (expanded && !preview) element.current?.scrollIntoView({ block: "start" });
+    const top = element.current?.getBoundingClientRect().top;
+    if (expanded && !preview && top !== undefined && (top < 0 || top > window.innerHeight * 0.6))
+      element.current?.scrollIntoView({ block: "start" });
   }, []);
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: The native summary provides Enter/Space toggling; body clicks extend its pointer target.

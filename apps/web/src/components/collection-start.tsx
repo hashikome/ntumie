@@ -51,7 +51,8 @@ export function KeepBuilding({ id, returnTo }: { id: string; returnTo: string })
             <span>Paste an address; it lands here.</span>
           </span>
           <a className="button primary" href={`/capture?collection=${id}`}>
-            Save a link
+            <span className="desktop-label">Save a link</span>
+            <span className="phone-label">Save the next link</span>
           </a>
         </li>
         <li>
@@ -63,7 +64,7 @@ export function KeepBuilding({ id, returnTo }: { id: string; returnTo: string })
             Add a section
           </a>
         </li>
-        <li>
+        <li className="keep-share">
           <span>
             <b>Share it</b>
             <span>Send the address to someone who is starting too.</span>

@@ -3,6 +3,11 @@ import type { Metadata } from "next";
 import { CollectionFeedback } from "../../../../components/collection-feedback";
 import { CollectionOperationForm } from "../../../../components/collection-operation-form";
 import { FormNotice } from "../../../../components/form-notice";
+import {
+  PrivateLimitHelp,
+  privateLeft,
+  readPrivateAllowance,
+} from "../../../../components/private-allowance";
 import { failure, permalink, queryValue } from "../../../../lib/http";
 import { serverRead } from "../../../../lib/server-api";
 import { shareReturn } from "../../../../lib/sharing";
@@ -40,6 +45,9 @@ export default async function Page({
   if (impactResult && !impactResult.ok)
     return <CollectionFeedback error={impactResult} returnTo={back} />;
   const impact = impactResult?.ok ? impactResult.data : null;
+  // Making it private uses one of the free private collections.
+  const allowance = action === "unpublish" && c.published ? await readPrivateAllowance() : null;
+  const full = privateLeft(allowance) === 0;
   const titles: Record<string, string> = {
     publish: "Publish collection",
     unpublish: "Unpublish collection",
@@ -65,6 +73,13 @@ export default async function Page({
               ? "Make this collection publicly readable and discoverable."
               : "Remove this collection from public view. Direct shares and enabled share links will still work."}
       </p>
+      {allowance && (
+        <p className="field-help">
+          {full
+            ? `You have used your ${allowance.limit} free private collections.`
+            : `You have ${privateLeft(allowance)} of ${allowance.limit} free private collections left.`}
+        </p>
+      )}
       {impact && (
         <section className="collection-impact" aria-labelledby="reference-impact">
           <h2 id="reference-impact">What will change</h2>
@@ -103,26 +118,30 @@ export default async function Page({
           </p>
         </section>
       )}
-      <CollectionOperationForm
-        returnTo={returnTo}
-        id={id}
-        action={action}
-        label={
-          action === "delete"
-            ? "Yes, delete"
-            : action === "transfer"
-              ? "Yes, transfer ownership"
-              : titles[action]
-        }
-      >
-        {impact && <input type="hidden" name="impactToken" value={impact.token} />}
-        {action === "transfer" && (
-          <label>
-            New owner's email
-            <input type="email" name="email" required maxLength={255} />
-          </label>
-        )}
-      </CollectionOperationForm>
+      {full ? (
+        <PrivateLimitHelp returnTo={`/c/${id}/actions?action=unpublish`} />
+      ) : (
+        <CollectionOperationForm
+          returnTo={returnTo}
+          id={id}
+          action={action}
+          label={
+            action === "delete"
+              ? "Yes, delete"
+              : action === "transfer"
+                ? "Yes, transfer ownership"
+                : titles[action]
+          }
+        >
+          {impact && <input type="hidden" name="impactToken" value={impact.token} />}
+          {action === "transfer" && (
+            <label>
+              New owner's email
+              <input type="email" name="email" required maxLength={255} />
+            </label>
+          )}
+        </CollectionOperationForm>
+      )}
       <p>
         <a href={action === "delete" || action === "transfer" ? back : returnTo}>
           {action === "delete" || action === "transfer" ? "Keep collection" : returnLabel}

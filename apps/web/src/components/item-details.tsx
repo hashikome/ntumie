@@ -2,7 +2,7 @@
 import { maxNoteLength } from "@ntumie/types";
 import { useEffect, useId, useState } from "react";
 import { Avatar } from "./avatar";
-import { LocalTime } from "./local-time";
+import { LocalTime, Updated } from "./local-time";
 import { NativeForm } from "./native-form";
 import type { ResourcePresentation } from "./resource-presentation";
 
@@ -57,11 +57,15 @@ export function ItemDetails({
               )}{" "}
             </>
           )}
-          {item.createdAt && (
-            <>
-              on <LocalTime at={item.createdAt} variant="day" />
-            </>
-          )}
+          {item.createdAt &&
+            // Today reads relative ("just now", per the board); older adds by day.
+            (Date.now() - Date.parse(item.createdAt) < 86_400_000 ? (
+              <Updated at={item.createdAt} />
+            ) : (
+              <>
+                on <LocalTime at={item.createdAt} variant="day" />
+              </>
+            ))}
         </p>
       )}
       {(permalink || discussHref || addNote) && (

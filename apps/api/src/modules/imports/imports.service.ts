@@ -7,6 +7,7 @@ import { normalizeTags } from "../../common/utils/tags.util";
 import { PrismaService } from "../../database/prisma.service";
 import type { ImportFolder } from "../../generated/prisma/client";
 import { CollectionsService } from "../collections/collections.service";
+import { privateAllowance } from "../collections/private-allowance";
 import { CollectionPolicyService } from "../hubs/collection-policy.service";
 import { ensurePersonalHub } from "../hubs/hub-onboarding";
 import { requestLinkMetadata } from "../resources/link-metadata";
@@ -172,6 +173,23 @@ export class ImportsService {
     const { rows } = await importState(this.prisma, draft);
     const ready = rows.filter((r) => r.collectionKey === collectionId && r.status === "ready");
     if (!ready.length || !folder.newTitle.trim()) throw appError("invalid_import");
+    // A new private destination needs room in the free private allowance,
+    // counting private destinations already queued (the job enforces it again).
+    const published =
+      !folder.targetCollectionId && dto.published !== undefined ? dto.published : folder.published;
+    if (!folder.targetCollectionId && !published) {
+      const { limit, used } = await privateAllowance(this.prisma, draft.hubId);
+      const queued = await this.prisma.importFolder.count({
+        where: {
+          id: { not: folder.id },
+          draft: { hubId: draft.hubId },
+          published: false,
+          targetCollectionId: null,
+          jobState: { in: ["queued", "running"] },
+        },
+      });
+      if (used + queued >= limit) throw appError("private_allowance_reached");
+    }
     await this.prisma.importFolder.update({
       where: { id: collectionId },
       data: {

@@ -43,6 +43,7 @@ import { CreateShareDto } from "./dto/create-share.dto";
 import { SetLinkSharingDto } from "./dto/set-link-sharing.dto";
 import { TransferCollectionDto } from "./dto/transfer-collection.dto";
 import { UpdateCollectionDto } from "./dto/update-collection.dto";
+import { privateAllowance, requirePrivateRoom } from "./private-allowance";
 
 @Injectable()
 export class CollectionsService {
@@ -62,6 +63,17 @@ export class CollectionsService {
   async create(user: AuthUser, dto: CreateCollectionDto) {
     const hubId = (await ensurePersonalHub(this.prisma, user.userId)).id;
     return this.createInHub(user, hubId, dto);
+  }
+
+  // How many free private collections this person has used, for the
+  // visibility choice on every screen that offers it.
+  async privateAllowance(user: AuthUser | null) {
+    if (!user) return privateAllowance(this.prisma, null);
+    const hub = await this.prisma.hub.findUnique({
+      where: { ownerUserId: user.userId },
+      select: { id: true },
+    });
+    return privateAllowance(this.prisma, hub?.id ?? null);
   }
 
   // --- settings / lifecycle ----------------------------------------------
@@ -101,6 +113,8 @@ export class CollectionsService {
         where: { id: collection.id, hubId: collection.hubId },
       });
       if (current.version !== collection.version) throw appError("version_conflict");
+      if (dto.published === false && current.published)
+        await requirePrivateRoom(tx, collection.hubId);
       return tx.collection.update({
         include: collectionTags,
         where: { id: collection.id, hubId: collection.hubId, version: collection.version },
@@ -146,6 +160,7 @@ export class CollectionsService {
     };
     const saved = await this.mutateOwned(collection, user, event, async (tx) => {
       const current = await tx.collection.findUniqueOrThrow({ where: { id } });
+      if (!published && current.published) await requirePrivateRoom(tx, collection.hubId);
       event.effect = {
         beforeState: current.published ? "published" : "unpublished",
         afterState: published ? "published" : "unpublished",
@@ -362,6 +377,8 @@ export class CollectionsService {
           where: { id, hubId: collection.hubId },
         });
         await applyCollectionImpact(tx, current, user.userId, "transfer", dto.impactToken);
+        // A private collection uses the recipient's allowance.
+        if (!current.published) await requirePrivateRoom(tx, recipientHub.id);
         await recordAudit(tx, {
           hubId: recipientHub.id,
           actorUserId: user.userId,
@@ -1303,6 +1320,7 @@ export class CollectionsService {
   // Collections are independent containers.
   private async createInHub(user: AuthUser, hubId: string, dto: CreateCollectionDto) {
     const saved = await this.prisma.$transaction(async (tx) => {
+      if (dto.published === false) await requirePrivateRoom(tx, hubId);
       const created = await tx.collection.create({
         include: collectionTags,
         data: {

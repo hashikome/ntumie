@@ -8,6 +8,10 @@ const messages: Record<string, string> = {
     "Subscriptions are on the way. Thanks for trying; it helps us decide what comes next.",
   "soon-communities":
     "Communities are on the way. Thanks for trying; it helps us decide what comes next.",
+  "soon-private_collections":
+    "More private collections are on the way. Thanks for asking; it helps us decide what comes next.",
+  "private-allowance":
+    "You have used your free private collections. Publish this one, or make another collection public first.",
   "soon-partners":
     "Partner hubs are on the way. Thanks for trying; it helps us decide what comes next.",
   "import-saved": "Ready links saved. Review any links still waiting below.",
@@ -88,6 +92,7 @@ const toasts = new Set([
   "soon-subscriptions",
   "soon-communities",
   "soon-partners",
+  "soon-private_collections",
   "link-saved",
   "collection-created",
   "note-saved",

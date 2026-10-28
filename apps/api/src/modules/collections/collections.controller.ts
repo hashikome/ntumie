@@ -38,6 +38,14 @@ export class CollectionsController {
   constructor(private readonly collectionsService: CollectionsService) {}
 
   @ApiBearerAuth()
+  // Literal route: declared before every :id route. Signed out, it reports
+  // the free limit with nothing used (Start a collection shows it).
+  @UseGuards(OptionalAuthGuard)
+  @Get("private-allowance")
+  async privateAllowance(@CurrentUser() user: AuthUser | null) {
+    return apiOk(await this.collectionsService.privateAllowance(user));
+  }
+
   @UseGuards(AuthGuard)
   @Post()
   async create(@CurrentUser() user: AuthUser, @Body() dto: CreateCollectionDto) {

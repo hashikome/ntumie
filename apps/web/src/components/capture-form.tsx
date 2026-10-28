@@ -11,6 +11,7 @@ import { CaptureLinks } from "./capture-links";
 import { Feedback } from "./feedback";
 import { FormNotice } from "./form-notice";
 import { NativeForm } from "./native-form";
+import { privateAllowanceText, privateLeft, readPrivateAllowance } from "./private-allowance";
 
 const shortDate = new Intl.DateTimeFormat("en", {
   month: "short",
@@ -52,6 +53,9 @@ export async function CaptureForm({
     if (targetCollection.ok && targetCollection.data.capabilities?.canEdit)
       collections.unshift(targetCollection.data);
   }
+  // Free private collections left for a new one (the API enforces it).
+  const allowance = profile.ok ? await readPrivateAllowance() : null;
+  const full = privateLeft(allowance) === 0;
   const id = draft?.id ?? randomUUID();
   const namedFirst =
     profile.ok && Boolean(draft?.collectionTitle ?? queryValue(query.title, 255)?.trim());
@@ -112,11 +116,20 @@ export async function CaptureForm({
                 />
                 <label>
                   Publish new collection
-                  <select name="published" defaultValue={String(draft?.published ?? true)}>
+                  <select
+                    name="published"
+                    defaultValue={String(full || (draft?.published ?? true))}
+                    aria-describedby="private-allowance-note"
+                  >
                     <option value="true">Yes</option>
-                    <option value="false">No</option>
+                    <option value="false" disabled={full}>
+                      No
+                    </option>
                   </select>
                 </label>
+                <p className="field-help" id="private-allowance-note">
+                  {privateAllowanceText(allowance, true).replace(/^Only you\. /, "Private: ")}
+                </p>
               </div>
             </>
           ) : (
@@ -140,11 +153,20 @@ export async function CaptureForm({
               )}
               <label>
                 Publish new collection
-                <select name="published" defaultValue={String(draft?.published ?? true)}>
+                <select
+                  name="published"
+                  defaultValue={String(full || (draft?.published ?? true))}
+                  aria-describedby="private-allowance-note"
+                >
                   <option value="true">Yes</option>
-                  <option value="false">No</option>
+                  <option value="false" disabled={full}>
+                    No
+                  </option>
                 </select>
               </label>
+              <p className="field-help" id="private-allowance-note">
+                {privateAllowanceText(allowance, true).replace(/^Only you\. /, "Private: ")}
+              </p>
             </>
           )}
         </CaptureLinks>

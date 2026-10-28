@@ -8,6 +8,8 @@ const env = maskVerificationOverrides({
   ...process.env,
   NODE_ENV: "test",
   EMAIL_PROVIDER: "capture",
+  // Fixtures make many private collections; allowance tests lower it to 3.
+  FREE_PRIVATE_COLLECTIONS: "1000",
   // Keep the resend gap real but short so journeys can resend without sleeping.
   AUTH_CODE_RESEND_SECONDS: "2",
   SUPPORT_EMAIL: "support@example.com",

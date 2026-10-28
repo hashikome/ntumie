@@ -4225,7 +4225,8 @@ it("shows collection descriptions and hub attribution without repeated separator
     // Cards name the hub (by its mark and name) and how much the guide holds.
     await browserExpect(row.locator(".card-hub")).toHaveText(profile.body.data.hubName);
     await browserExpect(row.locator(".card-hub .hub-mark")).toBeVisible();
-    await browserExpect(row).toContainText("0 sections · 0 resources");
+    // A count of none is left out (boards); resources always show.
+    await browserExpect(row.locator(".card-meta").last()).toHaveText("0 resources");
     expect(await row.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe("0px");
     expect(await page.locator("main").evaluate((el) => getComputedStyle(el).overflowY)).toBe(
       "visible",
@@ -5045,6 +5046,8 @@ it("starts a collection signed in, guides its first steps and adds a note where 
     await browserExpect(page.locator(".comments-empty")).toContainText(
       "Once people read your collection",
     );
+    // The owner's empty discussion is only its explanation (board).
+    await browserExpect(page.locator(".comment-compose")).toHaveCount(0);
     const keep = page.locator(".keep-building");
     await browserExpect(
       keep.getByRole("link", { name: "Save a link", exact: true }),
@@ -5075,6 +5078,57 @@ it("starts a collection signed in, guides its first steps and adds a note where 
     await browserExpect(page.locator(".live-panel")).toHaveCount(0);
     await browserExpect(page.locator(".keep-building")).toHaveCount(0);
   } finally {
+    await close();
+  }
+}, 45000);
+
+it("shows the free private allowance and, at the limit, keeps Private closed with ways on", async () => {
+  const configured = process.env.FREE_PRIVATE_COLLECTIONS;
+  process.env.FREE_PRIVATE_COLLECTIONS = "3";
+  const { page, close } = await freshPage();
+  try {
+    await ready(page, "/start");
+    await browserExpect(page.locator(".visibility-choice")).toContainText(
+      "Free accounts include 3 private collections.",
+    );
+    const email = `allowance-${crypto.randomUUID()}@example.com`;
+    const signed = await signInWithCode(app.getHttpServer(), { email });
+    const token = signed.headers["set-auth-token"];
+    await prisma.requestBudget.deleteMany();
+    await browserSignIn(page, email, "/hub");
+    for (let i = 0; i < 2; i++)
+      await request(app.getHttpServer())
+        .post("/api/v1/collections")
+        .auth(token, { type: "bearer" })
+        .send({ title: `Private ${i}`, published: false })
+        .expect(201);
+    await ready(page, "/start");
+    await browserExpect(page.locator(".visibility-choice")).toContainText(
+      "1 of 3 free private collections left.",
+    );
+    await request(app.getHttpServer())
+      .post("/api/v1/collections")
+      .auth(token, { type: "bearer" })
+      .send({ title: "Private 3", published: false })
+      .expect(201);
+    await ready(page, "/start");
+    await browserExpect(page.getByLabel(/^Private/)).toBeDisabled();
+    await browserExpect(page.getByLabel(/^Published/)).toBeChecked();
+    await browserExpect(page.locator(".visibility-choice")).toContainText(
+      "You have used your 3 free private collections.",
+    );
+    const more = page.getByRole("button", { name: "More private collections", exact: true });
+    await more.click();
+    await browserExpect(page.locator(".toast")).toContainText(
+      "More private collections are on the way",
+    );
+    expect(
+      await prisma.featureInterest.count({ where: { feature: "private_collections" } }),
+    ).toBeGreaterThan(0);
+    await page.screenshot({ path: "/tmp/start-private-limit.png", fullPage: true });
+  } finally {
+    if (configured === undefined) delete process.env.FREE_PRIVATE_COLLECTIONS;
+    else process.env.FREE_PRIVATE_COLLECTIONS = configured;
     await close();
   }
 }, 45000);
@@ -5244,7 +5298,9 @@ it("sizes discussion by its own content within the reader frame", async () => {
       const empty = await height();
       expect(empty).toBeLessThan(250);
       await page.screenshot({ path: `/tmp/discussion-empty-${js}.png` });
-      await page.locator(".comment-compose > summary").click();
+      // The owner's empty discussion has no box (board); asking opens it.
+      await browserExpect(page.locator(".comment-compose")).toHaveCount(0);
+      await ready(page, `/c/${id}?compose=comment`);
       await browserExpect(page.getByLabel("Add to the discussion")).toBeVisible();
       expect(await height()).toBeGreaterThan(empty);
 

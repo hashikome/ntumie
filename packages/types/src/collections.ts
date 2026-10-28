@@ -154,7 +154,13 @@ export interface TransferCollectionRequest extends CollectionImpactRequest {
  * Designed features that are not built yet. Using one records interest
  * (POST /api/v1/interest) and the client says it is on the way.
  */
-export const interestFeatures = ["search", "subscriptions", "communities", "partners"] as const;
+export const interestFeatures = [
+  "search",
+  "subscriptions",
+  "communities",
+  "partners",
+  "private_collections",
+] as const;
 export type InterestFeature = (typeof interestFeatures)[number];
 
 /** A tag on published collections, with how many use it. */
@@ -186,4 +192,10 @@ export interface CollectionOutline {
     sections: Array<{ id: string; title: string }>;
   }>;
   next: { id: string; title: string } | null;
+}
+
+/** Owner-only private collections a free account may keep (`used` counts them). */
+export interface PrivateAllowance {
+  limit: number;
+  used: number;
 }

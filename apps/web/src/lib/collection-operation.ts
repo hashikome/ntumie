@@ -128,7 +128,11 @@ export async function collectionOperation(
           ? "This action is no longer available to you."
           : result.code === "collection_held"
             ? "Distribution is on hold. Contact support for review."
-            : "The action could not be completed. Check the details and current access, then try again.",
+            : result.code === "private_allowance_reached"
+              ? action === "transfer"
+                ? "They have no free private collections left. Publish it first, or ask them to make one of theirs public."
+                : "You have used your free private collections. Make another collection public first."
+              : "The action could not be completed. Check the details and current access, then try again.",
     };
   if (result.data.token)
     return {

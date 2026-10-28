@@ -133,6 +133,37 @@ communities (opt-in), and private-collection allowances (monetization).
   without revealing accounts); the owner's item keeps Discuss beside "Add a
   note" and the passkey step keeps "Use a different email" (the boards omit
   both). `start` is now a reserved username and top-level path.
+- [x] (2026-10-28) M5b Free private allowance (owner decision: 3), backend and
+  screens together. `FREE_PRIVATE_COLLECTIONS` (default 3; test runners raise
+  it) is enforced in one place (`private-allowance.ts`, hub row lock) on create,
+  Start and Save a link, edit/unpublish to private, transfer (recipient) and
+  queued private imports; existing over-limit collections are kept; nothing is
+  ever published or deleted to make room. `GET /collections/private-allowance`
+  (signed out: the limit). Screens: Start's Private card ("Free accounts
+  include 3 private collections." / "N of 3 left" / at the limit disabled with
+  "Make one public" and a "More private collections" fake door,
+  `private_collections`), Save a link, the unpublish confirmation and import
+  review; every path maps `private_allowance_reached` to a plain message.
+- [x] (2026-10-28) Board fidelity pass (design-audit, then design-build): boards
+  now kept locally in `ref/boards/` (rendered light/dark). Fixed: an opened item
+  no longer scrolls the page past the title when it already starts near the
+  top; "+ Add a description" semibold 40 px with space before the person row;
+  item titles read across the column (no balanced wrapping); comment avatars at
+  their size (the base `flex` basis overrode it) so answer heads stay on one
+  line, with the answer's time kept for screen readers only; recent adds read
+  "just now"; phone "Keep building it" is two full-width buttons and the live
+  panel stacks; Discover and the reader leave out a zero section count. Found
+  by the tests: Discuss on a second link kept the first link's section in
+  "About" (the select now remounts per attached item).
+- [ ] Passkeys in email autofill (owner decision): WebAuthn conditional UI on
+  the sign-in email field plus a "Sign in with a passkey" link; after the email,
+  straight to the code (drop the per-address passkey step and sign-up's extra
+  "Confirm your email" step). Passkeys are already discoverable
+  (`residentKey: required`); the unbound (no email) authentication path needs
+  its own security review and tests.
+- [ ] Search plan (own milestone): the Discover search results board (hubs and
+  collections for a query, tag filters, best match, no-results state) has no
+  backend; write the ExecPlan before building.
 - [ ] M6 Save a link dialog and the Edit workspace.
 - [ ] M7 Audit, browser acceptance, docs and release (push only here).
 
