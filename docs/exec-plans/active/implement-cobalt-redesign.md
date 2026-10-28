@@ -130,9 +130,10 @@ communities (opt-in), and private-collection allowances (monetization).
   Private card omits "[N] private collections" (no data source); "five minutes"
   instead of 10; sign-up keeps a "Confirm your email / Send code" step and the
   passkey step shows for every address (it cannot know which have passkeys
-  without revealing accounts); the owner's item keeps Discuss beside "Add a
-  note" and the passkey step keeps "Use a different email" (the boards omit
-  both). `start` is now a reserved username and top-level path.
+  without revealing accounts); Discuss stays on every link, the
+  owner's own included, beside "Add a note" (owner ruling 2026-10-28: anyone,
+  owner included, may start a discussion from an item; the landing board's
+  omission is not followed). `start` is now a reserved username and top-level path.
 - [x] (2026-10-28) M5b Free private allowance (owner decision: 3), backend and
   screens together. `FREE_PRIVATE_COLLECTIONS` (default 3; test runners raise
   it) is enforced in one place (`private-allowance.ts`, hub row lock) on create,
