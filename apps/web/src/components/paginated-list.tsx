@@ -23,6 +23,8 @@ type Props = {
   pageParams?: Record<string, string>;
   /** The reader's address for an item's "Discuss". */
   discussBase?: string;
+  /** Set for people who can edit: items offer "Add a note". */
+  noteCollection?: string;
 } & (
   | {
       kind: "collections";
@@ -190,6 +192,7 @@ export function PaginatedList(props: Props) {
           canEdit={props.canEdit}
           selectedItem={props.selectedItem}
           discussBase={props.discussBase}
+          noteCollection={props.noteCollection}
         />
       ) : (
         <ul className={props.layout === "cards" ? "collection-cards" : "collection-rows"}>

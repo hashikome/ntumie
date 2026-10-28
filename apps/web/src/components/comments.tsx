@@ -221,6 +221,7 @@ export function Comments({
   sections = [],
   attached,
   answeredOnly = false,
+  owner = false,
 }: {
   collectionId: string;
   threads: CommentThreads | null;
@@ -235,6 +236,8 @@ export function Comments({
   /** An item attached from its Discuss action, with the section it sits in. */
   attached?: { id: string; title: string; sectionId?: string };
   answeredOnly?: boolean;
+  /** The collection's editor sees an empty discussion described for them. */
+  owner?: boolean;
 }) {
   const join = returnTo.includes("?") ? "&" : "?";
   return (
@@ -340,7 +343,9 @@ export function Comments({
           <p className="comments-empty">
             {answeredOnly
               ? "No answered questions yet."
-              : "No comments yet. Questions about these links are welcome."}
+              : owner
+                ? "No questions yet. Once people read your collection, they can ask and add what they know here."
+                : "No comments yet. Questions about these links are welcome."}
           </p>
         )}
         {olderHref && (

@@ -26,7 +26,7 @@ type Row = {
 // A savable address on the public web (not localhost, a private or example
 // name, or an IP number). Half-typed hosts like "https://exa" fail it too, so
 // they are never sent for a title lookup.
-function publicHref(value: string, origin: string) {
+export function publicHref(value: string, origin: string) {
   const href = captureUrl(value);
   return href !== null &&
     (collectionAddress(href, origin) || isPublicLinkHost(new URL(href).hostname))

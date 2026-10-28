@@ -7,8 +7,7 @@ export function SessionNav({ session }: { session: SessionView | null }) {
         <a className="nav-link" href="/sign-in">
           Sign in
         </a>
-        {/* The first-link flow becomes Start a collection in the cobalt redesign (M5). */}
-        <a className="button primary nav-button nav-start" href="/capture">
+        <a className="button primary nav-button nav-start" href="/start">
           Start a collection
         </a>
       </div>

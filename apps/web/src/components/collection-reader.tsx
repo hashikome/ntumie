@@ -12,6 +12,7 @@ import { readSession } from "../lib/session";
 import { sourcePath } from "../lib/sharing";
 import { Avatar } from "./avatar";
 import { CollectionFeedback } from "./collection-feedback";
+import { KeepBuilding, LivePanel } from "./collection-start";
 import { Comments, type DiscussionSection } from "./comments";
 import { FakeDoor } from "./fake-door";
 import { FormNotice } from "./form-notice";
@@ -114,10 +115,16 @@ export async function CollectionReader({
     item?.ok ? item.data : undefined,
   );
   const contributors = collection.contributors;
+  const owner = Boolean(collection.capabilities?.canEdit);
   const counts = [
-    collection.sectionCount !== undefined && plural(collection.sectionCount, "section"),
+    Boolean(collection.sectionCount) && plural(collection.sectionCount ?? 0, "section"),
     collection.resourceCount !== undefined && plural(collection.resourceCount, "resource"),
+    // Whoever can change it sees whether it is published.
+    owner && (collection.published ? "Published" : "Private"),
   ].filter(Boolean);
+  // A new collection's owner prompts, until three links or a first section.
+  const starting =
+    owner && !token && (collection.resourceCount ?? 0) < 3 && collection.sectionCount === 0;
   return (
     <div className="reader-page" data-reader>
       <SectionSpy />
@@ -159,8 +166,14 @@ export async function CollectionReader({
               </a>
             )}
             <h1 id="collection-title">{collection.title}</h1>
-            {collection.description && (
+            {collection.description ? (
               <p className="reader-description">{collection.description}</p>
+            ) : (
+              collection.capabilities?.canEdit && (
+                <a className="add-description" href={`/c/${id}/edit`}>
+                  + Add a description
+                </a>
+              )
             )}
             <Tags tags={collection.tags} limit={5} expandable />
             {contributors && contributors.total > 0 && (
@@ -233,6 +246,7 @@ export async function CollectionReader({
         )}
         <div className="reader-columns">
           <article className="reader-content" aria-labelledby="collection-title">
+            {starting && <LivePanel id={id} published={collection.published} />}
             {item && !item.ok && (
               <p className="form-notice" role="status">
                 {[400, 404].includes(item.status)
@@ -250,7 +264,9 @@ export async function CollectionReader({
               section={resources.meta?.section}
               selectedItem={item?.ok ? item.data : undefined}
               discussBase={returnTo}
+              noteCollection={owner && !token ? id : undefined}
             />
+            {starting && <KeepBuilding id={id} returnTo={sourcePath(returnTo, query)} />}
             {outline.next && outline.hub && (
               <a className="next-guide" href={permalink(outline.next.id)}>
                 <span>
@@ -273,7 +289,7 @@ export async function CollectionReader({
               </a>
             )}
             <p className="made-with">
-              Made with ntumie. <a href="/capture">Start your own collection</a>
+              Made with ntumie. <a href="/start">Start your own collection</a>
             </p>
           </article>
           {ready ? (
@@ -288,6 +304,7 @@ export async function CollectionReader({
               sections={sections}
               attached={attached}
               answeredOnly={answeredOnly}
+              owner={owner}
             />
           ) : (
             <Suspense
@@ -319,6 +336,7 @@ export async function CollectionReader({
                 sections={sections}
                 attached={attached}
                 answeredOnly={answeredOnly}
+                owner={owner}
               />
             </Suspense>
           )}
@@ -353,6 +371,7 @@ type DiscussionProps = {
   sections: DiscussionSection[];
   attached?: { id: string; title: string; sectionId?: string };
   answeredOnly: boolean;
+  owner: boolean;
 };
 
 async function CollectionDiscussion({
@@ -378,6 +397,7 @@ function DiscussionView({
   sections,
   attached,
   answeredOnly,
+  owner,
 }: DiscussionProps & {
   comments: Awaited<ReturnType<typeof serverRead<CommentThreads>>>;
   signedIn: boolean;
@@ -402,6 +422,7 @@ function DiscussionView({
       sections={sections}
       attached={attached}
       answeredOnly={answeredOnly}
+      owner={owner}
     />
   );
 }

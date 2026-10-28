@@ -63,9 +63,17 @@ export default function Page() {
       <h2 id="create-account">How do I create an account?</h2>
       <p>
         Choose Create an account from Sign in, then continue with your email or Google. After
-        verification, review your email and choose Create account. You can select Start with a hub
-        and give it a name, or create a hub later. Its initial handle matches your username; both
-        can be changed in Settings under their usual rules.
+        verification, review your email, add your name if you like, and choose Create account. Your
+        hub comes with your first collection; its handle matches your username, and both can be
+        changed in Settings under their usual rules. Starting a collection while signed out creates
+        your account the same way, once you confirm your email.
+      </p>
+      <h2 id="privacy">What do you do with my email?</h2>
+      <p>
+        Your email is never public: people see your username and the name on your profile. We use it
+        to send sign-in codes and the notifications you choose, and to look up your Gravatar picture
+        if you have one. When you share a collection by email, you can see that address in its
+        access list. Private collections are visible only to you and the people you share them with.
       </p>
       <h2 id="google-sign-in">How do I sign in with Google?</h2>
       <p>

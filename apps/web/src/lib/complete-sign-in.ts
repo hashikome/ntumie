@@ -9,6 +9,7 @@ import {
   readPendingAction,
 } from "./pending-action";
 import type { SignInFlow } from "./sign-in-flow";
+import { draftId } from "./validation";
 export async function completeSignIn(
   request: Request,
   flow: SignInFlow,
@@ -71,7 +72,7 @@ export async function completeSignIn(
       `${pending.target}${join}notice=${notice}${pending.anchor ? `#${pending.anchor}` : ""}`,
     );
   }
-  const captureId = /^\/capture\/([a-f0-9-]{36})$/.exec(flow.returnTo)?.[1];
+  const captureId = draftId(flow.returnTo);
   if (!flow.invitationToken && captureId) {
     const draft = await readDraft(captureId);
     if (draft) {

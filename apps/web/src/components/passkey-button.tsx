@@ -24,7 +24,13 @@ export function PasskeyButton({
   pending = false,
   email,
   googleConnection = false,
+  label = "Sign in with a passkey",
+  plain = false,
 }: {
+  /** The sign-in button's words (board: "Use passkey"). */
+  label?: string;
+  /** Shown as a text link beside other ways to sign in. */
+  plain?: boolean;
   register?: boolean;
   returnTo?: string;
   pending?: boolean;
@@ -53,7 +59,7 @@ export function PasskeyButton({
         </>
       )}
       <button
-        className={`button ${register ? "" : "primary"}`}
+        className={plain ? "text-button" : `button ${register ? "" : "primary"}`}
         type="button"
         disabled={!supported || busy || codes.length > 0}
         onClick={async () => {
@@ -104,7 +110,7 @@ export function PasskeyButton({
           }
         }}
       >
-        {busy ? "Waiting for your device…" : register ? "Add a passkey" : "Sign in with a passkey"}
+        {busy ? "Waiting for your device…" : register ? "Add a passkey" : label}
       </button>
       {supported === false && (
         <p>

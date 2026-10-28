@@ -1,7 +1,9 @@
 "use client";
+import { maxNoteLength } from "@ntumie/types";
 import { useEffect, useId, useState } from "react";
 import { Avatar } from "./avatar";
 import { LocalTime } from "./local-time";
+import { NativeForm } from "./native-form";
 import type { ResourcePresentation } from "./resource-presentation";
 
 // Inline context beneath the item's disclosure; the API authorizes every field.
@@ -12,12 +14,17 @@ export function ItemDetails({
   permalink,
   preview = false,
   discussHref,
+  noteCollection,
 }: {
   item: ResourcePresentation;
   permalink?: string;
   preview?: boolean;
   discussHref?: string;
+  /** Set for people who can edit: a link without a note offers "Add a note". */
+  noteCollection?: string;
 }) {
+  const addNote =
+    noteCollection && item.kind === "external_link" && !item.note && item.version !== undefined;
   return (
     <div className="item-context">
       {item.description && <p className="description">{item.description}</p>}
@@ -57,9 +64,12 @@ export function ItemDetails({
           )}
         </p>
       )}
-      {(permalink || discussHref) && (
+      {(permalink || discussHref || addNote) && (
         <div className="item-actions">
           {permalink && <ItemPermalink permalink={permalink} />}
+          {addNote && noteCollection && item.version !== undefined && (
+            <AddNote collectionId={noteCollection} itemId={item.id} version={item.version} />
+          )}
           {discussHref && (
             <a className="button text-button item-discuss" href={discussHref}>
               Discuss
@@ -68,6 +78,42 @@ export function ItemDetails({
         </div>
       )}
     </div>
+  );
+}
+
+// Why this link is here, added where it is read. Without JavaScript the
+// disclosure still opens and the form posts.
+function AddNote({
+  collectionId,
+  itemId,
+  version,
+}: {
+  collectionId: string;
+  itemId: string;
+  version: number;
+}) {
+  const fieldId = useId();
+  return (
+    <details className="item-add-note">
+      <summary className="text-button">Add a note</summary>
+      <NativeForm action="/forms/item-note">
+        <input type="hidden" name="collectionId" value={collectionId} />
+        <input type="hidden" name="itemId" value={itemId} />
+        <input type="hidden" name="version" value={version} />
+        <label htmlFor={fieldId}>Note</label>
+        <textarea
+          id={fieldId}
+          name="note"
+          rows={3}
+          required
+          maxLength={maxNoteLength}
+          placeholder="Why this link is worth reading"
+        />
+        <button type="submit" className="button primary">
+          Save note
+        </button>
+      </NativeForm>
+    </details>
   );
 }
 

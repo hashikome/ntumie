@@ -10,8 +10,14 @@ export interface CaptureDraft {
   destination: string;
   collectionTitle?: string;
   published?: boolean;
+  /** Started from Start a collection (lives at /start/<id>, lands as created). */
+  start?: boolean;
   issued: number;
 }
+
+// Where a waiting draft is shown, and where signing in returns.
+export const draftPath = (draft: Pick<CaptureDraft, "id" | "start">) =>
+  `/${draft.start ? "start" : "capture"}/${draft.id}`;
 const key = (secret: string) => createHash("sha256").update(`web-capture:${secret}`).digest();
 // Drafts live in one cookie. When tags make it too large they are dropped;
 // links themselves are kept.
@@ -63,6 +69,7 @@ export function openDraft(
             (Array.isArray(link.tags) && link.tags.every((tag) => typeof tag === "string"))),
       ) ||
       (draft.published !== undefined && typeof draft.published !== "boolean") ||
+      (draft.start !== undefined && draft.start !== true) ||
       (draft.collectionTitle !== undefined &&
         (typeof draft.collectionTitle !== "string" || draft.collectionTitle.length > 255)) ||
       !Number.isFinite(draft.issued) ||

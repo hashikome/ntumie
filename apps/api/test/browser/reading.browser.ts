@@ -869,7 +869,7 @@ describe("explore to resource: production browser journey", () => {
       await ready(page, "/sign-in");
       const documentId = await page.evaluate(() => performance.timeOrigin);
       const email = "interrupted-sign-in@example.com";
-      await page.getByLabel("Email address").fill(email);
+      await page.getByLabel("Email", { exact: true }).fill(email);
       let attempts = 0;
       await page.route("**/forms/email-start", async (route) => {
         attempts++;
@@ -882,7 +882,7 @@ describe("explore to resource: production browser journey", () => {
       await browserExpect(
         page.getByRole("alert").filter({ hasText: "couldn’t confirm" }),
       ).toBeVisible();
-      await browserExpect(page.getByLabel("Email address")).toHaveValue(email);
+      await browserExpect(page.getByLabel("Email", { exact: true })).toHaveValue(email);
       await browserExpect(
         page.getByRole("button", { name: "Continue with email", exact: true }),
       ).toBeEnabled();
@@ -2089,6 +2089,24 @@ describe("explore to resource: production browser journey", () => {
   }, 15000);
 });
 
+// Sign-in wording differs by step: an account may skip the code with a
+// passkey ("Email me a code instead"), and the code step signs in.
+const sendCode = /^(Send code|Email me a code instead)$/;
+const verifyCode = /^(Verify and continue|Sign in)$/;
+const usePasskey = /^(Sign in with a passkey|Use passkey|Use a passkey)$/;
+// Start a collection, step 1, signed out: name, first link, who can see it.
+async function startDraft(
+  page: Page,
+  url: string,
+  { title, published = true }: { title?: string; published?: boolean } = {},
+) {
+  await ready(page, "/start");
+  if (title) await page.getByLabel("What is it about?").fill(title);
+  await page.getByLabel("First link", { exact: true }).fill(url);
+  await page.getByLabel(published ? /^Published/ : /^Private/).check();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await browserExpect(page.locator("h1")).toHaveText("Where should we send your code?");
+}
 async function capturedCode(email: string, expectedSubject?: string) {
   const row = await prisma.emailOutbox.findFirstOrThrow({
     where: {
@@ -2128,10 +2146,10 @@ async function browserSignIn(page: Page, email: string, returnTo = "/manage") {
     page,
     `/${creating ? "sign-up" : "sign-in"}?returnTo=${encodeURIComponent(returnTo)}`,
   );
-  await page.getByLabel("Email address").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByRole("button", { name: "Continue with email", exact: true }).click();
   const sent = page.waitForResponse((response) => response.url().endsWith("/forms/code-send"));
-  await page.getByRole("button", { name: "Send code", exact: true }).click();
+  await page.getByRole("button", { name: sendCode }).click();
   const response = await sent;
   const interactive = response.request().headers()["x-form-navigation"] === "1";
   expect(response.status()).toBe(interactive ? 200 : 303);
@@ -2141,7 +2159,7 @@ async function browserSignIn(page: Page, email: string, returnTo = "/manage") {
   expect(page.url()).not.toContain(email);
   await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
   await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-  await page.getByRole("button", { name: "Verify and continue" }).click();
+  await page.getByRole("button", { name: verifyCode }).click();
   if (creating) {
     await page.getByRole("button", { name: "Create account", exact: true }).click();
     await browserExpect(page).not.toHaveURL(/\/sign-up\/confirm(?:\?|$)/);
@@ -2431,18 +2449,18 @@ describe("management: production browser journey", () => {
       { page, close } = await freshPage();
     try {
       await ready(page, "/sign-in?returnTo=https://untrusted.example/");
-      await page.getByLabel("Email address").fill(op.email);
+      await page.getByLabel("Email", { exact: true }).fill(op.email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await page.getByLabel("Six-digit code").fill("000000");
-      await page.getByRole("button", { name: "Verify and continue" }).click();
-      await browserExpect(page.locator(".form-notice")).toContainText("incorrect or expired");
+      await page.getByRole("button", { name: verifyCode }).click();
+      await browserExpect(page.locator(".field-error")).toContainText("That code does not match");
       await waitForResend(page);
       await page.getByRole("button", { name: "Send a new code", exact: true }).click();
       await browserExpect(page.locator(".toast")).toContainText("sent a new code");
       await page.getByLabel("Six-digit code").fill(await capturedCode(op.email));
-      await page.getByRole("button", { name: "Verify and continue" }).click();
+      await page.getByRole("button", { name: verifyCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Good links belong together.");
       expect(new URL(page.url()).origin).toBe(origin);
       // A sensitive action with a stale verification asks the signed-in
@@ -2460,7 +2478,7 @@ describe("management: production browser journey", () => {
       await submitOperation(page, "End all sessions", "owner_request");
       await browserExpect(page.locator("h1")).toHaveText("Confirm it's you");
       await browserExpect(page.locator("main")).toContainText("sign this account out everywhere");
-      await browserExpect(page.getByLabel("Email address")).toHaveCount(0);
+      await browserExpect(page.getByLabel("Email", { exact: true })).toHaveCount(0);
       await page.screenshot({ path: "/tmp/verify-confirm.png" });
       // Cancel sends nothing and returns to where the action was started.
       const mailsBefore = await prisma.emailOutbox.count();
@@ -2483,7 +2501,7 @@ describe("management: production browser journey", () => {
           sameSite: "Lax",
         },
       ]);
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       expect(
         (await page.context().cookies(origin)).some((cookie) =>
@@ -2492,7 +2510,7 @@ describe("management: production browser journey", () => {
       ).toBe(false);
       // Having chosen to send it, the code screen offers a new code, not a cancel.
       await browserExpect(page.getByRole("button", { name: "Cancel", exact: true })).toHaveCount(0);
-      await browserExpect(page.locator(".resend-row")).toContainText("Didn't receive the code?");
+      await browserExpect(page.locator(".resend-form")).toContainText(/Resend in|Send a new code/);
       await page.screenshot({ path: "/tmp/verify-code.png" });
       await browserExpect(page.locator("h1")).toHaveText("Confirm it's you");
       // A pasted code with a space ("336 865") is accepted.
@@ -3839,31 +3857,37 @@ it("[critical] saves a first private link through email, preserves retries, then
     const { page, close } = await freshPage(js);
     try {
       await ready(page, "/");
-      // The hero's Start a collection opens the first-link flow until M5 replaces it.
       await page
         .getByRole("main")
         .getByRole("link", { name: "Start a collection", exact: true })
         .click();
-      await page.getByLabel("Link URL", { exact: true }).fill(url);
-      await browserExpect(page.getByLabel("Publish new collection")).toHaveValue("true");
-      await page.getByLabel("Publish new collection").selectOption("false");
-      await page.getByRole("button", { name: "Save link", exact: true }).click();
-      await browserExpect(page.locator("h1")).toHaveText("Verify your email to save this link");
+      await browserExpect(page).toHaveURL(`${origin}/start`);
+      await page.getByLabel("First link", { exact: true }).fill(url);
+      await browserExpect(page.getByLabel(/^Published/)).toBeChecked();
+      await page.getByLabel(/^Private/).check();
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
+      await browserExpect(page.locator("h1")).toHaveText("Where should we send your code?");
+      await browserExpect(page.locator(".draft-summary")).toContainText("1 link · Private");
       expect(page.url()).not.toContain("fixture-links.dev");
       await browserExpect(
         page.getByRole("button", { name: "Continue with Google", exact: true }),
       ).toHaveCount(0);
-      await browserExpect(
-        page.getByRole("button", { name: "Sign in with a passkey", exact: true }),
-      ).toHaveCount(0);
-      await page.getByLabel("Email address").fill(email);
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await browserExpect(page.getByRole("button", { name: usePasskey })).toHaveCount(0);
+      // The waiting collection stays editable from its summary.
+      await page.locator(".draft-summary a").click();
+      await browserExpect(page.getByLabel("First link", { exact: true })).toHaveValue(url);
+      await browserExpect(page.getByLabel(/^Private/)).toBeChecked();
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
+      await page.getByLabel("Email", { exact: true }).fill(email);
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
+      await browserExpect(page.locator('.start-steps [aria-current="step"]')).toHaveText("Confirm");
       await capturedCode(email, "Verify your email to save your first link · ntumie.");
       expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
       await page.getByLabel("Six-digit code").fill("000000");
-      await page.getByRole("button", { name: "Verify and save" }).click();
-      await browserExpect(page.locator(".form-notice")).toContainText("incorrect or expired");
+      await page.getByRole("button", { name: "Create collection", exact: true }).click();
+      await browserExpect(page.locator(".field-error")).toContainText("That code does not match");
+      await browserExpect(page.locator(".draft-summary")).toBeVisible();
       await waitForResend(page);
       await page.getByRole("button", { name: "Send a new code", exact: true }).click();
       await browserExpect(page.locator(".toast")).toContainText("sent a new code");
@@ -3876,12 +3900,12 @@ it("[critical] saves a first private link through email, preserves retries, then
         .getByLabel("Six-digit code")
         .fill(`${proof.slice(0, 3)}${js ? "-" : " "}${proof.slice(3)}`);
       failCapture = js;
-      await page.getByRole("button", { name: "Verify and save" }).click();
+      await page.getByRole("button", { name: "Create collection", exact: true }).click();
       if (js) {
         await browserExpect(page.locator(".form-notice")).toContainText(
           "couldn't confirm the save",
         );
-        await browserExpect(page.getByLabel("Link URL", { exact: true })).toHaveValue(url);
+        await browserExpect(page.getByLabel("First link", { exact: true })).toHaveValue(url);
         await browserExpect(page.getByLabel("Account menu", { exact: true })).toBeVisible();
         const verified = await prisma.user.findUniqueOrThrow({
           where: { email },
@@ -3890,10 +3914,14 @@ it("[critical] saves a first private link through email, preserves retries, then
         expect(verified.hub).toBeNull();
         failCapture = false;
         await page.reload();
-        await page.getByRole("button", { name: "Save link", exact: true }).click();
+        await page.getByRole("button", { name: "Create collection", exact: true }).click();
       }
       await browserExpect(page.locator("h1")).toHaveText(/^Saved links, [A-Z][a-z]{2} \d{1,2}$/);
-      await browserExpect(page.locator(".toast")).toContainText("Link saved");
+      await browserExpect(page.locator(".toast")).toContainText("Collection created");
+      // The owner's prompts until it reads like a collection.
+      await browserExpect(page.locator(".live-panel")).toContainText("It lives at");
+      await browserExpect(page.locator(".keep-building")).toContainText("Keep building it");
+      await browserExpect(page.locator(".reader-stats")).toContainText("1 resource · Private");
       await browserExpect(page.locator(".resource-row h3 a")).toHaveAttribute("href", url);
       const account = await prisma.user.findUniqueOrThrow({
         where: { email },
@@ -3983,8 +4011,8 @@ it("[critical] saves a first private link through email, preserves retries, then
       await page.getByRole("button", { name: "Save link", exact: true }).click();
       if (js) {
         await browserExpect(page.locator("h1")).toHaveText("Verify your email to save this link");
-        await page.getByLabel("Email address").fill(email);
-        await page.getByRole("button", { name: "Send code", exact: true }).click();
+        await page.getByLabel("Email", { exact: true }).fill(email);
+        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
         await page.getByRole("button", { name: "Verify and save" }).click();
@@ -4033,23 +4061,16 @@ it("[critical] saves a first private link through email, preserves retries, then
         await page.getByLabel("Account menu", { exact: true }).click();
         await page.getByRole("button", { name: "Sign out", exact: true }).click();
         await browserExpect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
-        await ready(page, "/capture");
-        await page
-          .getByLabel("Link URL", { exact: true })
-          .fill("https://fixture-links.dev/returning");
-        await page.getByRole("button", { name: "Save link", exact: true }).click();
-        await page.getByLabel("Email address").fill(email);
-        await page.getByRole("button", { name: "Send code", exact: true }).click();
+        // Returning signed out, Start creates another collection once confirmed.
+        await startDraft(page, "https://fixture-links.dev/returning", { title: "Returning reads" });
+        await page.getByLabel("Email", { exact: true }).fill(email);
+        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-        await page.getByRole("button", { name: "Verify and save" }).click();
-        await browserExpect(page.locator(".form-notice")).toContainText("Choose where to save");
-        await browserExpect(page.getByLabel("Link URL", { exact: true })).toHaveValue(
-          "https://fixture-links.dev/returning",
-        );
-        await page.getByLabel("Save to", { exact: true }).selectOption(id);
-        await page.getByRole("button", { name: "Save link", exact: true }).click();
-        await browserExpect(page.locator(".resource-row")).toHaveCount(3);
+        await page.getByRole("button", { name: "Create collection", exact: true }).click();
+        await browserExpect(page.locator("h1")).toHaveText("Returning reads");
+        await browserExpect(page.locator(".toast")).toContainText("Collection created");
+        expect(await prisma.collection.count({ where: { hubId: account.hub.id } })).toBe(3);
       }
     } finally {
       failCapture = false;
@@ -4253,7 +4274,7 @@ describe("collection discussion", () => {
         expect(destination).toBe(`/c/${id}?compose=comment#comment-composer`);
         // The sign-in screen says why it's asking.
         await ready(page, signInHref ?? "/sign-in");
-        await browserExpect(page.locator(".verify-reason")).toHaveText(
+        await browserExpect(page.locator(".auth-lead")).toHaveText(
           "Sign in to join the discussion.",
         );
         const discussant = `discussant-${crypto.randomUUID()}@example.com`;
@@ -4292,18 +4313,18 @@ describe("collection discussion", () => {
         await page.getByLabel("Add to the discussion").fill(`After a break (${js})`);
         await page.getByRole("button", { name: "Post", exact: true }).click();
         await browserExpect(page.locator("h1")).toHaveText("Sign in to ntumie.");
-        await browserExpect(page.locator(".verify-reason")).toContainText("post your comment");
-        await page.getByLabel("Email address").fill(discussant);
+        await browserExpect(page.locator(".auth-lead")).toContainText("post your comment");
+        await page.getByLabel("Email", { exact: true }).fill(discussant);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
         // Fast earlier actions can still be inside the harness's two-second
         // resend window. Recovery must request a fresh code after that guard.
         await page.waitForTimeout(2100);
-        await page.getByRole("button", { name: "Send code", exact: true }).click();
+        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page, `resume code issued (JavaScript ${js})`).toHaveURL(
           /\/sign-in\/code\?notice=(?:re)?sent/,
         );
         await page.getByLabel("Six-digit code").fill(await capturedCode(discussant));
-        await page.getByRole("button", { name: "Verify and continue" }).click();
+        await page.getByRole("button", { name: verifyCode }).click();
         await browserExpect
           .poll(() => new URL(page.url()).pathname, {
             message: `resumed discussion (JavaScript ${js})`,
@@ -4324,14 +4345,14 @@ describe("collection discussion", () => {
         await page.getByRole("button", { name: "Post", exact: true }).click();
         await browserExpect(page.locator("h1")).toHaveText("Sign in to ntumie.");
         const stranger = `stranger-${crypto.randomUUID()}@example.com`;
-        await page.getByLabel("Email address").fill(stranger);
+        await page.getByLabel("Email", { exact: true }).fill(stranger);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: "Send code", exact: true }).click();
+        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page, `new account code issued (JavaScript ${js})`).toHaveURL(
           /\/sign-in\/code\?notice=(?:re)?sent/,
         );
         await page.getByLabel("Six-digit code").fill(await capturedCode(stranger));
-        await page.getByRole("button", { name: "Verify and continue" }).click();
+        await page.getByRole("button", { name: verifyCode }).click();
         await page.getByRole("button", { name: "Create account", exact: true }).click();
         await browserExpect(page.locator("h1")).toHaveText("Discussion guide");
         await browserExpect(discussion).not.toContainText(`Not theirs (${js})`);
@@ -4443,9 +4464,11 @@ it("preserves a throttled resend journey beyond the normal resend interval", asy
     const { page, close } = await freshPage(js);
     try {
       await ready(page, "/sign-in?returnTo=%2Fhub");
-      await page.getByLabel("Email address").fill(`cooldown-${crypto.randomUUID()}@example.com`);
+      await page
+        .getByLabel("Email", { exact: true })
+        .fill(`cooldown-${crypto.randomUUID()}@example.com`);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await waitForResend(page);
       const key = requestBudgetKey(
@@ -4460,10 +4483,11 @@ it("preserves a throttled resend journey beyond the normal resend interval", asy
       });
       await page.getByRole("button", { name: "Send a new code", exact: true }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
-      await browserExpect(
-        page.getByRole("button", { name: "Send a new code", exact: true }),
-      ).toBeDisabled();
-      await browserExpect(page.locator(".field-help")).toContainText(/another code in [5-6]\d?s/);
+      // The throttled wait shows as a countdown on the disabled resend button.
+      await browserExpect(page.locator(".resend-form button")).toBeDisabled();
+      await browserExpect(page.locator(".resend-form button")).toContainText(
+        /Resend in (0:5\d|1:0\d)/,
+      );
       await page.reload();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
@@ -4631,7 +4655,8 @@ it("lays the reader out like its board: hub tree, band, sections, next and phone
     await browserExpect(tree.locator('a[aria-current="page"]')).toHaveText(longTitle);
     await browserExpect(page.locator(".reader-band h1")).toHaveText(longTitle);
     await browserExpect(page.locator(".reader-stats")).toContainText(
-      /Updated .* · \d+ sections? · \d+ resources?/,
+      // A section count shows only when there are sections.
+      /Updated .* · (\d+ sections? · )?\d+ resources?/,
     );
     await browserExpect(page.locator(".made-with")).toContainText("Made with ntumie.");
     await browserExpect(page.getByRole("button", { name: /Search this hub/ })).toBeVisible();
@@ -4886,7 +4911,7 @@ it("edits a hubless person's username and profile without creating a hub", async
       ).toBeVisible();
       await settingsSection(page, "Hub");
       await browserExpect(
-        page.getByRole("link", { name: "Save your first link", exact: true }),
+        page.getByRole("link", { name: "Start a collection", exact: true }),
       ).toBeVisible();
       await settingsSection(page, "Profile");
       const username = `rowan-${crypto.randomUUID().replaceAll("-", "").slice(0, 14)}`;
@@ -4938,10 +4963,8 @@ it("edits a hubless person's username and profile without creating a hub", async
       await ready(page, `/${username}`);
       await page.getByLabel("What is it about?", { exact: true }).fill("Reading lists");
       await page.getByRole("button", { name: "Start a collection", exact: true }).click();
-      await browserExpect(page).toHaveURL(/\/capture\?title=Reading\+lists/);
-      await browserExpect(page.getByLabel("Name for the new collection")).toHaveValue(
-        "Reading lists",
-      );
+      await browserExpect(page).toHaveURL(/\/start\?title=Reading\+lists/);
+      await browserExpect(page.getByLabel("What is it about?")).toHaveValue("Reading lists");
       await page.screenshot({ path: `/tmp/optional-hub-entry-${js}.png`, fullPage: true });
       expect(await prisma.hub.count({ where: { ownerUserId: person.id } })).toBe(0);
       await ready(page, "/settings");
@@ -4995,7 +5018,68 @@ it("edits a hubless person's username and profile without creating a hub", async
   }
 }, 45000);
 
-it("finds only the title and validates links before sign-in, with a saveable lookup-failure fallback", async () => {
+it("starts a collection signed in, guides its first steps and adds a note where it is read", async () => {
+  await prisma.requestBudget.deleteMany();
+  const { page, close } = await freshPage();
+  try {
+    const email = `start-${crypto.randomUUID()}@example.com`;
+    await browserSignIn(page, email, "/hub");
+    await ready(page, "/start");
+    await browserExpect(page.locator(".start-steps")).toHaveCount(0);
+    await page.getByLabel("What is it about?").fill("Starting a kitchen garden");
+    await page.getByLabel("First link", { exact: true }).fill("https://fixture-links.dev/garden-1");
+    await page.getByRole("button", { name: "Create collection", exact: true }).click();
+    await browserExpect(page.locator("h1")).toHaveText("Starting a kitchen garden");
+    await browserExpect(page.locator(".toast")).toContainText("Collection created");
+    // The hub comes with the first collection.
+    const user = await prisma.user.findUniqueOrThrow({ where: { email }, include: { hub: true } });
+    if (!user.hub) throw new Error("Missing hub");
+    const collection = await prisma.collection.findFirstOrThrow({ where: { hubId: user.hub.id } });
+    expect(collection.published).toBe(true);
+    await browserExpect(page.locator(".live-panel")).toContainText("It is live at");
+    await browserExpect(page.locator(".reader-stats")).toContainText("1 resource · Published");
+    await browserExpect(page.locator(".reader-band .add-description")).toHaveAttribute(
+      "href",
+      `/c/${collection.id}/edit`,
+    );
+    await browserExpect(page.locator(".comments-empty")).toContainText(
+      "Once people read your collection",
+    );
+    const keep = page.locator(".keep-building");
+    await browserExpect(
+      keep.getByRole("link", { name: "Save a link", exact: true }),
+    ).toHaveAttribute("href", `/capture?collection=${collection.id}`);
+    await browserExpect(
+      keep.getByRole("link", { name: "Add a section", exact: true }),
+    ).toHaveAttribute("href", `/c/${collection.id}/sections`);
+    await page.screenshot({ path: "/tmp/start-landed.png", fullPage: true });
+    // Why the link is here, added where it is read.
+    await page.getByText("Add a note", { exact: true }).click();
+    await page.getByLabel("Note", { exact: true }).fill("Where to put the beds.");
+    await page.getByRole("button", { name: "Save note", exact: true }).click();
+    await browserExpect(page.locator(".toast")).toContainText("Note saved");
+    await browserExpect(page.locator(".item-note blockquote")).toHaveText("Where to put the beds.");
+    await browserExpect(page.getByText("Add a note", { exact: true })).toHaveCount(0);
+    // At three links the prompts give way to the collection.
+    for (const position of [1, 2])
+      await prisma.resource.create({
+        data: {
+          collectionId: collection.id,
+          kind: "external_link",
+          position,
+          url: `https://fixture-links.dev/garden-${position + 1}`,
+        },
+      });
+    await ready(page, `/c/${collection.id}`);
+    await browserExpect(page.locator(".reader-content .resource-row")).toHaveCount(3);
+    await browserExpect(page.locator(".live-panel")).toHaveCount(0);
+    await browserExpect(page.locator(".keep-building")).toHaveCount(0);
+  } finally {
+    await close();
+  }
+}, 45000);
+
+it("finds only the title and validates the first link before sign-in, with a lookup-failure fallback", async () => {
   const { page, close } = await freshPage();
   const setting = process.env.LINK_TITLES;
   const url = `https://fixture-links.dev/first-title-${crypto.randomUUID()}`;
@@ -5010,12 +5094,17 @@ it("finds only the title and validates links before sign-in, with a saveable loo
   });
   process.env.LINK_TITLES = "on";
   try {
-    await ready(page, "/capture");
+    // Signed out, saving a first link starts a collection.
+    await ready(page, "/capture?title=Notebooks");
+    await browserExpect(page).toHaveURL(`${origin}/start?title=Notebooks`);
+    await browserExpect(page.getByLabel("What is it about?")).toHaveValue("Notebooks");
     await browserExpect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
-    const input = page.getByLabel("Link URL", { exact: true });
+    const input = page.getByLabel("First link", { exact: true });
     await input.fill(url);
-    await browserExpect(page.locator(".capture-title")).toHaveText("Why WorkLog became a notebook");
-    await browserExpect(input).toHaveAttribute("data-state", "valid");
+    await browserExpect(page.locator(".link-preview b")).toHaveText(
+      "Why WorkLog became a notebook",
+    );
+    await browserExpect(page.locator(".link-preview")).toContainText("fixture-links.dev");
     await browserExpect(page.locator("main")).not.toContainText(
       "This belongs in collection details",
     );
@@ -5031,13 +5120,11 @@ it("finds only the title and validates links before sign-in, with a saveable loo
     );
     await page.route("**/api/v1/link-preview?**", (route) => route.abort());
     await input.fill("https://fixture-links.dev/unavailable-title");
-    await browserExpect(page.locator(".capture-note")).toContainText(
-      "The link will still be saved.",
-    );
-    await browserExpect(page.locator(".capture-title.pending")).toHaveCount(0);
+    // No title found: the site stands in, and the link can still be used.
+    await browserExpect(page.locator(".link-preview b")).toHaveText("fixture-links.dev");
     expect(await input.evaluate((element: HTMLInputElement) => element.checkValidity())).toBe(true);
-    await page.getByRole("button", { name: "Save link", exact: true }).click();
-    await browserExpect(page.getByLabel("Email address", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await browserExpect(page.getByLabel("Email", { exact: true })).toBeVisible();
   } finally {
     await close();
     if (setting === undefined) delete process.env.LINK_TITLES;
@@ -6606,13 +6693,13 @@ it("preserves private sharing destinations and resumes access, link and transfer
     const path = `/share?${new URLSearchParams({ kind: "collection", id, returnTo: `/c/${id}` })}`;
     const { page, close } = await freshPage(js);
     const verify = async () => {
-      await page.getByLabel("Email address").fill(email);
+      await page.getByLabel("Email", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-      await page.getByRole("button", { name: "Verify and continue" }).click();
+      await page.getByRole("button", { name: verifyCode }).click();
     };
     const expire = async () => {
       await prisma.requestBudget.deleteMany();
@@ -6640,7 +6727,7 @@ it("preserves private sharing destinations and resumes access, link and transfer
       await page.locator('select[name="role"]').selectOption("contributor");
       await expire();
       await page.getByRole("button", { name: "Grant access", exact: true }).click();
-      await browserExpect(page.locator(".verify-reason")).toContainText(
+      await browserExpect(page.locator(".auth-lead")).toContainText(
         "grant access to this collection",
       );
       await verify();
@@ -6691,7 +6778,7 @@ it("preserves private sharing destinations and resumes access, link and transfer
       await page.getByLabel("New owner's email").fill(receiverEmail);
       await expire();
       await page.getByRole("button", { name: "Yes, transfer ownership", exact: true }).click();
-      await browserExpect(page.locator(".verify-reason")).toContainText("transfer this collection");
+      await browserExpect(page.locator(".auth-lead")).toContainText("transfer this collection");
       await verify();
       await browserExpect(page).toHaveURL(`${origin}/manage/collections?notice=done`);
       const transferred = await prisma.collection.findUniqueOrThrow({
@@ -6744,12 +6831,12 @@ it("binds resumed collection commands to their account and rechecks current auth
         // A new sign-in immediately follows the fixture's consumed code. Keep
         // the real two-second resend guard, rather than submitting the old code.
         await page.waitForTimeout(2100);
-        await page.getByLabel("Email address").fill(verifyingEmail);
+        await page.getByLabel("Email", { exact: true }).fill(verifyingEmail);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: "Send code", exact: true }).click();
+        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.locator("h1")).toHaveText("Check your email");
         await page.getByLabel("Six-digit code").fill(await capturedCode(verifyingEmail));
-        await page.getByRole("button", { name: "Verify and continue" }).click();
+        await page.getByRole("button", { name: verifyCode }).click();
         await browserExpect(page).toHaveURL(/\/manage\/collections(?:\?|$)/);
         expect(await prisma.collection.count({ where: { id: collection.id } })).toBe(1);
         expect(
@@ -7219,14 +7306,14 @@ describe("reorder", () => {
           .locator(`#reorder-${current[1].id}`)
           .getByRole("button", { name: "Move up", exact: true })
           .click();
-        await browserExpect(page.locator(".verify-reason")).toContainText("move this item");
-        await page.getByLabel("Email address").fill(email);
+        await browserExpect(page.locator(".auth-lead")).toContainText("move this item");
+        await page.getByLabel("Email", { exact: true }).fill(email);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: "Send code", exact: true }).click();
+        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.locator("h1")).toHaveText("Check your email");
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-        await page.getByRole("button", { name: "Verify and continue" }).click();
+        await page.getByRole("button", { name: verifyCode }).click();
         await browserExpect(page.locator("h1")).toHaveText("Reorder items");
         expect((await rows())[0].id).toBe(current[1].id);
         // A stale form reports the conflict; it never silently reapplies the move.
@@ -7650,12 +7737,12 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
     // A valid device credential for this user cannot authenticate a different
     // selected email. No account methods or credential IDs are disclosed.
     const wrongEmail = `wrong-passkey-${crypto.randomUUID()}@example.com`;
-    await page.getByLabel("Email address").fill(wrongEmail);
+    await page.getByLabel("Email", { exact: true }).fill(wrongEmail);
     await page.getByRole("button", { name: "Continue with email", exact: true }).click();
     const wrongOptions = page.waitForResponse((response) =>
       response.url().endsWith("/passkey/generate-authenticate-options"),
     );
-    await page.getByRole("button", { name: "Sign in with a passkey", exact: true }).click();
+    await page.getByRole("button", { name: usePasskey }).click();
     expect((await (await wrongOptions).json()).allowCredentials ?? []).toEqual([]);
     await browserExpect(page.locator(".security-passkey [role=alert]")).toContainText(
       "couldn't verify",
@@ -7663,7 +7750,7 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
     expect(await prisma.user.findUnique({ where: { email: wrongEmail } })).toBeNull();
     expect((await page.request.get(`${publicApiOrigin}/api/v1/profile`)).status()).toBe(401);
     await ready(page, "/sign-in?returnTo=/settings/security");
-    await page.getByLabel("Email address").fill(email);
+    await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByRole("button", { name: "Continue with email", exact: true }).click();
     const mailsBeforePasskey = await prisma.emailOutbox.count();
     await cdp.send("WebAuthn.setResponseOverrideBits", { authenticatorId, isBadUV: true });
@@ -7684,7 +7771,7 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
         body: JSON.stringify({ ...(await response.json()), userVerification: "discouraged" }),
       });
     });
-    await page.getByRole("button", { name: "Sign in with a passkey", exact: true }).click();
+    await page.getByRole("button", { name: usePasskey }).click();
     await browserExpect(page.locator(".security-passkey [role=alert]")).toContainText(
       "couldn't verify",
     );
@@ -7707,7 +7794,7 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
       );
       await route.continue({ postData: JSON.stringify(payload) });
     });
-    await page.getByRole("button", { name: "Sign in with a passkey", exact: true }).click();
+    await page.getByRole("button", { name: usePasskey }).click();
     await browserExpect(page.locator(".security-passkey [role=alert]")).toContainText(
       "couldn't verify",
     );
@@ -7719,7 +7806,7 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
       (request) =>
         request.method() === "POST" && request.url().endsWith("/passkey/verify-authentication"),
     );
-    await page.getByRole("button", { name: "Sign in with a passkey", exact: true }).click();
+    await page.getByRole("button", { name: usePasskey }).click();
     const assertionCall = await assertionRequest;
     const assertion = assertionCall.postDataJSON();
     const assertionResponse = await assertionCall.response();
@@ -7760,7 +7847,7 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
       },
     ]);
     await ready(page, "/sign-in/google");
-    await page.getByRole("button", { name: "Sign in with a passkey", exact: true }).click();
+    await page.getByRole("button", { name: usePasskey }).click();
     await browserExpect(
       page.getByRole("heading", { name: "Account security", exact: true }),
     ).toBeVisible();
@@ -7775,14 +7862,14 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
     });
     await browserSignIn(page, email, "/settings/security");
     await browserExpect(
-      page.getByRole("heading", { name: "Confirm your sign-in", exact: true }),
+      page.getByRole("heading", { name: "Confirm it is you", exact: true }),
     ).toBeVisible();
     await securityScreens(page, "factor");
     const guarded = await page.request.get(`${publicApiOrigin}/api/v1/profile`);
     expect(guarded.status()).toBe(401);
     await page.getByRole("link", { name: "Use a recovery code", exact: true }).click();
     await page.getByLabel("Recovery code", { exact: true }).fill(recovery);
-    await page.getByRole("button", { name: "Verify and continue", exact: true }).click();
+    await page.getByRole("button", { name: verifyCode }).click();
     await browserExpect(
       page.getByRole("heading", { name: "Account security", exact: true }),
     ).toBeVisible();
@@ -7838,11 +7925,11 @@ it("sets up an authenticator and uses recovery without JavaScript", async () => 
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await browserSignIn(page, email, "/settings/security");
     await browserExpect(
-      page.getByRole("heading", { name: "Confirm your sign-in", exact: true }),
+      page.getByRole("heading", { name: "Confirm it is you", exact: true }),
     ).toBeVisible();
     await page.getByRole("link", { name: "Use a recovery code", exact: true }).click();
     await page.getByLabel("Recovery code", { exact: true }).fill(recovery);
-    await page.getByRole("button", { name: "Verify and continue", exact: true }).click();
+    await page.getByRole("button", { name: verifyCode }).click();
     await browserExpect(
       page.getByText("Your authenticator is enabled.", { exact: false }),
     ).toBeVisible();
@@ -7878,9 +7965,7 @@ it("starts Google sign-in through a native form", async () => {
     await browserExpect(
       page.getByRole("button", { name: "Continue with email", exact: true }),
     ).toBeVisible();
-    await browserExpect(
-      page.getByRole("button", { name: "Sign in with a passkey", exact: true }),
-    ).toHaveCount(0);
+    await browserExpect(page.getByRole("button", { name: usePasskey })).toHaveCount(0);
     await securityScreens(page, "signin");
     await page.getByRole("button", { name: "Continue with Google", exact: true }).click();
     await browserExpect(
@@ -7963,11 +8048,11 @@ for (const registration of [false, true]) {
       );
       await browserExpect(
         page.getByRole("heading", {
-          name: registration ? "Create your account" : "Verify your email",
+          name: registration ? "Create an account with Google?" : "Verify your email",
         }),
       ).toBeVisible();
       await browserExpect(
-        page.locator(registration ? ".verify-reason" : ".verify-detail"),
+        page.locator(registration ? ".identity-card" : ".verify-detail"),
       ).toContainText(email);
       expect(await googleCount()).toBe(0);
       if (registration) {
@@ -7976,19 +8061,19 @@ for (const registration of [false, true]) {
           page.getByRole("button", { name: "Create account", exact: true }),
         ).toBeVisible();
         await browserExpect(
-          page.getByText("There isn’t a ntumie. account for", {
+          page.getByText("There is no ntumie. account for this Google email yet.", {
             exact: false,
           }),
         ).toBeVisible();
       }
       await securityScreens(page, registration ? "google-create" : "google-connect");
       if (registration) {
-        await browserExpect(page.locator(".verify-footer")).toContainText("Use a different email");
+        await browserExpect(page.locator(".auth-foot")).toContainText("Back to sign in");
         await browserExpect(page.locator("main button")).toHaveCount(2);
       }
       await page
         .getByRole("button", {
-          name: registration ? "Use a different email" : "Cancel",
+          name: registration ? "Back to sign in" : "Cancel",
           exact: true,
         })
         .click();
@@ -8040,7 +8125,7 @@ for (const registration of [false, true]) {
         ).toBeVisible();
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-        await page.getByRole("button", { name: "Verify and continue", exact: true }).click();
+        await page.getByRole("button", { name: verifyCode }).click();
       }
       await browserExpect(page).toHaveURL(`${origin}/notifications`);
       expect(await googleCount()).toBe(1);
@@ -8078,7 +8163,7 @@ for (const registration of [false, true]) {
   }, 60000);
 }
 
-it("offers only cancel deletion after email proof during first-link capture", async () => {
+it("offers only cancel deletion after email proof while starting a collection", async () => {
   for (const js of [true, false]) {
     await prisma.requestBudget.deleteMany();
     const email = `recover-capture-${crypto.randomUUID()}@example.com`;
@@ -8104,20 +8189,17 @@ it("offers only cancel deletion after email proof during first-link capture", as
       await browserExpect(
         page.getByRole("button", { name: /Reactivate account|Cancel deletion/ }),
       ).toHaveCount(0);
-      await ready(page, "/capture");
-      await page.getByLabel("Link URL", { exact: true }).fill("https://fixture-links.dev/recovery");
-      await page.getByRole("button", { name: "Save link", exact: true }).click();
-      await browserExpect(page.getByLabel("Email address")).toBeVisible();
+      await startDraft(page, "https://fixture-links.dev/recovery");
       const destination = new URL(page.url()).searchParams.get("returnTo");
-      await page.getByLabel("Email address").fill(email);
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await page.getByLabel("Email", { exact: true }).fill(email);
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-      await page.getByRole("button", { name: "Verify and save", exact: true }).click();
+      await page.getByRole("button", { name: "Create collection", exact: true }).click();
       await browserExpect(page.locator("h1")).toHaveText("Cancel deletion");
       await browserExpect(page.locator("main")).toContainText("scheduled for deletion");
-      await browserExpect(page.locator("main")).toContainText("saving your link");
+      await browserExpect(page.locator("main")).toContainText("creating your collection");
       await browserExpect(
         page.getByRole("button", { name: "Reactivate account", exact: true }),
       ).toHaveCount(0);
@@ -8169,12 +8251,12 @@ it("prioritizes verified recovery over a different signed-in account", async () 
           page.getByRole("link", { name: "Deactivate account", exact: true }),
         ).toBeVisible();
         await ready(page, "/sign-in?returnTo=/notifications");
-        await page.getByLabel("Email address").fill(email);
+        await page.getByLabel("Email", { exact: true }).fill(email);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: "Send code", exact: true }).click();
+        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-        await page.getByRole("button", { name: "Verify and continue", exact: true }).click();
+        await page.getByRole("button", { name: verifyCode }).click();
         const label = deletion ? "Cancel deletion" : "Reactivate account";
         await browserExpect(page.locator("h1")).toHaveText(label);
         await browserExpect(page.locator("main")).toContainText(email);
@@ -8217,19 +8299,21 @@ it("preserves the sign-in destination when choosing a different email", async ()
       const destination = `/c/${sourceId}?item=${item.id}`;
       for (const returnTo of ["/settings?section=hub", destination]) {
         await ready(page, `/sign-in?returnTo=${encodeURIComponent(returnTo)}`);
-        await page.getByLabel("Email address").fill(`wrong-${crypto.randomUUID()}@example.com`);
+        await page
+          .getByLabel("Email", { exact: true })
+          .fill(`wrong-${crypto.randomUUID()}@example.com`);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
         await page.getByRole("link", { name: "Use a different email", exact: true }).click();
         await browserExpect(page).toHaveURL((url) => url.searchParams.get("returnTo") === returnTo);
       }
       const email = `right-${crypto.randomUUID()}@example.com`;
       await signInWithCode(app.getHttpServer(), { email });
-      await page.getByLabel("Email address").fill(email);
+      await page.getByLabel("Email", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-      await page.getByRole("button", { name: "Verify and continue" }).click();
+      await page.getByRole("button", { name: verifyCode }).click();
       await browserExpect(page).toHaveURL(`${origin}${destination}`);
     } finally {
       await close();
@@ -8237,9 +8321,10 @@ it("preserves the sign-in destination when choosing a different email", async ()
   }
 }, 30000);
 
-it("offers deliberate account creation and an optional named hub after email proof", async () => {
+it("offers deliberate account creation, an optional name and never a hub after email proof", async () => {
   for (const js of [true, false]) {
-    for (const withHub of [false, true]) {
+    // Signing up names the account; signing in to no account offers creation.
+    for (const signup of [false, true]) {
       await prisma.requestBudget.deleteMany();
       const { page, close } = await freshPage(js);
       try {
@@ -8247,41 +8332,45 @@ it("offers deliberate account creation and an optional named hub after email pro
         const destination = `/c/${sourceId}`;
         await ready(
           page,
-          `/${withHub ? "sign-up" : "sign-in"}?returnTo=${encodeURIComponent(destination)}`,
+          `/${signup ? "sign-up" : "sign-in"}?returnTo=${encodeURIComponent(destination)}`,
         );
         await browserExpect(
           page.getByRole("heading", {
-            name: withHub ? "Create your account" : "Sign in to ntumie.",
+            name: signup ? "Create your account" : "Sign in to ntumie.",
             exact: true,
           }),
         ).toBeVisible();
-        await page.getByLabel("Email address").fill(email);
+        await page.getByLabel("Email", { exact: true }).fill(email);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: "Send code", exact: true }).click();
+        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-        await page.getByRole("button", { name: "Verify and continue", exact: true }).click();
+        await page.getByRole("button", { name: verifyCode }).click();
         await browserExpect(page).toHaveURL(`${origin}/sign-up/confirm?method=email`);
-        await browserExpect(page.locator(".verify-reason")).toContainText(email);
+        await browserExpect(
+          page.getByRole("heading", {
+            name: signup ? "Create your account" : "No account for this email",
+            exact: true,
+          }),
+        ).toBeVisible();
+        await browserExpect(page.locator(signup ? ".identity-card" : ".auth-lead")).toContainText(
+          email,
+        );
         expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
-        await browserExpect(page.getByLabel("Start with a hub", { exact: true })).not.toBeChecked();
-        await browserExpect(page.getByLabel("Hub name", { exact: true })).not.toBeVisible();
-        if (withHub) {
-          await page.getByLabel("Start with a hub", { exact: true }).check();
-          await page.getByLabel("Hub name", { exact: true }).fill("Engineering toolkit");
+        await browserExpect(page.getByLabel("Hub name", { exact: true })).toHaveCount(0);
+        if (signup) {
+          await browserExpect(page.locator(".auth-foot")).toContainText("Your hub comes with it");
+          await page.getByLabel("Your name").fill("Amina Hassan");
         }
         await page.screenshot({
-          path: `/tmp/explicit-auth-create-${js}-${withHub}.png`,
+          path: `/tmp/explicit-auth-create-${js}-${signup}.png`,
           fullPage: true,
         });
         await page.getByRole("button", { name: "Create account", exact: true }).click();
         await browserExpect(page).toHaveURL(`${origin}${destination}`);
         const user = await prisma.user.findUniqueOrThrow({ where: { email } });
-        const hub = await prisma.hub.findUnique({ where: { ownerUserId: user.id } });
-        if (withHub) {
-          expect(hub?.name).toBe("Engineering toolkit");
-          expect(hub?.handle).toBe(user.username);
-        } else expect(hub).toBeNull();
+        if (signup) expect(user.name).toBe("Amina Hassan");
+        expect(await prisma.hub.findUnique({ where: { ownerUserId: user.id } })).toBeNull();
       } finally {
         await close();
       }
@@ -8305,7 +8394,7 @@ it("keeps centered authentication entries consistent across viewports and themes
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
           ).toBe(true);
-          const input = await page.getByLabel("Email address").boundingBox();
+          const input = await page.getByLabel("Email", { exact: true }).boundingBox();
           const email = await page
             .getByRole("button", { name: "Continue with email", exact: true })
             .boundingBox();
@@ -9061,13 +9150,13 @@ it("resumes submitted import corrections after sign-in with and without JavaScri
     const here = `/manage/import-export/${d.id}`;
     const { page, close } = await freshPage(javascript);
     const verify = async () => {
-      await page.getByLabel("Email address").fill(email);
+      await page.getByLabel("Email", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-      await page.getByRole("button", { name: "Verify and continue" }).click();
+      await page.getByRole("button", { name: verifyCode }).click();
     };
     try {
       await ready(page, `${here}/rows/${row.id}?status=failed`);
@@ -9212,13 +9301,13 @@ it("transfers same-title collections at stable IDs before and after sign-in", as
     });
     const { page, close } = await freshPage(javascript);
     const verify = async () => {
-      await page.getByLabel("Email address").fill(email);
+      await page.getByLabel("Email", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: "Send code", exact: true }).click();
+      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));
-      await page.getByRole("button", { name: "Verify and continue" }).click();
+      await page.getByRole("button", { name: verifyCode }).click();
     };
     try {
       await ready(page, "/sign-in?returnTo=/manage/collections");
@@ -9234,9 +9323,7 @@ it("transfers same-title collections at stable IDs before and after sign-in", as
       }
       await page.getByRole("button", { name: "Yes, transfer ownership", exact: true }).click();
       if (!javascript) {
-        await browserExpect(page.locator(".verify-reason")).toContainText(
-          "transfer this collection",
-        );
+        await browserExpect(page.locator(".auth-lead")).toContainText("transfer this collection");
         await verify();
       }
       await page.waitForURL(/\/manage\/collections\?notice=done/);
@@ -9677,7 +9764,12 @@ it("marks only signed-out, fully rendered public pages for the edge cache", asyn
       ];
     for (const path of ["/", "/about", "/discover", `/h/${hubId}`, `/c/${sourceId}`])
       expect(await policy(path)).toBe(edge);
-    for (const path of [`/c/${sourceId}?s=not-a-token`, `/h/${hubId}?view=public`, "/capture"])
+    for (const path of [
+      `/c/${sourceId}?s=not-a-token`,
+      `/h/${hubId}?view=public`,
+      "/capture",
+      "/start",
+    ])
       expect(await policy(path)).toContain("no-store");
     // A render whose primary read failed shows a 200 error notice: never shared.
     delayedDiscussion = {

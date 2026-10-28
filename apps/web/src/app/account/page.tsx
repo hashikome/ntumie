@@ -4,6 +4,7 @@ import { NativeForm } from "../../components/native-form";
 import { readAccountFlow, readFlow } from "../../lib/form-server";
 import { queryValue, safeReturn } from "../../lib/http";
 import { serverRead } from "../../lib/server-api";
+import { isDraftPath } from "../../lib/validation";
 
 export const metadata: Metadata = { title: "Account access and deletion" };
 export const dynamic = "force-dynamic";
@@ -53,7 +54,10 @@ export default async function Page({
     const signIn = await readFlow();
     const returnTo = safeReturn(signIn?.returnTo ?? "/hub");
     const signInHref = `/sign-in?returnTo=${encodeURIComponent(returnTo)}`;
-    const saving = returnTo.startsWith("/capture/");
+    const saving = isDraftPath(returnTo);
+    const waiting = returnTo.startsWith("/start/")
+      ? "creating your collection"
+      : "saving your link";
     return (
       <section className="reader account-flow verify">
         <h1>
@@ -70,8 +74,8 @@ export default async function Page({
           <>
             <p className="verify-reason">
               {recovery.data.action === "reactivate"
-                ? `Your account is deactivated. Reactivate it before ${saving ? "saving your link" : "signing in"}.`
-                : `Your account is scheduled for deletion. Cancel deletion to keep your account${saving ? " and return to saving your link" : ""}.`}
+                ? `Your account is deactivated. Reactivate it before ${saving ? waiting : "signing in"}.`
+                : `Your account is scheduled for deletion. Cancel deletion to keep your account${saving ? ` and return to ${waiting}` : ""}.`}
             </p>
             <p className="verify-detail">{recovery.data.email}</p>
             <p>

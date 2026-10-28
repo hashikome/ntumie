@@ -126,14 +126,12 @@ export function createAuth({
       user: {
         create: {
           after: async (user) => {
-            await completeSignup(prisma, user.id, security.registrationHubName);
+            await completeSignup(prisma, user.id);
           },
-          before: async (user) => ({
-            data: {
-              ...user,
-              ...(await prepareSignup(prisma, user.name, security.registrationHubName)),
-            },
-          }),
+          before: async (user) => {
+            const name = security.registrationName ?? user.name;
+            return { data: { ...user, name, ...(await prepareSignup(prisma, name)) } };
+          },
         },
       },
     },

@@ -17,7 +17,10 @@ export async function GoogleSignIn({
       <NativeForm action="/forms/google-start">
         <input type="hidden" name="returnTo" value={returnTo} />
         <input type="hidden" name="intent" value={intent} />
-        <button type="submit" className="button">
+        <button type="submit" className="button auth-google">
+          <span className="google-mark" aria-hidden="true">
+            G
+          </span>
           Continue with Google
         </button>
       </NativeForm>

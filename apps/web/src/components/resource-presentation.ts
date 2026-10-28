@@ -9,7 +9,13 @@ export type ResourcePresentation = Pick<
   Partial<
     Pick<
       Resource,
-      "createdAt" | "addedBy" | "siteName" | "linkedCollection" | "collectionHint" | "note"
+      | "createdAt"
+      | "addedBy"
+      | "siteName"
+      | "linkedCollection"
+      | "collectionHint"
+      | "note"
+      | "version"
     >
   > & {
     kind: Resource["kind"] | "site_link";

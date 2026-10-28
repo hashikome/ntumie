@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { safeReturn } from "./http";
+import { isDraftPath } from "./validation";
 import { type VerificationPurpose, verificationPurposes } from "./verification";
 
 export interface SignInFlow {
@@ -45,10 +46,7 @@ export function openSignInFlow(
       flow.issued > now ||
       (flow.retryAt !== undefined && !Number.isFinite(flow.retryAt)) ||
       (flow.purpose !== undefined && !verificationPurposes.includes(flow.purpose)) ||
-      now - flow.issued >
-        (!flow.invitationToken && /^\/capture\/[a-f0-9-]{36}$/.test(flow.returnTo)
-          ? 1800000
-          : 600000)
+      now - flow.issued > (!flow.invitationToken && isDraftPath(flow.returnTo) ? 1800000 : 600000)
     )
       return null;
     return { ...flow, returnTo: safeReturn(flow.returnTo) };

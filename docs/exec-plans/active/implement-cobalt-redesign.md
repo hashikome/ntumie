@@ -91,7 +91,14 @@ communities (opt-in), and private-collection allowances (monetization).
   saves, then latest update; owner decision 15 October 2026) in `PRODUCT.md`
   Discover requirements; the footer removal (supersedes ADR-0063's footer
   link); the API hub mark (DESIGN.md palette and an ADR); Discover, hub and
-  profile layouts (`web-product-experience.md`, PRODUCT.md §6.6).
+  profile layouts (`web-product-experience.md`, PRODUCT.md §6.6). From M5:
+  the registration contract (`email-registration/confirm` and
+  `google-connection/register` take an optional `name`, no longer `hubName`;
+  the Google preview returns `name`) in the auth design docs and ADR-0069's
+  follow-up; `/start` (and `/start/<id>` drafts) as the first-collection route
+  with `/capture` forwarding signed-out visitors; docs that still describe
+  "Start with a hub" at sign-up or "Save your first link"; the code screen's
+  "It works for five minutes" (the boards say 10; codes expire after 300 s).
 - [x] (2026-10-22) M4 Collection reader (desktop and phone), to the "Collection",
   "Discussion: comment states" and phone boards: full-width page with the hub
   tree sidebar (sections follow the reading position; Search this hub is a fake
@@ -107,7 +114,25 @@ communities (opt-in), and private-collection allowances (monetization).
   `total` / `answered` counts and `?answered=true`, collection section and
   resource counts. Fixed the copied-item reload that sometimes landed closed:
   `replaceState` now passes null state so Next.js keeps its router in sync.
-- [ ] M5 Start a collection, sign in and sign up.
+- [x] (2026-10-28) M5 Start a collection, sign in and sign up, to the "Start a
+  collection", "Landed in the new collection", "Sign in and create an account"
+  and phone journey boards. `/start` keeps the draft (name, first link with its
+  title preview, note, Published/Private radio cards) in the encrypted draft
+  cookie across the three steps, with the step bar and an editable summary;
+  signed in it creates straight away. The code screen has six boxes over one
+  real input, "Resend in m:ss" and the board's mismatch error. The new
+  collection lands with "Collection created", the live panel, "+ Add a
+  description", owner meta (published state, no "0 sections"), the owner's empty
+  discussion text, "Add a note" on the item, and "Keep building it" until three
+  links or a section. Auth screens use one 400 px column under the cobalt header
+  (520 px for Start). Sign-up asks for an optional name and never creates a hub;
+  the API rejects `hubName`. Deviations the owner has not yet ruled on: the
+  Private card omits "[N] private collections" (no data source); "five minutes"
+  instead of 10; sign-up keeps a "Confirm your email / Send code" step and the
+  passkey step shows for every address (it cannot know which have passkeys
+  without revealing accounts); the owner's item keeps Discuss beside "Add a
+  note" and the passkey step keeps "Use a different email" (the boards omit
+  both). `start` is now a reserved username and top-level path.
 - [ ] M6 Save a link dialog and the Edit workspace.
 - [ ] M7 Audit, browser acceptance, docs and release (push only here).
 

@@ -1,3 +1,4 @@
+import { maxNoteLength } from "@ntumie/types";
 import { Toast } from "./toast";
 
 const messages: Record<string, string> = {
@@ -29,6 +30,10 @@ const messages: Record<string, string> = {
   "order-saved": "Order saved.",
   "section-saved": "Section saved.",
   "link-saved": "Link saved.",
+  "collection-created": "Collection created",
+  "note-saved": "Note saved.",
+  "note-invalid": `Write a note of up to ${maxNoteLength} characters.`,
+  "note-conflict": "This link changed elsewhere. Reload it and add your note again.",
   "links-saved": "Links saved.",
   "link-not-public":
     "Use a public web address. Local, private and example addresses can't be opened by the people you share with.",
@@ -84,6 +89,8 @@ const toasts = new Set([
   "soon-communities",
   "soon-partners",
   "link-saved",
+  "collection-created",
+  "note-saved",
   "links-saved",
   "collection-saved",
   "profile-saved",

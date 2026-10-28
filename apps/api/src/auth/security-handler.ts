@@ -177,7 +177,11 @@ export async function securityHandler(
           const pending = await pendingGoogleConnection(tx, secret, connectionToken);
           return pending
             ? json({
-                data: { email: pending.proof.email, registration: pending.proof.userId === null },
+                data: {
+                  email: pending.proof.email,
+                  name: pending.proof.name ?? null,
+                  registration: pending.proof.userId === null,
+                },
               })
             : failed(404);
         }
@@ -203,17 +207,14 @@ export async function securityHandler(
           return response;
         }
         const security: SecurityContext = {};
+        // A new account may carry the name the person typed (optional). Hubs are
+        // never created at sign-up: one comes with the first collection (ADR-0069).
         if (
           ["/email-registration/confirm", "/google-connection/register"].includes(path) &&
-          body.hubName !== undefined
+          body.name !== undefined
         ) {
-          if (
-            typeof body.hubName !== "string" ||
-            !body.hubName.trim() ||
-            body.hubName.trim().length > 255
-          )
-            return failed();
-          security.registrationHubName = body.hubName.trim();
+          if (typeof body.name !== "string" || body.name.trim().length > 255) return failed();
+          if (body.name.trim()) security.registrationName = body.name.trim();
         }
         if (path.startsWith("/email-registration")) {
           const token = registrationToken(request.headers, baseURL);
@@ -229,7 +230,7 @@ export async function securityHandler(
           if (path === "/email-registration") return json({ data: { email: pending.email } });
           if (
             body.confirm !== true ||
-            Object.keys(body).some((key) => !["confirm", "hubName"].includes(key))
+            Object.keys(body).some((key) => !["confirm", "name"].includes(key))
           )
             return failed();
           security.emailRegistration = { email: pending.email };
@@ -239,7 +240,7 @@ export async function securityHandler(
           if (
             !google ||
             body.confirm !== true ||
-            Object.keys(body).some((key) => !["confirm", "hubName"].includes(key))
+            Object.keys(body).some((key) => !["confirm", "name"].includes(key))
           )
             return failed();
           const pending = await pendingGoogleConnection(tx, secret, connectionToken);
@@ -326,7 +327,7 @@ export async function securityHandler(
         const allowed = ["/google-connection/register", "/email-registration/confirm"].includes(
           path,
         )
-          ? ["confirm", "hubName"]
+          ? ["confirm", "name"]
           : path === "/passkey/generate-authenticate-options"
             ? ["continueSignIn", "email", "googleConnection"]
             : path.endsWith("/remove")

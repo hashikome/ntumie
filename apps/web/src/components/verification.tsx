@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { VerificationCopy, VerificationPurpose } from "../lib/verification";
+import { CodeInput } from "./code-input";
 import { FormNotice } from "./form-notice";
 import { NativeForm } from "./native-form";
 import { ResendCode } from "./resend-code";
@@ -49,7 +50,7 @@ export function VerifyStart({
           </p>
         ) : (
           <>
-            <label htmlFor="email">Email address</label>
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               name="email"
@@ -78,7 +79,7 @@ export function VerifyStart({
 }
 
 // Step 2: enter the code. Choosing to send it was the decision, so the way on
-// is the code, or a new one if it didn't arrive.
+// is the code, or a new one if it didn't arrive (board: "Check your email").
 export function VerifyCode({
   copy,
   email,
@@ -86,6 +87,8 @@ export function VerifyCode({
   wait,
   resendIn,
   footer,
+  before,
+  leadEnd,
 }: {
   copy: VerificationCopy;
   email: string;
@@ -93,35 +96,40 @@ export function VerifyCode({
   wait?: string;
   resendIn: number;
   footer?: ReactNode;
+  /** Shown above the title (Start a collection's steps and summary). */
+  before?: ReactNode;
+  /** Finishes "Enter the code we sent to …" ("to sign in"). */
+  leadEnd?: string;
 }) {
+  const mismatch = notice === "code-invalid";
   return (
-    <section className="reader account-flow verify">
+    <section className="auth-column verify">
+      {before}
       <h1>{copy.codeTitle}</h1>
-      <p className="verify-reason">
-        We sent a code to <strong>{email}</strong>. It expires in five minutes.
+      <p className="auth-lead">
+        Enter the code we sent to <strong>{email}</strong>
+        {leadEnd ? ` ${leadEnd}` : ""}. It works for five minutes.
       </p>
       {/* The page already says the code was sent; only problems need a notice. */}
-      <FormNotice code={notice === "sent" ? undefined : notice} wait={wait} />
-      <NativeForm action="/forms/code-verify">
-        <label htmlFor="code">Six-digit code</label>
-        <input
-          id="code"
-          name="code"
-          autoComplete="one-time-code"
-          inputMode="numeric"
-          pattern="[0-9\s\-]{6,16}"
-          maxLength={16}
-          required
-        />
-        <p className="verify-detail">{copy.after}</p>
-        <div className="verify-actions">
-          <button type="submit" className="button primary">
-            {copy.codeButton}
-          </button>
-        </div>
+      <FormNotice code={notice === "sent" || mismatch ? undefined : notice} wait={wait} />
+      <NativeForm action="/forms/code-verify" id="code-form" className="auth-form">
+        <label htmlFor="code" className="sr-only">
+          Six-digit code
+        </label>
+        <CodeInput invalid={mismatch} />
+        {mismatch && (
+          <p className="field-error" id="code-error" role="alert">
+            That code does not match. Check the newest email from ntumie., or send a new code.
+          </p>
+        )}
       </NativeForm>
-      <ResendCode remaining={resendIn} />
-      {footer && <div className="verify-footer">{footer}</div>}
+      <div className="code-row">
+        <ResendCode remaining={resendIn} />
+        {footer}
+      </div>
+      <button type="submit" form="code-form" className="button primary auth-submit">
+        {copy.codeButton}
+      </button>
     </section>
   );
 }

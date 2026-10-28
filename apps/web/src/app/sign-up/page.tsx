@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthEntry } from "../../components/auth-entry";
 import { queryValue, safeReturn } from "../../lib/http";
+import { isDraftPath } from "../../lib/validation";
 export const metadata: Metadata = { title: "Create your account" };
 export const dynamic = "force-dynamic";
 export default async function Page({
@@ -11,7 +12,6 @@ export default async function Page({
 }) {
   const query = await searchParams;
   const returnTo = safeReturn(queryValue(query.returnTo) ?? "/hub");
-  if (/^\/capture\/[a-f0-9-]{36}$/.test(returnTo))
-    redirect(`/sign-in?returnTo=${encodeURIComponent(returnTo)}`);
+  if (isDraftPath(returnTo)) redirect(`/sign-in?returnTo=${encodeURIComponent(returnTo)}`);
   return <AuthEntry intent="sign-up" returnTo={returnTo} notice={queryValue(query.notice)} />;
 }

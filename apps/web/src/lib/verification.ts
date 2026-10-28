@@ -76,7 +76,7 @@ export function verificationCopy(
           reason: `Sign in to ${goal}.`,
           after: "We'll email you a six-digit code. No password needed.",
           codeTitle: "Check your email",
-          codeButton: "Verify and continue",
+          codeButton: "Sign in",
         };
       return verificationCopy("sign-in");
     }
@@ -86,7 +86,7 @@ export function verificationCopy(
         reason: "Welcome back to your corner of the web.",
         after: "We'll email you a six-digit code. No password needed.",
         codeTitle: "Check your email",
-        codeButton: "Verify and continue",
+        codeButton: "Sign in",
       };
   }
 }

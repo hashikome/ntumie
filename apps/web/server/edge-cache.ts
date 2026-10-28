@@ -34,6 +34,7 @@ export const RESERVED_TOP_LEVEL = new Set([
   "share",
   "sign-in",
   "sign-up",
+  "start",
   "status",
   "support",
 ]);

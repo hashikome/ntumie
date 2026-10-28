@@ -12,10 +12,12 @@ export function ResourceSections({
   selectedItem,
   preview = false,
   discussBase,
+  noteCollection,
 }: {
   items: Resource[];
   /** The reader's address for "Discuss" on an item (opens the comment box with it). */
   discussBase?: string;
+  noteCollection?: string;
   preview?: boolean;
   section?: Resource;
   selectedItem?: Resource;
@@ -50,6 +52,7 @@ export function ResourceSections({
                 itemBase={itemBase}
                 preview={preview}
                 discussBase={discussBase}
+                noteCollection={noteCollection}
                 expanded={selectedId === selectedItem.id}
                 onExpandedChange={(open) => select(selectedItem.id, open)}
               />
@@ -83,6 +86,7 @@ export function ResourceSections({
                           itemBase={itemBase}
                           preview={preview}
                           discussBase={discussBase}
+                          noteCollection={noteCollection}
                           expanded={item.id === selectedId}
                           onExpandedChange={(open) => select(item.id, open)}
                         />
@@ -106,6 +110,7 @@ export function ResourceSections({
                   itemBase={itemBase}
                   preview={preview}
                   discussBase={discussBase}
+                  noteCollection={noteCollection}
                   expanded={item.id === selectedId}
                   onExpandedChange={(open) => select(item.id, open)}
                 />

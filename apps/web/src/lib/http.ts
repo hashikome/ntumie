@@ -2,7 +2,7 @@ import { browserApiOrigin } from "@ntumie/config/web-browser";
 import type { ApiWarning, CursorMeta } from "@ntumie/types";
 import { isApiErrorCode, SHARE_ATTRIBUTION_KEYS } from "@ntumie/types";
 
-import { isUuid } from "./validation";
+import { isDraftPath, isUuid } from "./validation";
 
 export type ApiPath = `/api/v1/${string}`;
 export type Failure = { ok: false; code: string; status: number; retryAfter: number };
@@ -316,7 +316,7 @@ export function safeReturn(value: unknown): string {
     if (back) query.set("returnTo", safeDocumentReturn(back));
     return `/share?${query}`;
   }
-  if (/^\/capture\/[a-f0-9-]{36}$/.test(parsed.pathname)) return parsed.pathname;
+  if (isDraftPath(parsed.pathname)) return parsed.pathname;
   if (parsed.pathname === "/settings") {
     const section = parsed.searchParams.get("section");
     return section === "hub" || section === "notifications" || section === "device"

@@ -10,6 +10,7 @@ export const reservedUsernames = new Set([
   "platform",
   "manage",
   "capture",
+  "start",
   "sign-in",
   "sign-up",
   "sign-out",

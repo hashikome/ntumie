@@ -64,8 +64,8 @@ async function pending() {
   return { ...proof, cookie: cookies(response) };
 }
 afterAll(() => prisma.$disconnect());
-it("requires explicit consent after verified absence; creates one account and optional hub atomically", async () => {
-  for (const withHub of [false, true]) {
+it("requires explicit consent after verified absence; creates one account, never a hub", async () => {
+  for (const withName of [false, true]) {
     const proof = await pending();
     const preview = await call("/email-registration", undefined, proof.cookie);
     expect((await preview.json()).data.email).toBe(proof.email);
@@ -73,13 +73,23 @@ it("requires explicit consent after verified absence; creates one account and op
     expect(
       (await call("/email-registration/confirm", { confirm: false }, proof.cookie)).status,
     ).toBe(400);
+    // Hubs come with the first collection (ADR-0069), never at sign-up.
     expect(
-      (await call("/email-registration/confirm", { confirm: true, hubName: " " }, proof.cookie))
+      (await call("/email-registration/confirm", { confirm: true, hubName: "A hub" }, proof.cookie))
         .status,
+    ).toBe(400);
+    expect(
+      (
+        await call(
+          "/email-registration/confirm",
+          { confirm: true, name: "x".repeat(256) },
+          proof.cookie,
+        )
+      ).status,
     ).toBe(400);
     const response = await call(
       "/email-registration/confirm",
-      { confirm: true, ...(withHub ? { hubName: "Engineering toolkit" } : {}) },
+      { confirm: true, ...(withName ? { name: "  Amina Hassan  " } : {}) },
       proof.cookie,
     );
     expect(response.status).toBe(200);
@@ -93,14 +103,8 @@ it("requires explicit consent after verified absence; creates one account and op
     const session = await prisma.session.findFirstOrThrow({ where: { userId: user.id } });
     expect(session.authenticationMethod).toBe("email");
     expect(session.verifiedAt).toEqual(stored.lastLoginAt);
-    const hub = await prisma.hub.findUnique({ where: { ownerUserId: user.id } });
-    if (withHub) {
-      expect(hub?.name).toBe("Engineering toolkit");
-      expect(hub?.handle).toBe(stored.username);
-      expect(
-        await prisma.hubHandleReservation.findUnique({ where: { handle: stored.username } }),
-      ).not.toBeNull();
-    } else expect(hub).toBeNull();
+    if (withName) expect(stored.name).toBe("Amina Hassan");
+    expect(await prisma.hub.findUnique({ where: { ownerUserId: user.id } })).toBeNull();
     expect(
       (await call("/email-registration/confirm", { confirm: true }, proof.cookie)).status,
     ).toBe(404);
@@ -179,19 +183,12 @@ it("commit failures roll back OTP consumption, creation consent, account and hub
   expect(response.status).toBe(200);
   const cookie = cookies(response);
   expect(
-    (
-      await call(
-        "/email-registration/confirm",
-        { confirm: true, hubName: "My hub" },
-        cookie,
-        broken,
-      )
-    ).status,
+    (await call("/email-registration/confirm", { confirm: true, name: "My name" }, cookie, broken))
+      .status,
   ).toBe(503);
   expect(await prisma.user.findUnique({ where: { email: proof.email } })).toBeNull();
   expect(
-    (await call("/email-registration/confirm", { confirm: true, hubName: "My hub" }, cookie))
-      .status,
+    (await call("/email-registration/confirm", { confirm: true, name: "My name" }, cookie)).status,
   ).toBe(200);
 });
 
@@ -211,7 +208,7 @@ it("cannot commit email registration without its authentication audit event", as
   try {
     const failed = await call(
       "/email-registration/confirm",
-      { confirm: true, hubName: "Atomic signup" },
+      { confirm: true, name: "Atomic signup" },
       proof.cookie,
     );
     expect(failed.status).toBe(503);
@@ -229,16 +226,17 @@ it("cannot commit email registration without its authentication audit event", as
   }
   const retry = await call(
     "/email-registration/confirm",
-    { confirm: true, hubName: "Atomic signup" },
+    { confirm: true, name: "Atomic signup" },
     proof.cookie,
   );
   expect(retry.status).toBe(200);
   const user = (await retry.json()).user;
   await expectSignIns(prisma, user.id, ["email"]);
-  expect(await prisma.hub.count({ where: { ownerUserId: user.id } })).toBe(1);
+  expect(user.name).toBe("Atomic signup");
+  expect(await prisma.hub.count({ where: { ownerUserId: user.id } })).toBe(0);
 });
 
-it("allocates a matching username and hub handle without reusing a retired identity", async () => {
+it("allocates a username that never reuses a retired hub handle", async () => {
   const owner = await prisma.user.create({
     data: {
       email: `retired-${randomUUID()}@example.com`,
@@ -263,7 +261,7 @@ it("allocates a matching username and hub handle without reusing a retired ident
   });
   const response = await call(
     "/google-connection/register",
-    { confirm: true, hubName: "New purpose" },
+    { confirm: true },
     `${googleConnectionCookie(config.baseURL)}=${token}`,
     google,
   );
@@ -271,21 +269,19 @@ it("allocates a matching username and hub handle without reusing a retired ident
   const user = (await response.json()).user;
   expect(user.username).toBe(`${stem}-2`);
   await expectSignIns(prisma, user.id, ["google"]);
-  const created = await prisma.hub.findUniqueOrThrow({ where: { ownerUserId: user.id } });
-  expect(created.handle).toBe(user.username);
-  expect(created.name).toBe("New purpose");
+  expect(await prisma.hub.findUnique({ where: { ownerUserId: user.id } })).toBeNull();
 });
 
 it("consumes creation consent once across simultaneous confirmations", async () => {
   const proof = await pending();
   const replies = await Promise.all(
     [1, 2].map(() =>
-      call("/email-registration/confirm", { confirm: true, hubName: "One hub" }, proof.cookie),
+      call("/email-registration/confirm", { confirm: true, name: "One name" }, proof.cookie),
     ),
   );
   expect(replies.map((reply) => reply.status).sort()).toEqual([200, 404]);
   const user = await prisma.user.findUniqueOrThrow({ where: { email: proof.email } });
-  expect(await prisma.hub.count({ where: { ownerUserId: user.id } })).toBe(1);
+  expect(await prisma.hub.count({ where: { ownerUserId: user.id } })).toBe(0);
   expect(await prisma.session.count({ where: { userId: user.id } })).toBe(1);
   await expectSignIns(prisma, user.id, ["email"]);
 });

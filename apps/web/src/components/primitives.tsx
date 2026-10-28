@@ -67,6 +67,7 @@ export function ResourceRow({
   onExpandedChange,
   preview = false,
   discussBase,
+  noteCollection,
 }: {
   item: ResourcePresentation;
   itemBase?: string | null;
@@ -74,6 +75,8 @@ export function ResourceRow({
   preview?: boolean;
   onExpandedChange?: (open: boolean) => void;
   discussBase?: string;
+  /** Set for people who can edit: the item offers "Add a note". */
+  noteCollection?: string;
 }) {
   const ResourceTitle = preview ? "h4" : "h3";
   // The demo links back to its own selectable example, never a fictional record.
@@ -153,6 +156,7 @@ export function ResourceRow({
           preview={preview}
           item={item}
           discussHref={discussHref(discussBase, item.id)}
+          noteCollection={noteCollection}
           permalink={
             itemBase === null
               ? undefined

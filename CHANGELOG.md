@@ -9,6 +9,19 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Replace "Save your first link" with Start a collection (`/start`): name the
+  idea, add the first link (its title appears as you type) with an optional
+  note, choose Published or Private, then confirm your email; nothing is
+  created until the code is confirmed, and the waiting collection stays visible
+  and editable on every step. Signed in, it creates the collection straight
+  away. The new collection opens with "Collection created", its address and a
+  Copy link, "+ Add a description", "Add a note" on the link and "Keep building
+  it" until it has three links or a section. Sign in, code, passkey, second
+  step, create account, no-account and Google screens follow the boards under
+  the cobalt header, with six code boxes. Creating an account asks for an
+  optional name and no longer offers a hub (it comes with the first
+  collection); the registration API takes `name` instead of `hubName`.
+
 - Redesign the collection reader to its board: full-width page with the hub's
   collections and sections in a sidebar (a menu on phones), a cobalt band with
   the hub, tags, contributors, counts, Share and Edit, sections that read

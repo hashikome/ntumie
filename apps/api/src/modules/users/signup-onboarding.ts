@@ -1,26 +1,22 @@
 import type { Prisma } from "../../generated/prisma/client";
-import { ensurePersonalHub } from "../hubs/hub-onboarding";
 import { accountUsername } from "./account-onboarding";
 
 // App-owned identity/onboarding policy, shared by every credential provider.
 // Call both phases inside the account-creation transaction after consent/proof.
-export async function prepareSignup(tx: Prisma.TransactionClient, name: string, hubName?: string) {
+// No hub is created here: a hub comes with the first collection (ADR-0069).
+export async function prepareSignup(tx: Prisma.TransactionClient, name: string) {
+  // Skip retired hub handles, so the hub that comes with the first collection
+  // can take the same handle as the username.
   return {
     username: await accountUsername(
       tx,
       name,
-      hubName
-        ? async (candidate) =>
-            !(await tx.hubHandleReservation.findUnique({ where: { handle: candidate } }))
-        : undefined,
+      async (candidate) =>
+        !(await tx.hubHandleReservation.findUnique({ where: { handle: candidate } })),
     ),
   };
 }
 
-export async function completeSignup(
-  tx: Prisma.TransactionClient,
-  userId: string,
-  hubName?: string,
-) {
-  if (hubName) await ensurePersonalHub(tx, userId, hubName);
-}
+// The after-creation phase. Nothing app-owned is needed yet; it stays so every
+// provider keeps one place to add onboarding steps.
+export async function completeSignup(_tx: Prisma.TransactionClient, _userId: string) {}

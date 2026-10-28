@@ -43,8 +43,7 @@ export default async function Page({
               share one guide people can follow.
             </p>
             <div className="brand-actions">
-              {/* The first-link flow becomes Start a collection in the cobalt redesign (M5). */}
-              <a className="button band-solid" href="/capture">
+              <a className="button band-solid" href="/start">
                 Start a collection
               </a>
               <a

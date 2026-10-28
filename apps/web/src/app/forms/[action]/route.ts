@@ -10,6 +10,7 @@ import type {
   SendSignInCodeRequest,
   UpdateCommentRequest,
   UpdateProfileRequest,
+  UpdateResourceRequest,
   VerifySignInCodeRequest,
 } from "@ntumie/types";
 import {
@@ -18,6 +19,7 @@ import {
   interestFeatures,
   isPublicLinkHost,
   maxCaptureLinks,
+  maxNoteLength,
   operationActions,
   operationReasons,
   signInCodePurposes,
@@ -59,7 +61,7 @@ import { readOwnProfile, readSession } from "../../../lib/session";
 import { resendTiming } from "../../../lib/sign-in-flow";
 import { appearanceCookie } from "../../../lib/theme";
 import { dayBoundary } from "../../../lib/time";
-import { captureUrl, isUuid, parseTags } from "../../../lib/validation";
+import { captureUrl, isDraftPath, isUuid, parseTags } from "../../../lib/validation";
 import type { VerificationPurpose } from "../../../lib/verification";
 
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
@@ -199,6 +201,81 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
       if (form.get("notice") === "1") target.searchParams.set("notice", `soon-${feature}`);
     }
     return redirectResponse(target.pathname + target.search);
+  }
+  // "Add a note" on a link, from where it is read.
+  if (action === "item-note") {
+    const collectionId = form.get("collectionId") ?? "";
+    const itemId = form.get("itemId") ?? "";
+    const version = Number(form.get("version"));
+    if (!isUuid(collectionId) || !isUuid(itemId) || !Number.isInteger(version))
+      return redirectResponse("/hub?notice=invalid");
+    const back = (notice: string) =>
+      redirectResponse(`/c/${collectionId}?${new URLSearchParams({ item: itemId, notice })}`);
+    const note = (form.get("note") ?? "").trim();
+    if (!note || note.length > maxNoteLength) return back("note-invalid");
+    const result = await formPost(
+      request,
+      `/api/v1/collections/${collectionId}/resources/${itemId}`,
+      { note, version } satisfies UpdateResourceRequest,
+      false,
+      "PATCH",
+    );
+    if (result.status === 401)
+      return redirectResponse(`/sign-in?returnTo=${encodeURIComponent(`/c/${collectionId}`)}`);
+    return back(
+      result.ok
+        ? "note-saved"
+        : result.code === "version_conflict"
+          ? "note-conflict"
+          : "unavailable",
+    );
+  }
+  // Start a collection: a name, one first link (with an optional note) and who
+  // can see it. Signed in, it is created straight away; otherwise the draft
+  // waits at /start/<id> while the person confirms their email.
+  if (action === "start-collection") {
+    const id = form.get("draftId") ?? "";
+    if (!isUuid(id)) return redirectResponse("/start?notice=invalid");
+    const previous = await readDraft(id);
+    const back = (notice: string) =>
+      redirectResponse(`${previous ? `/start/${id}` : "/start"}?notice=${notice}`);
+    const url = captureUrl((form.get("url") ?? "").trim());
+    if (!url) return back("link-invalid");
+    if (
+      !collectionAddress(url, webServerConfig().publicOrigin) &&
+      !isPublicLinkHost(new URL(url).hostname)
+    )
+      return back("link-not-public");
+    const note = (form.get("note") ?? "").trim().slice(0, maxNoteLength);
+    const collectionTitle = form.get("collectionTitle")?.trim().slice(0, 255) || undefined;
+    const published = form.get("published") !== "false";
+    const links: CaptureLink[] = [{ url, ...(note ? { note } : {}) }];
+    const same =
+      previous &&
+      JSON.stringify([previous.links, previous.collectionTitle, previous.published ?? true]) ===
+        JSON.stringify([links, collectionTitle, published]);
+    const draft: CaptureDraft = {
+      id,
+      links,
+      destination: "new",
+      ...(collectionTitle ? { collectionTitle } : {}),
+      published,
+      start: true,
+      issued: previous?.issued ?? Date.now(),
+      operationId: same ? previous.operationId : previous ? randomUUID() : id,
+    };
+    try {
+      draftCookie(draft);
+    } catch {
+      return back("link-invalid");
+    }
+    const room = previous ? [] : await draftRoom();
+    if (!sessionCookie(request.headers.get("cookie") ?? ""))
+      return redirectResponse(`/sign-in?returnTo=${encodeURIComponent(`/start/${id}`)}`, [
+        ...room,
+        draftCookie(draft),
+      ]);
+    return saveDraft(request, draft, room);
   }
   if (action === "capture-save") {
     const id = form.get("draftId") ?? "";
@@ -581,7 +658,7 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
       previous?.purpose ??
       (previous?.invitationToken
         ? "invitation"
-        : /^\/capture\/[a-f0-9-]{36}$/.test(returnTo)
+        : isDraftPath(returnTo)
           ? "first-link"
           : (await readPendingAction())?.target === returnTo
             ? "resume"
@@ -613,7 +690,7 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
     return redirectResponse(
       `/sign-in/code?notice=${result.ok ? (previous ? "resent" : "sent") : result.status === 429 ? "limited" : "unavailable"}${!result.ok && result.retryAfter ? `&wait=${Math.min(result.retryAfter, 600)}` : ""}`,
       [
-        flowCookie(sealFlow(flow), returnTo.startsWith("/capture/") ? 1800 : 600),
+        flowCookie(sealFlow(flow), isDraftPath(returnTo) ? 1800 : 600),
         ...(result.setCookies ?? []),
       ],
     );
@@ -623,7 +700,7 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
     if (!flow) return redirectResponse("/sign-in?notice=expired");
     // Pasted codes often carry spaces or dashes ("336 865"); only digits count.
     const code = (form.get("code") ?? "").replace(/[\s-]/g, "");
-    if (!/^\d{6}$/.test(code)) return redirectResponse("/sign-in/code?notice=invalid");
+    if (!/^\d{6}$/.test(code)) return redirectResponse("/sign-in/code?notice=code-invalid");
     const result = await formPost(
       request,
       flow.invitationToken ? "/api/v1/auth/invitations/verify" : "/api/v1/auth/code/verify",
@@ -638,7 +715,7 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
     );
     if (!result.ok)
       return redirectResponse(
-        `/sign-in/code?notice=${result.status === 429 ? "limited" : result.status >= 500 || !result.status ? "unavailable" : "invalid"}${result.retryAfter ? `&wait=${Math.min(result.retryAfter, 600)}` : ""}`,
+        `/sign-in/code?notice=${result.status === 429 ? "limited" : result.status >= 500 || !result.status ? "unavailable" : "code-invalid"}${result.retryAfter ? `&wait=${Math.min(result.retryAfter, 600)}` : ""}`,
       );
     if ((result.data as { registrationRequired?: boolean })?.registrationRequired)
       return redirectResponse("/sign-up/confirm?method=email", result.setCookies ?? []);

@@ -75,7 +75,9 @@ export async function securityForm(
         : "/api/v1/auth/email-registration/confirm",
       {
         confirm: form.get("confirm") === "yes",
-        ...(form.get("startHub") === "yes" ? { hubName: (form.get("hubName") ?? "").trim() } : {}),
+        ...(form.get("name")?.trim()
+          ? { name: (form.get("name") ?? "").trim().slice(0, 255) }
+          : {}),
       },
       true,
     );

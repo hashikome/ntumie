@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { NativeForm } from "./native-form";
 
-// A new code is available once the server's resend gap has passed. The server
-// renders the remaining wait; the countdown keeps it current. Without
-// JavaScript, reloading after the wait enables the button.
+// A new code is available once the server's resend gap has passed: "Resend in
+// 0:42", then "Send a new code". The server renders the remaining wait; the
+// countdown keeps it current. Without JavaScript, reloading after the wait
+// enables the button.
 export function ResendCode({ remaining }: { remaining: number }) {
   const [left, setLeft] = useState(remaining);
   useEffect(() => {
@@ -18,19 +19,18 @@ export function ResendCode({ remaining }: { remaining: number }) {
     }, 250);
     return () => window.clearInterval(timer);
   }, [remaining]);
+  const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
   return (
-    <NativeForm action="/forms/code-resend">
-      <p className="resend-row">
-        Didn't receive the code?{" "}
-        <button type="submit" className="text-button" disabled={left > 0}>
-          Send a new code
-        </button>
-      </p>
-      {left > 0 && (
-        <p className="field-help" aria-live="off">
-          You can request another code in {left}s.
-        </p>
-      )}
+    <NativeForm action="/forms/code-resend" className="resend-form">
+      <button type="submit" className="text-button" disabled={left > 0}>
+        {left > 0 ? (
+          <>
+            Resend in <span aria-live="off">{clock}</span>
+          </>
+        ) : (
+          "Send a new code"
+        )}
+      </button>
     </NativeForm>
   );
 }

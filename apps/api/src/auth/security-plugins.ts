@@ -21,7 +21,7 @@ export interface SecurityContext {
   /** Credential enrollment can rotate a session without completing a new login. */
   sessionMaintenance?: boolean;
   emailRegistration?: { email: string };
-  registrationHubName?: string;
+  registrationName?: string;
   invitationToken?: string;
   googleLinkEmail?: string;
   googleIdentity?: GoogleIdentity;

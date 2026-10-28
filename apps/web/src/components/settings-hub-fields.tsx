@@ -13,7 +13,7 @@ export default function SettingsHubFields() {
         <p className="field-help">
           Your hub is created when you save your first link or create a collection. You can read and
           contribute without one. <a href="/hub">Create your hub</a> or{" "}
-          <a href="/capture">Save your first link</a>.
+          <a href="/start">Start a collection</a>.
         </p>
       ) : (
         <>

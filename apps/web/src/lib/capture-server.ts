@@ -2,7 +2,7 @@ import "server-only";
 import { webServerConfig } from "@ntumie/config/web-server";
 import type { CaptureRequest, CaptureResult } from "@ntumie/types";
 import { cookies } from "next/headers";
-import { type CaptureDraft, draftTtl, fitDraft, openDraft } from "./capture-draft";
+import { type CaptureDraft, draftPath, draftTtl, fitDraft, openDraft } from "./capture-draft";
 import { serverCookie } from "./cookies";
 import { formPost, redirectResponse } from "./form-server";
 import { isUuid } from "./validation";
@@ -44,10 +44,16 @@ export async function saveDraft(
   const result = await formPost<CaptureResult>(request, "/api/v1/capture", body);
   if (result.ok)
     return redirectResponse(
-      `/c/${result.data.collectionId}?notice=${result.data.resourceIds.length > 1 ? "links-saved" : "link-saved"}`,
+      // A started collection lands with its first link open and says so.
+      draft.start
+        ? `/c/${result.data.collectionId}?${new URLSearchParams({
+            ...(result.data.resourceIds[0] ? { item: result.data.resourceIds[0] } : {}),
+            notice: "collection-created",
+          })}`
+        : `/c/${result.data.collectionId}?notice=${result.data.resourceIds.length > 1 ? "links-saved" : "link-saved"}`,
       [...extraCookies, draftCookie(draft, true)],
     );
-  const path = `/capture/${draft.id}`;
+  const path = draftPath(draft);
   if (result.status === 401)
     return redirectResponse(`/sign-in?returnTo=${encodeURIComponent(path)}&notice=signin`, [
       ...extraCookies,

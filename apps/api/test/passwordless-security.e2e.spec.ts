@@ -418,7 +418,11 @@ it("Google requires explicit creation consent, links authoritative email, and ga
         headers: { cookie: registrationCookie },
       }),
     );
-    expect((await registration.json()).data).toEqual({ email: unknown, registration: true });
+    expect((await registration.json()).data).toEqual({
+      email: unknown,
+      name: "Google fixture",
+      registration: true,
+    });
     expect(
       await instance.api.getSession({ headers: new Headers({ cookie: registrationCookie }) }),
     ).toBeNull();
@@ -486,7 +490,7 @@ it("Google requires explicit creation consent, links authoritative email, and ga
     expect(await prisma.user.findUnique({ where: { email: unknown } })).toBeNull();
     const registered = await call(
       "/google-connection/register",
-      { confirm: true, hubName: "My Google hub" },
+      { confirm: true },
       registrationCookie,
       instance,
     );
@@ -496,9 +500,8 @@ it("Google requires explicit creation consent, links authoritative email, and ga
     expect(newUser.emailVerified).toBe(true);
     expect(newUser.name).toBe("Google fixture");
     expect(newUser.username).toBeTruthy();
-    const signupHub = await prisma.hub.findUniqueOrThrow({ where: { ownerUserId: newUser.id } });
-    expect(signupHub.name).toBe("My Google hub");
-    expect(signupHub.handle).toBe(newUser.username);
+    // No hub at sign-up: one comes with the first collection (ADR-0069).
+    expect(await prisma.hub.findUnique({ where: { ownerUserId: newUser.id } })).toBeNull();
     expect(
       await prisma.emailOutbox.count({
         where: { recipientKey: emailKey(suppressionSecret, "recipient", unknown) },
@@ -630,7 +633,9 @@ it("Google requires explicit creation consent, links authoritative email, and ga
         headers: { cookie: connectionCookie },
       }),
     );
-    expect(await preview.json()).toEqual({ data: { email: external, registration: false } });
+    expect(await preview.json()).toEqual({
+      data: { email: external, name: "External Google fixture", registration: false },
+    });
     const wrongEmail = `wrong-${randomUUID()}@example.com`;
     expect(
       (

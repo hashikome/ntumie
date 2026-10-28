@@ -39,3 +39,13 @@ export const parseTags = (value: string | null | undefined) =>
   splitTags(value)
     .map((tag) => tag.slice(0, maxTagLength))
     .slice(0, maxTags);
+
+// A waiting draft's address: Start a collection (/start/<id>) or a saved
+// link (/capture/<id>). Signing in returns here and the draft is saved.
+const draftAddress = /^\/(start|capture)\/([a-f0-9-]{36})$/;
+export function draftId(path: string): string | undefined {
+  return draftAddress.exec(path)?.[2];
+}
+export function isDraftPath(path: string): boolean {
+  return draftAddress.test(path);
+}

@@ -29,7 +29,7 @@ export function StartCollectionPrompt({ hubAddress }: { hubAddress?: string }) {
           Publish it when it is ready to share
         </li>
       </ul>
-      <form action="/capture" method="get">
+      <form action="/start" method="get">
         <label htmlFor="start-title">What is it about?</label>
         <input
           id="start-title"
