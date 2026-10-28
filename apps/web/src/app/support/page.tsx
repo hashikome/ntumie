@@ -41,9 +41,9 @@ export default function Page() {
       <h2 id="passkeys">How do I use a passkey?</h2>
       <p>
         Sign in, open Settings → Security and choose Add a passkey. Your device will ask for a
-        fingerprint, face scan or PIN. Give the passkey a name you recognize. Next time, continue
-        with your email, then choose Sign in with a passkey. You won't need an email or
-        authenticator code. A passkey can also finish Google sign-in.
+        fingerprint, face scan or PIN. Give the passkey a name you recognize. Next time, on Sign in,
+        choose your passkey from the email field's suggestions, or choose Sign in with a passkey.
+        You won't need an email or authenticator code. A passkey can also finish Google sign-in.
       </p>
       <p>
         Keep another passkey or your recovery codes somewhere you can reach if you lose your device.

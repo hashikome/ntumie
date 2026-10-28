@@ -9,6 +9,12 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Offer passkeys on the first sign-in screen, the way most products do: saved
+  passkeys appear in the email field's suggestions, with a "Sign in with a
+  passkey" button for devices without them. Continue with email now goes
+  straight to "Check your email"; the passkey step after the email (shown for
+  every address) is gone, and nothing reveals which emails have accounts.
+
 - Free accounts keep 3 private collections. The limit is enforced by the API on
   every way a collection becomes private (create, Start, Save a link, making it
   private, transfer, private imports), never by auto-publishing or deleting;

@@ -2147,9 +2147,9 @@ async function browserSignIn(page: Page, email: string, returnTo = "/manage") {
     `/${creating ? "sign-up" : "sign-in"}?returnTo=${encodeURIComponent(returnTo)}`,
   );
   await page.getByLabel("Email", { exact: true }).fill(email);
+  // Continue with email sends the code straight away (no passkey step).
+  const sent = page.waitForResponse((response) => response.url().endsWith("/forms/email-start"));
   await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-  const sent = page.waitForResponse((response) => response.url().endsWith("/forms/code-send"));
-  await page.getByRole("button", { name: sendCode }).click();
   const response = await sent;
   const interactive = response.request().headers()["x-form-navigation"] === "1";
   expect(response.status()).toBe(interactive ? 200 : 303);
@@ -2451,7 +2451,6 @@ describe("management: production browser journey", () => {
       await ready(page, "/sign-in?returnTo=https://untrusted.example/");
       await page.getByLabel("Email", { exact: true }).fill(op.email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await page.getByLabel("Six-digit code").fill("000000");
       await page.getByRole("button", { name: verifyCode }).click();
@@ -4316,11 +4315,11 @@ describe("collection discussion", () => {
         await browserExpect(page.locator("h1")).toHaveText("Sign in to ntumie.");
         await browserExpect(page.locator(".auth-lead")).toContainText("post your comment");
         await page.getByLabel("Email", { exact: true }).fill(discussant);
-        await page.getByRole("button", { name: "Continue with email", exact: true }).click();
         // Fast earlier actions can still be inside the harness's two-second
-        // resend window. Recovery must request a fresh code after that guard.
+        // resend window. Recovery must request a fresh code after that guard
+        // (Continue with email sends it).
         await page.waitForTimeout(2100);
-        await page.getByRole("button", { name: sendCode }).click();
+        await page.getByRole("button", { name: "Continue with email", exact: true }).click();
         await browserExpect(page, `resume code issued (JavaScript ${js})`).toHaveURL(
           /\/sign-in\/code\?notice=(?:re)?sent/,
         );
@@ -4348,7 +4347,6 @@ describe("collection discussion", () => {
         const stranger = `stranger-${crypto.randomUUID()}@example.com`;
         await page.getByLabel("Email", { exact: true }).fill(stranger);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page, `new account code issued (JavaScript ${js})`).toHaveURL(
           /\/sign-in\/code\?notice=(?:re)?sent/,
         );
@@ -4469,7 +4467,6 @@ it("preserves a throttled resend journey beyond the normal resend interval", asy
         .getByLabel("Email", { exact: true })
         .fill(`cooldown-${crypto.randomUUID()}@example.com`);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await waitForResend(page);
       const key = requestBudgetKey(
@@ -6751,7 +6748,6 @@ it("preserves private sharing destinations and resumes access, link and transfer
     const verify = async () => {
       await page.getByLabel("Email", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));
@@ -6889,7 +6885,6 @@ it("binds resumed collection commands to their account and rechecks current auth
         await page.waitForTimeout(2100);
         await page.getByLabel("Email", { exact: true }).fill(verifyingEmail);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.locator("h1")).toHaveText("Check your email");
         await page.getByLabel("Six-digit code").fill(await capturedCode(verifyingEmail));
         await page.getByRole("button", { name: verifyCode }).click();
@@ -7365,7 +7360,6 @@ describe("reorder", () => {
         await browserExpect(page.locator(".auth-lead")).toContainText("move this item");
         await page.getByLabel("Email", { exact: true }).fill(email);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.locator("h1")).toHaveText("Check your email");
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
@@ -7770,6 +7764,25 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
     await page.evaluate(async () => {
       await fetch("/forms/sign-out", { method: "POST", body: new URLSearchParams() });
     });
+    // The email field's autofill offers the saved passkey; choosing it (the
+    // virtual authenticator answers like a person picking it) signs in from
+    // the first screen, with no email typed and no code sent.
+    const mailsBeforeAutofill = await prisma.emailOutbox.count();
+    await ready(page, "/sign-in?returnTo=/settings/security");
+    await browserExpect(
+      page.getByRole("heading", { name: "Account security", exact: true }),
+    ).toBeVisible();
+    expect(await prisma.emailOutbox.count()).toBe(mailsBeforeAutofill);
+    await page.evaluate(async () => {
+      await fetch("/forms/sign-out", { method: "POST", body: new URLSearchParams() });
+    });
+    // The remaining checks use the "Sign in with a passkey" button, so the
+    // autofill is switched off for them.
+    await page.addInitScript(() => {
+      Object.defineProperty(PublicKeyCredential, "isConditionalMediationAvailable", {
+        value: async () => false,
+      });
+    });
     await ready(page, "/sign-in?returnTo=/settings/security");
     const abandonedEmail = `abandoned-google-${crypto.randomUUID()}@example.com`;
     await signInWithCode(app.getHttpServer(), { email: abandonedEmail });
@@ -7790,24 +7803,17 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
         sameSite: "Lax",
       },
     ]);
-    // A valid device credential for this user cannot authenticate a different
-    // selected email. No account methods or credential IDs are disclosed.
-    const wrongEmail = `wrong-passkey-${crypto.randomUUID()}@example.com`;
-    await page.getByLabel("Email", { exact: true }).fill(wrongEmail);
-    await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-    const wrongOptions = page.waitForResponse((response) =>
+    // Passkeys are offered on the first screen: in the email field's autofill
+    // and as their own button. The request names no account and lists no
+    // credential IDs, so nothing about which emails have accounts is disclosed.
+    await browserExpect(page.getByLabel("Email", { exact: true })).toHaveAttribute(
+      "autocomplete",
+      "username webauthn",
+    );
+    expect((await page.request.get(`${publicApiOrigin}/api/v1/profile`)).status()).toBe(401);
+    const openOptions = page.waitForResponse((response) =>
       response.url().endsWith("/passkey/generate-authenticate-options"),
     );
-    await page.getByRole("button", { name: usePasskey }).click();
-    expect((await (await wrongOptions).json()).allowCredentials ?? []).toEqual([]);
-    await browserExpect(page.locator(".security-passkey [role=alert]")).toContainText(
-      "couldn't verify",
-    );
-    expect(await prisma.user.findUnique({ where: { email: wrongEmail } })).toBeNull();
-    expect((await page.request.get(`${publicApiOrigin}/api/v1/profile`)).status()).toBe(401);
-    await ready(page, "/sign-in?returnTo=/settings/security");
-    await page.getByLabel("Email", { exact: true }).fill(email);
-    await page.getByRole("button", { name: "Continue with email", exact: true }).click();
     const mailsBeforePasskey = await prisma.emailOutbox.count();
     await cdp.send("WebAuthn.setResponseOverrideBits", { authenticatorId, isBadUV: true });
     await page.route("**/api/v1/auth/passkey/generate-authenticate-options", async (route) => {
@@ -7828,6 +7834,7 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
       });
     });
     await page.getByRole("button", { name: usePasskey }).click();
+    expect((await (await openOptions).json()).allowCredentials ?? []).toEqual([]);
     await browserExpect(page.locator(".security-passkey [role=alert]")).toContainText(
       "couldn't verify",
     );
@@ -7867,7 +7874,7 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
     const assertion = assertionCall.postDataJSON();
     const assertionResponse = await assertionCall.response();
     expect(assertionResponse?.status()).toBe(200);
-    await expectSignIns(prisma, person.id, ["email", "passkey"]);
+    await expectSignIns(prisma, person.id, ["email", "passkey", "passkey"]);
     await browserExpect(
       page.getByRole("heading", { name: "Account security", exact: true }),
     ).toBeVisible();
@@ -7937,7 +7944,7 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
       },
     );
     expect(replay.ok()).toBe(false);
-    await expectSignIns(prisma, person.id, ["email", "passkey", "passkey", "recovery"]);
+    await expectSignIns(prisma, person.id, ["email", "passkey", "passkey", "passkey", "recovery"]);
     await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   } finally {
     await close();
@@ -8309,7 +8316,6 @@ it("prioritizes verified recovery over a different signed-in account", async () 
         await ready(page, "/sign-in?returnTo=/notifications");
         await page.getByLabel("Email", { exact: true }).fill(email);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
         await page.getByRole("button", { name: verifyCode }).click();
@@ -8366,7 +8372,6 @@ it("preserves the sign-in destination when choosing a different email", async ()
       await signInWithCode(app.getHttpServer(), { email });
       await page.getByLabel("Email", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));
       await page.getByRole("button", { name: verifyCode }).click();
@@ -8398,7 +8403,6 @@ it("offers deliberate account creation, an optional name and never a hub after e
         ).toBeVisible();
         await page.getByLabel("Email", { exact: true }).fill(email);
         await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-        await page.getByRole("button", { name: sendCode }).click();
         await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
         await page.getByLabel("Six-digit code").fill(await capturedCode(email));
         await page.getByRole("button", { name: verifyCode }).click();
@@ -9208,7 +9212,6 @@ it("resumes submitted import corrections after sign-in with and without JavaScri
     const verify = async () => {
       await page.getByLabel("Email", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));
@@ -9359,7 +9362,6 @@ it("transfers same-title collections at stable IDs before and after sign-in", as
     const verify = async () => {
       await page.getByLabel("Email", { exact: true }).fill(email);
       await page.getByRole("button", { name: "Continue with email", exact: true }).click();
-      await page.getByRole("button", { name: sendCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Check your email");
       await browserExpect(page.getByLabel("Six-digit code")).toBeVisible();
       await page.getByLabel("Six-digit code").fill(await capturedCode(email));

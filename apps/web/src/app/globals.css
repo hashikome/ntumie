@@ -6226,24 +6226,10 @@ body:has(.auth-stage) .session-nav .nav-start,
 body:has(.auth-stage):not(:has(.start-collection, .start-steps)) .session-nav .nav-link {
   display: none;
 }
-.auth-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 3rem;
-  height: 3rem;
-  margin-bottom: 1rem;
-  border-radius: 50%;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-}
 .auth-column .security-passkey > .button {
   width: 100%;
   min-height: 2.75rem;
   justify-content: center;
-}
-.auth-text-action {
-  font-weight: 600;
-  color: var(--color-ink);
 }
 .item-add-note > summary {
   display: inline-flex;
@@ -6304,4 +6290,16 @@ body:has(.auth-stage):not(:has(.start-collection, .start-steps)) .session-nav .n
     top: auto;
     bottom: 1rem;
   }
+}
+
+/* Sign in: the passkey way in sits quietly under Google. */
+.auth-passkey {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+.auth-passkey .text-button {
+  min-height: 2.75rem;
+  font-weight: 600;
+  color: var(--color-ink);
 }

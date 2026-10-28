@@ -26,7 +26,10 @@ export function PasskeyButton({
   googleConnection = false,
   label = "Sign in with a passkey",
   plain = false,
+  quiet = false,
 }: {
+  /** An extra way in (the sign-in screen): hidden where passkeys can't work. */
+  quiet?: boolean;
   /** The sign-in button's words (board: "Use passkey"). */
   label?: string;
   /** Shown as a text link beside other ways to sign in. */
@@ -44,6 +47,7 @@ export function PasskeyButton({
     [name, setName] = useState("");
   const finish = useRef<HTMLFormElement>(null);
   useEffect(() => setSupported(!!window.PublicKeyCredential), []);
+  if (quiet && !supported) return null;
   return (
     <div className="security-passkey">
       {register && (
@@ -154,5 +158,56 @@ export function PasskeyButton({
         </AppForm>
       )}
     </div>
+  );
+}
+
+// The sign-in email field's passkey autofill (WebAuthn conditional UI): the
+// browser lists this site's passkeys saved on the device under the field, so
+// a passkey signs in from the first screen without the site learning or
+// revealing which emails have accounts. Does nothing where unsupported.
+export function PasskeyAutofill({ returnTo = "/hub" }: { returnTo?: string }) {
+  const finish = useRef<HTMLFormElement>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      if (!(await window.PublicKeyCredential?.isConditionalMediationAvailable?.())) return;
+      try {
+        const optionsJSON = await post<Parameters<typeof startAuthentication>[0]["optionsJSON"]>(
+          "/passkey/generate-authenticate-options",
+          { continueSignIn: false },
+        );
+        if (!live) return;
+        const response = await startAuthentication({ optionsJSON, useBrowserAutofill: true });
+        // Only now, with a passkey chosen, start the sign-in: opening this
+        // page must not replace a code or second-step flow in progress.
+        const started = await submitForm("/forms/auth-start", new URLSearchParams({ returnTo }));
+        if (!started.ok) throw new PasskeyRequestError("Couldn't start sign-in. Please try again.");
+        await post("/passkey/verify-authentication", { response });
+        finish.current?.requestSubmit();
+      } catch (cause) {
+        // Leaving the page or typing an email instead cancels quietly.
+        if (
+          live &&
+          !(cause instanceof Error && ["AbortError", "NotAllowedError"].includes(cause.name))
+        )
+          setError("We couldn't use this passkey. Try again or continue with email.");
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [returnTo]);
+  return (
+    <>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      <AppForm ref={finish} action="/forms/auth-complete" method="post" hidden>
+        <button type="submit">Continue</button>
+      </AppForm>
+    </>
   );
 }

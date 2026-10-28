@@ -1,5 +1,6 @@
 import "server-only";
 import { webServerConfig } from "@ntumie/config/web-server";
+import type { SendSignInCodeRequest } from "@ntumie/types";
 import { authenticatedFlow } from "./authenticated-flow";
 import { completeSignIn } from "./complete-sign-in";
 import { serverCookie } from "./cookies";
@@ -27,24 +28,38 @@ export async function securityForm(
         `/${intent}?returnTo=${encodeURIComponent(returnTo)}&notice=${result.status === 400 ? "invalid" : "unavailable"}`,
         result.setCookies ?? [],
       );
+    // Straight to the code, as on the boards: a passkey is offered on the
+    // first screen (autofill, or its own button), never per address, so this
+    // step reveals nothing about which emails have accounts or passkeys.
     const pending = await readPendingAction();
-    return redirectResponse("/sign-in/continue", [
-      ...(result.setCookies ?? []),
-      flowCookie(
-        sealFlow({
-          email,
-          intent,
-          returnTo,
-          issued: Date.now(),
-          purpose: pending?.target === returnTo ? "resume" : "sign-in",
-        }),
-      ),
-      serverCookie(
-        `${webServerConfig().publicOrigin.startsWith("https:") ? "__Secure-" : ""}better-auth.two_factor`,
-        "",
-        0,
-      ),
-    ]);
+    const purpose = pending?.target === returnTo ? "resume" : "sign-in";
+    const sent = await formPost(
+      request,
+      "/api/v1/auth/code/send",
+      { email, purpose } satisfies SendSignInCodeRequest,
+      true,
+    );
+    return redirectResponse(
+      `/sign-in/code?notice=${sent.ok ? "sent" : sent.status === 429 ? "limited" : "unavailable"}${!sent.ok && sent.retryAfter ? `&wait=${Math.min(sent.retryAfter, 600)}` : ""}`,
+      [
+        ...(result.setCookies ?? []),
+        ...(sent.setCookies ?? []),
+        flowCookie(
+          sealFlow({
+            email,
+            intent,
+            returnTo,
+            purpose,
+            ...resendTiming(null, sent, webServerConfig().codeResendSeconds),
+          }),
+        ),
+        serverCookie(
+          `${webServerConfig().publicOrigin.startsWith("https:") ? "__Secure-" : ""}better-auth.two_factor`,
+          "",
+          0,
+        ),
+      ],
+    );
   }
   if (action === "google-cancel" || action === "email-registration-cancel") {
     const previous = await readFlow();

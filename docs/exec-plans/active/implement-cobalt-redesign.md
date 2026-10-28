@@ -155,12 +155,16 @@ communities (opt-in), and private-collection allowances (monetization).
   panel stacks; Discover and the reader leave out a zero section count. Found
   by the tests: Discuss on a second link kept the first link's section in
   "About" (the select now remounts per attached item).
-- [ ] Passkeys in email autofill (owner decision): WebAuthn conditional UI on
-  the sign-in email field plus a "Sign in with a passkey" link; after the email,
-  straight to the code (drop the per-address passkey step and sign-up's extra
-  "Confirm your email" step). Passkeys are already discoverable
-  (`residentKey: required`); the unbound (no email) authentication path needs
-  its own security review and tests.
+- [x] (2026-10-28) Passkeys in email autofill (owner decision, the common
+  practice): the sign-in email field is `autocomplete="username webauthn"` and
+  starts a WebAuthn conditional request, so the browser lists this site's
+  saved passkeys under the field; a "Sign in with a passkey" button covers
+  devices without autofill. Both use the existing unbound path (no email, no
+  credential IDs listed: nothing reveals which emails have accounts); the
+  sign-in flow cookie is only replaced once a passkey is chosen, so opening
+  Sign in never breaks a code or second-step flow in progress. Continue with
+  email now sends the code straight away for sign-in and sign-up; the
+  per-address passkey step (`/sign-in/continue`, board screen 3) is gone.
 - [ ] Search plan (own milestone): the Discover search results board (hubs and
   collections for a query, tag filters, best match, no-results state) has no
   backend; write the ExecPlan before building.
