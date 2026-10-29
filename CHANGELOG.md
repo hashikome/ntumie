@@ -9,6 +9,10 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Fix Settings losing text typed into the Hub fields before that section's
+  code loaded (it never reached the draft, so it did not autosave); the
+  section now reads its fields when it loads, keeping any error notice.
+
 - Upgrade BullMQ to 6.5.1 (dependency security fixes, worker reconnect and
   shutdown fixes). Queue readiness now follows the backend's ready/close events.
   A sustained Redis outage ends the worker with exit 1 after

@@ -178,6 +178,16 @@ export function ProfileEditor({ profile, theme }: { profile: Profile; theme: The
     }
     setEnhanced(true);
   }, []);
+  // A section loads on demand: text typed into its server-rendered fields
+  // before its code arrived never fired onChange, so read them once it mounts.
+  // Unlike edit(), this leaves a shown notice (a failed save) in place.
+  const adopt = () => {
+    if (!form.current) return;
+    const next = readDraft(form.current, latest.current);
+    if (sameDraft(next, latest.current)) return;
+    latest.current = next;
+    setDraft(next);
+  };
   const edit = () => {
     if (!form.current) return;
     const next = readDraft(form.current, latest.current);
@@ -360,6 +370,7 @@ export function ProfileEditor({ profile, theme }: { profile: Profile; theme: The
         suggestion,
         form,
         edit,
+        adopt,
         openPublicView,
       }}
     >

@@ -35,6 +35,8 @@ export type SettingsFieldState = {
   suggestion?: string;
   form: RefObject<HTMLFormElement | null>;
   edit: () => void;
+  /** Re-read fields a lazily loaded section brings, keeping any notice shown. */
+  adopt: () => void;
   openPublicView: (event: MouseEvent<HTMLAnchorElement>, target: "profile" | "hub") => void;
 };
 export const SettingsFieldContext = createContext<SettingsFieldState | null>(null);

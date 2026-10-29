@@ -1,11 +1,24 @@
 "use client";
+import { useEffect } from "react";
 import { LocalTime } from "./local-time";
 import { handleMessages, useSettingsFields } from "./settings-field-context";
 
 const invalidStates = ["invalid", "checking", "taken", "reserved"];
 export default function SettingsHubFields() {
-  const { saved, draft, section, enhanced, saving, savingPart, handleState, edit, openPublicView } =
-    useSettingsFields();
+  const {
+    saved,
+    draft,
+    section,
+    enhanced,
+    saving,
+    savingPart,
+    handleState,
+    edit,
+    adopt,
+    openPublicView,
+  } = useSettingsFields();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Once, when this on-demand section mounts.
+  useEffect(() => adopt(), []);
   return (
     <fieldset className="account-field-group" hidden={section !== "hub"}>
       <legend>Hub</legend>
