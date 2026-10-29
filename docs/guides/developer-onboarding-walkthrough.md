@@ -12,7 +12,7 @@ answer in your own words before continuing. Reading the whole file in one go
 is the failure mode this structure exists to prevent. Every file is a
 clickable link.
 
-**Pin:** verified against commit `8138bec14226df080280969a0ddb7c357cb4a400`. This is enforced, not honor
+**Pin:** verified against commit `6751bda369c5dfc92424cbf66651946432f91c2e`. This is enforced, not honor
 system: `check:guide-pin` (part of `bun run verify`) fails when any file this
 guide links changes after the pinned commit. To clear it, reread the affected
 sessions, fix any drift, and move the pin to the latest commit — in a
@@ -233,8 +233,9 @@ curl -s localhost:4004/api/v1/status | jq        # "degraded"; redisQueue "unava
 curl -s localhost:4004/api/v1/discover | jq '.data | length'   # still serves
 docker start ntumie-redis
 curl -s localhost:4004/api/v1/status | jq        # "ready" again
-# Keep the outage short: after REDIS_OUTAGE_LIMIT_MS (5 min) the worker exits
-# with code 1 instead of reconnecting forever; restart `bun run dev` if it did.
+# Keep the outage short: after REDIS_OUTAGE_LIMIT_MS (5 min) the worker logs a
+# fatal event and exits 1 (ADR-0071); production restarts it every 30 s until
+# Redis is back. Locally, restart `bun run dev` if it exited.
 
 # Drill 2: existence-hiding — unpublish, then read anonymously
 curl -s -X POST localhost:4004/api/v1/collections/$GUIDE/unpublish \
