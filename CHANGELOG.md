@@ -9,6 +9,13 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Add Discover search to the API (`GET /api/v1/discover/search`): published
+  collections and public hubs, ranked by how well the content matches
+  (`ts_rank_cd`: title, then description, then tags), with word prefixes,
+  typo tolerance (`pg_trgm`) and matched words marked; private, held and
+  inactive-owner content is never found, counted or marked. The screens come
+  next (docs/exec-plans/active/discover-search.md).
+
 - Move the toolchain pin to Bun 1.4.4 (Dockerfiles by digest, CI, README,
   release runbook, `@types/bun`). One imports e2e test now reuses a server an
   earlier request left listening under 1.4.

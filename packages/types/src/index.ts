@@ -13,6 +13,7 @@ export * from "./imports.js";
 export * from "./links.js";
 export * from "./operations.js";
 export * from "./resources.js";
+export * from "./search.js";
 export * from "./sharing.js";
 export * from "./status.js";
 export * from "./users.js";

@@ -16,6 +16,7 @@ import { InterestModule } from "./modules/interest/interest.module";
 import { OperationsModule } from "./modules/operations/operations.module";
 import { RecoveryModule } from "./modules/recovery/recovery.controller";
 import { ResourcesModule } from "./modules/resources/resources.module";
+import { SearchModule } from "./modules/search/search.module";
 import { SharingModule } from "./modules/sharing/sharing.module";
 import { UsersModule } from "./modules/users/users.module";
 
@@ -32,6 +33,7 @@ import { UsersModule } from "./modules/users/users.module";
     UsersModule,
     OperationsModule,
     CollectionsModule,
+    SearchModule,
     ResourcesModule,
     RecoveryModule,
     SharingModule,

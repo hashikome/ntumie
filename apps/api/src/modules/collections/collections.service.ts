@@ -564,13 +564,18 @@ export class CollectionsService {
         h.id DESC
       LIMIT ${limit}
     `;
+    return this.hubCards(rows.map(({ id }) => id));
+  }
+
+  // Hub cards for these hub IDs, in this order (Discover and search).
+  async hubCards(ids: string[]): Promise<HubCard[]> {
     const hubs = await this.prisma.hub.findMany({
-      where: { id: { in: rows.map(({ id }) => id) } },
+      where: { id: { in: ids } },
       include: { owner: { select: { id: true, username: true, name: true } } },
     });
     const saves = await this.hubSaves(hubs.map((hub) => hub.id));
     const byId = new Map(hubs.map((hub) => [hub.id, hub]));
-    return rows.flatMap(({ id }) => {
+    return ids.flatMap((id) => {
       const hub = byId.get(id);
       if (!hub) return [];
       return [
@@ -693,8 +698,8 @@ export class CollectionsService {
     return new Map(rows.map((row) => [row.hub_id, row.saves]));
   }
 
-  // Listing rows for these collection IDs, in this order.
-  private async listingsInOrder(ids: string[]) {
+  // Listing rows for these collection IDs, in this order (Discover and search).
+  async listingsInOrder(ids: string[]) {
     const order = new Map(ids.map((id, index) => [id, index]));
     const rows = await this.prisma.collection.findMany({
       where: { id: { in: ids } },
