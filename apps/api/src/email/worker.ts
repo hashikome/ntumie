@@ -26,15 +26,21 @@ async function main() {
     config.provider === "resend"
       ? new ResendProvider(config.apiKey ?? "", config.from ?? "")
       : new CaptureProvider();
+  // A sustained Redis outage ends the worker (exit 1) rather than reconnecting
+  // forever; the stack's capped restart policy decides what happens next.
+  const onRedisOutage = () => void stop(true);
   const runtime = startEmailQueue(
     new EmailDelivery(prisma, provider, config.secret),
     config.redisUrl,
     config.prefix,
+    { onRedisOutage },
   );
   // Link metadata lookups share the worker process and Redis (not under test
   // unless LINK_TITLES=on, never when LINK_TITLES=off).
   const metadata = linkTitlesEnabled()
-    ? startLinkMetadataQueue(new LinkMetadataLookup(prisma), config.redisUrl, config.prefix)
+    ? startLinkMetadataQueue(new LinkMetadataLookup(prisma), config.redisUrl, config.prefix, {
+        onRedisOutage,
+      })
     : null;
   const imports = importJobService(prisma);
   let importWork: Promise<unknown> | undefined;

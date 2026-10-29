@@ -139,9 +139,14 @@ services:
         limits:
           cpus: '0.5'
           memory: 256M
+      # A sustained Redis outage ends the worker (exit 1 after
+      # REDIS_OUTAGE_LIMIT_MS, default 5 minutes); Swarm retries a bounded
+      # number of times, then leaves the task stopped for an operator.
       restart_policy:
         condition: on-failure
-        delay: 5s
+        delay: 30s
+        max_attempts: 5
+        window: 120s
 
 networks:
   egress:

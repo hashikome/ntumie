@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { UnrecoverableError, Worker } from "bullmq";
 
 import { emitEvent } from "../../common/observability/telemetry";
-import { ProducerQueue } from "../../common/producer-queue";
+import { ProducerQueue, watchRedis } from "../../common/producer-queue";
 import { redisConnection } from "../../email/delivery";
 import type { PrismaClient } from "../../generated/prisma/client";
 import { FAILED_RETRY_MS } from "./link-metadata";
@@ -104,6 +104,7 @@ export function startLinkMetadataQueue(
   lookup: LinkMetadataLookup,
   redisUrl: string,
   prefix: string,
+  options: { onRedisOutage?: () => void } = {},
 ) {
   const connection = redisConnection(redisUrl);
   const queue = new ProducerQueue("link-metadata", {
@@ -144,24 +145,16 @@ export function startLinkMetadataQueue(
   queue.on("error", reportFailure);
   worker.on("error", reportFailure);
   worker.on("failed", reportFailure);
-  let queueReady = false;
-  void queue.client
-    .then((client) => {
-      queueReady = client.status === "ready";
-      client.on("ready", () => {
-        queueReady = true;
-      });
-      client.on("close", () => {
-        queueReady = false;
-      });
-    })
-    .catch(() => {});
+  const redis = watchRedis(queue, () => {
+    emitEvent("link_metadata.redis_unavailable", {}, "error");
+    options.onRedisOutage?.();
+  });
   let stopping = false;
   let running: Promise<void> | undefined;
   const tick = () => {
     if (stopping || running) return running;
     running = (async () => {
-      if (!queueReady) return;
+      if (!redis.ready()) return;
       const now = new Date();
       const rows = await lookup.prisma.linkMetadata.findMany({
         where: {
@@ -195,6 +188,7 @@ export function startLinkMetadataQueue(
     async close() {
       stopping = true;
       clearInterval(timer);
+      redis.stop();
       await worker.close(true);
       await queue.disconnect();
       let deadline: ReturnType<typeof setTimeout> | undefined;

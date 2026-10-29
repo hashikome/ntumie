@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { UnrecoverableError, Worker } from "bullmq";
 
 import { emitEvent } from "../common/observability/telemetry";
-import { ProducerQueue } from "../common/producer-queue";
+import { ProducerQueue, watchRedis } from "../common/producer-queue";
 import type { PrismaClient } from "../generated/prisma/client";
 import { type DeliveryPayload, deliveryKey, unseal } from "./outbox";
 import { DeliveryError, type EmailProvider } from "./provider";
@@ -121,7 +121,12 @@ export function redisConnection(redisUrl: string) {
   };
 }
 
-export function startEmailQueue(delivery: EmailDelivery, redisUrl: string, prefix: string) {
+export function startEmailQueue(
+  delivery: EmailDelivery,
+  redisUrl: string,
+  prefix: string,
+  options: { onRedisOutage?: () => void } = {},
+) {
   const connection = redisConnection(redisUrl);
   const queue = new ProducerQueue("email", {
     connection: { ...connection, maxRetriesPerRequest: 1, enableOfflineQueue: false },
@@ -162,18 +167,10 @@ export function startEmailQueue(delivery: EmailDelivery, redisUrl: string, prefi
   queue.on("error", reportFailure);
   worker.on("error", reportFailure);
   worker.on("failed", reportFailure);
-  let queueReady = false;
-  void queue.client
-    .then((client) => {
-      queueReady = client.status === "ready";
-      client.on("ready", () => {
-        queueReady = true;
-      });
-      client.on("close", () => {
-        queueReady = false;
-      });
-    })
-    .catch(() => {});
+  const redis = watchRedis(queue, () => {
+    emitEvent("email.redis_unavailable", {}, "error");
+    options.onRedisOutage?.();
+  });
   let stopping = false;
   let running: Promise<void> | undefined;
   const tick = () => {
@@ -181,7 +178,7 @@ export function startEmailQueue(delivery: EmailDelivery, redisUrl: string, prefi
     running = (async () => {
       // Cleanup still runs during Redis loss; outbox never depends on Redis.
       await delivery.maintain();
-      if (!queueReady) return;
+      if (!redis.ready()) return;
       const rows = await delivery.prisma.emailOutbox.findMany({
         where: {
           state: "pending",
@@ -221,6 +218,7 @@ export function startEmailQueue(delivery: EmailDelivery, redisUrl: string, prefi
     async close() {
       stopping = true;
       clearInterval(timer);
+      redis.stop();
       // Redis may be down: waiting for BullMQ acknowledgements can hang.
       // Stop queue consumption/connections first, then let bounded provider
       // calls finish database bookkeeping. Unfinished claims recover by lease.

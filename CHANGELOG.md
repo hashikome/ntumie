@@ -9,6 +9,12 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Upgrade BullMQ to 6.5.1 (dependency security fixes, worker reconnect and
+  shutdown fixes). Queue readiness now follows the backend's ready/close events.
+  A sustained Redis outage ends the worker with exit 1 after
+  `REDIS_OUTAGE_LIMIT_MS` (default five minutes) instead of reconnecting
+  forever, and production restarts it at most five times.
+
 - Add Discover search to the API (`GET /api/v1/discover/search`): published
   collections and public hubs, ranked by how well the content matches
   (`ts_rank_cd`: title, then description, then tags), with word prefixes,

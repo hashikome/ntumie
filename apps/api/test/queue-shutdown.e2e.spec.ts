@@ -9,7 +9,7 @@ import {
 } from "../src/modules/resources/link-metadata-lookup";
 
 const factories = {
-  email: (url: string, prefix: string) =>
+  email: (url: string, prefix: string, onRedisOutage?: () => void) =>
     startEmailQueue(
       {
         maintain: async () => {},
@@ -17,14 +17,49 @@ const factories = {
       } as unknown as EmailDelivery,
       url,
       prefix,
+      { onRedisOutage },
     ),
-  metadata: (url: string, prefix: string) =>
+  metadata: (url: string, prefix: string, onRedisOutage?: () => void) =>
     startLinkMetadataQueue(
       { prisma: { linkMetadata: { findMany: async () => [] } } } as unknown as LinkMetadataLookup,
       url,
       prefix,
+      { onRedisOutage },
     ),
 };
+
+// No unbounded retries: a Redis that stays unreachable past the limit ends the
+// worker (the handler stops it with exit 1) instead of reconnecting forever.
+for (const [name, start] of Object.entries(factories)) {
+  it(`${name} reports a sustained Redis outage once`, async () => {
+    const configured = process.env.REDIS_OUTAGE_LIMIT_MS;
+    process.env.REDIS_OUTAGE_LIMIT_MS = "300";
+    // Nothing listens here: every connection attempt is refused.
+    const closed = createServer();
+    await new Promise<void>((resolve) => closed.listen(0, "127.0.0.1", resolve));
+    const address = closed.address();
+    if (!address || typeof address === "string") throw new Error("Missing fixture port");
+    await new Promise<void>((resolve) => closed.close(() => resolve()));
+    let outages = 0;
+    const runtime = start(
+      `redis://127.0.0.1:${address.port}`,
+      `test-outage-${randomUUID()}`,
+      () => {
+        outages++;
+      },
+    );
+    try {
+      for (let i = 0; i < 60 && !outages; i++) await Bun.sleep(100);
+      expect(outages).toBe(1);
+      await Bun.sleep(1500);
+      expect(outages).toBe(1);
+    } finally {
+      if (configured === undefined) delete process.env.REDIS_OUTAGE_LIMIT_MS;
+      else process.env.REDIS_OUTAGE_LIMIT_MS = configured;
+      await runtime.close();
+    }
+  }, 15000);
+}
 
 for (const [name, start] of Object.entries(factories)) {
   for (const initiallyOffline of [false, true]) {
@@ -56,7 +91,8 @@ for (const [name, start] of Object.entries(factories)) {
       const runtime = start(url.toString(), prefix);
       try {
         if (!initiallyOffline) {
-          const client = await runtime.queue.waitUntilReady();
+          await runtime.queue.waitUntilReady();
+          const client = await runtime.queue.getBackend().client;
           await runtime.worker.waitUntilReady();
           offline = true;
           for (const socket of sockets) socket.destroy();

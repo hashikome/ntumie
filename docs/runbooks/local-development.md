@@ -143,8 +143,11 @@ suppression rekey/import, since suppression rows do not store raw addresses.
 The worker uses the same database, auth secret and Redis configuration as the
 API. Production runs `bun run --filter @ntumie/api email:worker:prod` from the API
 image. Do not share queue namespaces between deployments or test runs. Pending
-codes expire after five minutes; delivery stops after expiry. Run the worker
-for cleanup even during provider/Redis outages. Retention and endpoint contracts
+codes expire after five minutes; delivery stops after expiry. The worker keeps
+cleaning up through short Redis outages, but a sustained one ends it: after
+`REDIS_OUTAGE_LIMIT_MS` (default 300000, five minutes) without a Redis
+connection it stops with exit code 1 instead of reconnecting forever, and the
+production stack restarts it at most five times. Retention and endpoint contracts
 are in [auth delivery](../design-docs/auth-delivery-integration.md).
 
 ## Product analytics
