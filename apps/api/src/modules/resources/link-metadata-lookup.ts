@@ -146,7 +146,7 @@ export function startLinkMetadataQueue(
   worker.on("error", reportFailure);
   worker.on("failed", reportFailure);
   const redis = watchRedis(queue, () => {
-    emitEvent("link_metadata.redis_unavailable", {}, "error");
+    emitEvent("link_metadata.redis_unavailable", {}, "fatal");
     options.onRedisOutage?.();
   });
   let stopping = false;
@@ -180,6 +180,18 @@ export function startLinkMetadataQueue(
     return running;
   };
   const timer = setInterval(() => void tick(), 1000);
+  // Report lookups still pending fifteen minutes past their due time.
+  const stuck = setInterval(() => {
+    lookup.prisma.linkMetadata
+      .count({
+        where: { state: "pending", availableAt: { lt: new Date(Date.now() - 900_000) } },
+      })
+      .then((count) => {
+        if (count) emitEvent("link_metadata.stuck", { "rows.count": count }, "warn");
+      })
+      .catch(() => {});
+  }, 60_000);
+  stuck.unref?.();
   void tick();
   return {
     queue,
@@ -188,6 +200,7 @@ export function startLinkMetadataQueue(
     async close() {
       stopping = true;
       clearInterval(timer);
+      clearInterval(stuck);
       redis.stop();
       await worker.close(true);
       await queue.disconnect();

@@ -168,7 +168,7 @@ export function startEmailQueue(
   worker.on("error", reportFailure);
   worker.on("failed", reportFailure);
   const redis = watchRedis(queue, () => {
-    emitEvent("email.redis_unavailable", {}, "error");
+    emitEvent("email.redis_unavailable", {}, "fatal");
     options.onRedisOutage?.();
   });
   let stopping = false;
@@ -210,6 +210,21 @@ export function startEmailQueue(
     return running;
   };
   const timer = setInterval(() => void tick(), 1000);
+  // Durable work never gives up, and it never goes quiet: once a minute,
+  // report rows still waiting well past their due time (codes expire at five
+  // minutes, so two minutes late is already noticeable).
+  const stuck = setInterval(() => {
+    const late = new Date(Date.now() - 120_000);
+    delivery.prisma.emailOutbox
+      .count({
+        where: { state: "pending", availableAt: { lt: late }, expiresAt: { gt: new Date() } },
+      })
+      .then((count) => {
+        if (count) emitEvent("email.outbox_stuck", { "rows.count": count }, "warn");
+      })
+      .catch(() => {});
+  }, 60_000);
+  stuck.unref?.();
   void tick();
   return {
     queue,
@@ -218,6 +233,7 @@ export function startEmailQueue(
     async close() {
       stopping = true;
       clearInterval(timer);
+      clearInterval(stuck);
       redis.stop();
       // Redis may be down: waiting for BullMQ acknowledgements can hang.
       // Stop queue consumption/connections first, then let bounded provider

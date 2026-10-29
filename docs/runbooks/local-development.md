@@ -147,7 +147,8 @@ codes expire after five minutes; delivery stops after expiry. The worker keeps
 cleaning up through short Redis outages, but a sustained one ends it: after
 `REDIS_OUTAGE_LIMIT_MS` (default 300000, five minutes) without a Redis
 connection it stops with exit code 1 instead of reconnecting forever, and the
-production stack restarts it at most five times. Retention and endpoint contracts
+production stack restarts it every 30 seconds, with no attempt cap, until Redis
+is back (ADR-0071). Retention and endpoint contracts
 are in [auth delivery](../design-docs/auth-delivery-integration.md).
 
 ## Product analytics

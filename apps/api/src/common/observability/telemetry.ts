@@ -119,7 +119,7 @@ export function initializeTelemetry(
 export function emitEvent(
   event: string,
   properties: Record<string, unknown> = {},
-  level: "info" | "warn" | "error" = "info",
+  level: "info" | "warn" | "error" | "fatal" = "info",
 ): void {
   if (!initialization || !eventNames.has(event)) return;
   try {

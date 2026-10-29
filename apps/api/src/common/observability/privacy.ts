@@ -8,6 +8,14 @@ export const eventNames = new Set([
   "email.relay_failed",
   "email.worker_started",
   "email.worker_stopped",
+  // A sustained Redis outage (logged fatal; the worker exits, ADR-0071).
+  "email.redis_unavailable",
+  "link_metadata.redis_unavailable",
+  // Durable rows pending well past their due time while the worker runs.
+  "email.outbox_stuck",
+  "link_metadata.stuck",
+  "link_metadata.relay_failed",
+  "link_metadata.failed",
   "budget.maintenance_failed",
   "imports.cleanup_failed",
   "imports.job_failed",
@@ -57,6 +65,8 @@ export function safeProperties(input: Record<string, unknown>): Record<string, P
     )
       output[key] = value;
     else if (key === "http.aborted" && typeof value === "boolean") output[key] = value;
+    else if (key === "rows.count" && Number.isInteger(value) && (value as number) >= 0)
+      output[key] = value as number;
     else if (key === "request.id" && typeof value === "string" && /^req_[\w-]{16}$/.test(value))
       output[key] = value;
     else if (key === "trace.id" && typeof value === "string" && /^[a-f0-9]{32}$/.test(value))
