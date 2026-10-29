@@ -19,16 +19,23 @@ export function redisOutageLimitMs(env: NodeJS.ProcessEnv = process.env) {
 }
 
 // Follows a producer queue's Redis connection: `ready()` says whether jobs can
-// be published now; `onOutage` runs once when the connection has been down
-// (or never came up) for longer than the limit.
+// be published now; `onOutage` runs once when Redis has been unreachable (or
+// never came up) for longer than the limit. Connection events alone are not
+// enough: a connection can hang (a partition, a stalled proxy) without ever
+// closing, so a bounded probe (one read every few seconds, on this producer
+// connection, which fails fast while disconnected) decides as well. The
+// worker's own connection is untouched and keeps commands waiting.
 export function watchRedis(
   queue: ProducerQueue,
   onOutage: () => void,
   limitMs = redisOutageLimitMs(),
+  probeMs = Math.min(5_000, Math.max(250, Math.floor(limitMs / 3))),
 ) {
   let ready = false;
   let downSince = Date.now();
   let reported = false;
+  let probing = false;
+  let stopped = false;
   const backend = queue.getBackend();
   const up = () => {
     ready = true;
@@ -40,14 +47,41 @@ export function watchRedis(
   backend.on("ready", up);
   backend.on("close", down);
   queue.waitUntilReady().then(up, () => {});
+  const probe = async () => {
+    if (probing || stopped) return;
+    probing = true;
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const client = await backend.client;
+      await Promise.race([
+        // A read of an unused key under this queue's prefix: cheap and harmless.
+        client.get(`${queue.qualifiedName}:probe`),
+        new Promise((_, reject) => {
+          deadline = setTimeout(() => reject(new Error("Redis probe timed out")), 2_000);
+        }),
+      ]);
+      up();
+    } catch {
+      down();
+    } finally {
+      clearTimeout(deadline);
+      probing = false;
+    }
+  };
+  const probes = setInterval(() => void probe(), probeMs);
   const timer = setInterval(() => {
     if (ready || reported || Date.now() - downSince < limitMs) return;
     reported = true;
     onOutage();
-  }, 1_000);
+  }, 250);
+  probes.unref?.();
   timer.unref?.();
   return {
     ready: () => ready,
-    stop: () => clearInterval(timer),
+    stop: () => {
+      stopped = true;
+      clearInterval(probes);
+      clearInterval(timer);
+    },
   };
 }

@@ -17,7 +17,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
   shutdown fixes). Queue readiness now follows the backend's ready/close events.
   A sustained Redis outage ends the worker with exit 1 after
   `REDIS_OUTAGE_LIMIT_MS` (default five minutes) instead of reconnecting
-  forever, and production restarts it at most five times.
+  forever, and production restarts it at most five times. Outages are detected
+  by connection events and by a bounded probe (one read every few seconds), so
+  a connection that hangs without closing is caught too.
 
 - Add Discover search to the API (`GET /api/v1/discover/search`): published
   collections and public hubs, ranked by how well the content matches
