@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@ntumie/config": "workspace:*",
-    "@types/bun": "^1.3.14",
+    "@types/bun": "^1.4.4",
     "@types/react": "^19.0.0",
     "typescript": "^6.0.3"
   }

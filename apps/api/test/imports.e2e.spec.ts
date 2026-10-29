@@ -534,7 +534,9 @@ describe("reviewed imports", () => {
       entered();
       return original.apply(this, args);
     });
-    await app.listen(0, "127.0.0.1");
+    // Under Bun 1.4 an earlier supertest request can leave the server
+    // listening; reuse it rather than listening twice.
+    if (!(app.getHttpServer() as http.Server).listening) await app.listen(0, "127.0.0.1");
     const address = (app.getHttpServer() as http.Server).address();
     if (!address || typeof address === "string") throw new Error("Missing listener");
     const boundary = "slow-import";

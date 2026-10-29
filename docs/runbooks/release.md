@@ -94,7 +94,7 @@ publishes artifacts); no Git webhook
 deploys ahead of the release checks. The first coordinated production rollout passed; see the acceptance record above.
 
 
-The Dockerfile pins Bun 1.3.14 by digest, installs the frozen lockfile and
+The Dockerfile pins Bun 1.4.4 by digest, installs the frozen lockfile and
 compiles in the build stage. The runtime retains the pinned Prisma CLI so
 the migration uses the identical artifact, at the cost of a larger image.
 No install, generation, or compilation happens at application startup.

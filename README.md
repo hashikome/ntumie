@@ -35,7 +35,7 @@ extension are not implemented. Production uses shared company PostgreSQL and que
 
 ## Start locally
 
-Use Bun 1.3.14 (the CI version), Docker with Compose, and Git.
+Use Bun 1.4.4 (the CI version), Docker with Compose, and Git.
 
 ```bash
 git clone git@github.com:hashikome/ntumie.git

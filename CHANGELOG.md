@@ -9,6 +9,10 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Move the toolchain pin to Bun 1.4.4 (Dockerfiles by digest, CI, README,
+  release runbook, `@types/bun`). One imports e2e test now reuses a server an
+  earlier request left listening under 1.4.
+
 - Offer passkeys on the first sign-in screen, the way most products do: saved
   passkeys appear in the email field's suggestions, with a "Sign in with a
   passkey" button for devices without them. Continue with email now goes
