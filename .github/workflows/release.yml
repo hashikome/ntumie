@@ -21,7 +21,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.4 }
       - run: bun install --frozen-lockfile
@@ -39,7 +39,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -80,7 +80,7 @@ jobs:
           printf 'API_IMAGE=%s\nWEB_IMAGE=%s\nRELEASE_SHA=%s\n' "$API_IMAGE" "$WEB_IMAGE" "$GITHUB_SHA" > release-inputs.txt
           cat release-inputs.txt >> "$GITHUB_STEP_SUMMARY"
           printf 'api=%s\nweb=%s\n' "$API_IMAGE" "$WEB_IMAGE" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ntumie-release-inputs
           path: release-inputs.txt
@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.4 }
       - name: Validate secret provider
