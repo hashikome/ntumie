@@ -1,10 +1,15 @@
-import type { Collection, DiscoverOverview, HubCard as HubCardData } from "@ntumie/types";
+import {
+  type Collection,
+  type DiscoverOverview,
+  type HubCard as HubCardData,
+  maxSearchLength,
+} from "@ntumie/types";
 import type { Metadata } from "next";
 import { CollectionCard } from "../../components/collection-card";
+import { DiscoverSearch, SearchBox, TagFilter } from "../../components/discover-search";
 import { Feedback } from "../../components/feedback";
 import { FormNotice } from "../../components/form-notice";
 import { HubCard } from "../../components/hub-card";
-import { NativeForm } from "../../components/native-form";
 import { PaginatedList } from "../../components/paginated-list";
 import { type ApiPath, queryValue, withCursor } from "../../lib/http";
 import { serverRead } from "../../lib/server-api";
@@ -29,6 +34,8 @@ export default async function Page({
   const query = await searchParams;
   const requested = queryValue(query.tab);
   const tag = queryValue(query.tag, 80)?.trim().toLowerCase() || undefined;
+  const q = queryValue(query.q, maxSearchLength)?.trim();
+  if (q) return <DiscoverSearch q={q} tag={tag} query={query} />;
   const cursor = queryValue(query.cursor);
   // A list cursor only continues the newest list (older links carry no tab).
   const tab: Tab = tabs.some(([key]) => key === requested)
@@ -60,39 +67,7 @@ export default async function Page({
         <p className="band-lead">
           Guides people put together around one idea, and the hubs that make them.
         </p>
-        {/* Search is on the way: submitting records the interest and says so. */}
-        <NativeForm action="/forms/interest" className="search-box">
-          <input type="hidden" name="feature" value="search" />
-          <input type="hidden" name="returnTo" value={here} />
-          <input type="hidden" name="notice" value="1" />
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="6.5" />
-            <path d="m20 20-4-4" />
-          </svg>
-          <input
-            name="q"
-            type="search"
-            aria-label="Search collections"
-            placeholder="Search collections, topics or tags"
-            maxLength={200}
-          />
-          <button
-            type="submit"
-            className="button primary"
-            data-ph-capture-attribute-feature="search"
-          >
-            Search
-          </button>
-        </NativeForm>
+        <SearchBox tag={tag} />
         {overview && overview.tags.length > 0 && (
           <nav className="popular-tags" aria-label="Popular tags">
             <span>Popular:</span>
@@ -238,27 +213,7 @@ function Tagged({
 }) {
   return (
     <section aria-labelledby="tagged-title">
-      <div className="filter-chips">
-        <span className="filter-chip">
-          Tag: {tag}
-          <a href="/discover">
-            <span className="sr-only">Remove tag filter {tag}</span>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <path d="M6 6l12 12M18 6 6 18" />
-            </svg>
-          </a>
-        </span>
-        <a href="/discover">Clear all</a>
-      </div>
+      <TagFilter tag={tag} removeHref="/discover" />
       <SectionHead id="tagged-title" title={`Collections tagged “${tag}”`} />
       <PaginatedList
         kind="collections"

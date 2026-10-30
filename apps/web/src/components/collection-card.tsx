@@ -1,4 +1,4 @@
-import type { Collection } from "@ntumie/types";
+import { type Collection, searchMarkEnd, searchMarkStart } from "@ntumie/types";
 import { permalink } from "../lib/http";
 import { Avatar } from "./avatar";
 import { HubMark } from "./hub-mark";
@@ -18,15 +18,44 @@ export function CollectionCounts({ item }: { item: Collection }) {
   return parts.length ? <span>{parts.join(" · ")}</span> : null;
 }
 
+// Text from the API with its matched words marked (search only).
+function Marked({ text }: { text: string }) {
+  return text.split(searchMarkStart).map((part, index) => {
+    const [matched, rest] = part.split(searchMarkEnd);
+    // biome-ignore lint/suspicious/noArrayIndexKey: A fixed split of one string.
+    if (rest === undefined) return <span key={index}>{matched}</span>;
+    return (
+      // biome-ignore lint/suspicious/noArrayIndexKey: A fixed split of one string.
+      <span key={index}>
+        <mark>{matched}</mark>
+        {rest}
+      </span>
+    );
+  });
+}
+
 // Discover and a hub's page to visitors: one card per collection. The title is
 // the link and its target covers the card, so the link's name stays the title.
-export function CollectionCard({ item, showHub = true }: { item: Collection; showHub?: boolean }) {
+export function CollectionCard({
+  item,
+  showHub = true,
+  highlight,
+}: {
+  item: Collection;
+  showHub?: boolean;
+  /** A search's matched words, marked by the API. */
+  highlight?: { title: string | null; description: string | null };
+}) {
   return (
     <li className="collection-card collection-item">
       <h3 className="collection-card-title">
-        <a href={permalink(item.id)}>{item.title}</a>
+        <a href={permalink(item.id)}>
+          {highlight?.title ? <Marked text={highlight.title} /> : item.title}
+        </a>
       </h3>
-      {item.description && <p>{item.description}</p>}
+      {item.description && (
+        <p>{highlight?.description ? <Marked text={highlight.description} /> : item.description}</p>
+      )}
       {item.tags.length > 0 && (
         <span className="card-tags">
           {item.tags.slice(0, 3).map((tag) => (

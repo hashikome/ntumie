@@ -37,8 +37,14 @@ private content never contributes to results, counts or highlights.
   names, and a `lower(name) text_pattern_ops` index for tag prefixes. Module
   `apps/api/src/modules/search/` (`SearchService`, the safe `parseSearch`
   with unit tests); e2e `test/discover-search.e2e.spec.ts`.
-- [ ] Milestone 2: Discover search screen to the board, with tag chips and the
-  empty state; remove the `search` fake door from Discover.
+- [x] (2026-10-30) Milestone 2: Discover search screen to the board
+  (`apps/web/src/components/discover-search.tsx`, `search-results.tsx`). The
+  box is a plain GET form (`/discover?q=&tag=`, `tab=hubs` for See all); the
+  band shows only the title and box; hubs, then collections by Best match with
+  `<mark>`ed words; Show more results (in place, or the next page without
+  JavaScript); removable tag chip; empty state with popular tags. The Discover
+  `search` fake door is gone; the reader's "Search this hub" keeps it until
+  milestone 3.
 - [ ] Milestone 3: in-hub search (reader "Search this hub", Ctrl K).
 - [ ] Docs, CHANGELOG, browser acceptance.
 

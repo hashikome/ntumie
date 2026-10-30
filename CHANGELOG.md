@@ -9,6 +9,11 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Search Discover: results as a shareable address (`/discover?q=compost`), with
+  matching hubs first, then collections by best match with the matched words
+  marked, a removable tag filter, Show more results and a helpful empty state.
+  Works without JavaScript. Fix the Search button sitting low in its box.
+
 - Fix Settings losing text typed into the Hub fields before that section's
   code loaded (it never reached the draft, so it did not autosave); the
   section now reads its fields when it loads, keeping any error notice.

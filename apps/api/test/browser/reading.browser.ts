@@ -4811,7 +4811,6 @@ it("ships the designed Discover, hub and profile in full, with fake doors that r
   for (const js of [true, false]) {
     const { page, close } = await freshPage(js);
     try {
-      const before = await prisma.featureInterest.count({ where: { feature: "search" } });
       await ready(page, "/discover");
       const tabs = page.getByRole("navigation", { name: "Discover", exact: true });
       await browserExpect(tabs.getByRole("link")).toHaveText([
@@ -4820,11 +4819,6 @@ it("ships the designed Discover, hub and profile in full, with fake doors that r
         "Newest",
         "Hubs",
       ]);
-      // Search is on the way: using it records interest and says so.
-      await page.getByLabel("Search collections").fill("compost");
-      await page.getByRole("button", { name: "Search", exact: true }).click();
-      await browserExpect(page.locator(".toast")).toContainText("Search is on the way");
-      expect(await prisma.featureInterest.count({ where: { feature: "search" } })).toBe(before + 1);
       // Popular tags filter, removable.
       await ready(page, `/discover?tag=${tag}`);
       await browserExpect(page.locator(".filter-chip")).toContainText(`Tag: ${tag}`);
@@ -5129,6 +5123,112 @@ it("shows the free private allowance and, at the limit, keeps Private closed wit
     await close();
   }
 }, 45000);
+
+it("searches Discover: hubs, best matches with marked words, tags, more results and nothing found", async () => {
+  const word = `mulch${crypto
+    .randomUUID()
+    .replace(/[^a-f]/g, "")
+    .slice(0, 6)}`;
+  const signed = await signInHubOwner(app.getHttpServer(), {
+    email: `search-${crypto.randomUUID()}@example.com`,
+    name: "Searcher",
+  });
+  const hub = await prisma.hub.findUniqueOrThrow({
+    where: { ownerUserId: signed.body.user.id },
+  });
+  await prisma.hub.update({ where: { id: hub.id }, data: { name: `The ${word} shelf` } });
+  const collection = (title: string, description?: string) =>
+    prisma.collection.create({
+      data: {
+        hubId: hub.id,
+        creatorUserId: signed.body.user.id,
+        title,
+        description,
+        published: true,
+      },
+    });
+  const best = await collection(`All about ${word}`);
+  // Equal matches rank by saves, so this one leads.
+  await prisma.collectionSave.create({
+    data: { collectionId: best.id, userId: signed.body.user.id },
+  });
+  const second = await collection("Feeding your soil", `Why ${word} matters.`);
+  for (let i = 0; i < 21; i++) await collection(`Notes ${i} on ${word}`);
+  const tagged = await prisma.tag.upsert({
+    where: { name: word },
+    update: {},
+    create: { name: word },
+  });
+  await prisma.collectionTag.create({
+    data: { collectionId: second.id, tagId: tagged.id, itemCount: 1 },
+  });
+  for (const js of [true, false]) {
+    const { page, close } = await freshPage(js);
+    try {
+      await ready(page, "/discover");
+      await page.getByLabel("Search collections").fill(word);
+      await page.getByRole("button", { name: "Search", exact: true }).click();
+      await browserExpect(page).toHaveURL(`${origin}/discover?q=${word}`);
+      await browserExpect(page.getByLabel("Search collections")).toHaveValue(word);
+      // The board's search band: the title and the box, no lead, tags or tabs.
+      await browserExpect(page.locator(".band-lead")).toHaveCount(0);
+      await browserExpect(
+        page.getByRole("navigation", { name: "Discover", exact: true }),
+      ).toHaveCount(0);
+      await browserExpect(page.getByRole("heading", { level: 2 }).first()).toHaveText(
+        `1 hub for “${word}”`,
+      );
+      await browserExpect(page.locator(".hub-card")).toContainText(`The ${word} shelf`);
+      await browserExpect(
+        page.getByRole("heading", { name: `23 collections for “${word}”`, exact: true }),
+      ).toBeVisible();
+      await browserExpect(page.locator(".band-section-head .meta")).toHaveText("Best match");
+      const cards = page.locator(".collection-card");
+      await browserExpect(cards).toHaveCount(20);
+      await browserExpect(cards.first().locator("h3 a")).toHaveAttribute("href", `/c/${best.id}`);
+      await browserExpect(cards.first().locator("h3 mark")).toHaveText(word);
+      await page.getByRole("link", { name: "Show more results", exact: true }).click();
+      // With JavaScript the next page joins the list; without, it is the next page.
+      if (js) await browserExpect(cards).toHaveCount(23);
+      else {
+        await browserExpect(page).toHaveURL(/cursor=/);
+        await browserExpect(cards).toHaveCount(3);
+      }
+      await browserExpect(page.getByRole("link", { name: "Show more results" })).toHaveCount(0);
+      // A tag narrows the search, shown as a removable chip.
+      await ready(page, `/discover?q=${word}&tag=${word}`);
+      await browserExpect(page.locator(".filter-chip")).toContainText(`Tag: ${word}`);
+      await browserExpect(cards).toHaveCount(1);
+      await browserExpect(cards.locator("p mark")).toHaveText(word);
+      await page.getByRole("link", { name: `Remove tag filter ${word}` }).click();
+      await browserExpect(page).toHaveURL(`${origin}/discover?q=${word}`);
+      for (const width of [390, 1280]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+        await page.screenshot({ path: `/tmp/discover-search-${js}-${width}.png`, fullPage: true });
+      }
+      // Nothing found names the problem and offers a way forward.
+      await ready(page, "/discover?q=xylophonequartz");
+      await browserExpect(
+        page.getByRole("heading", { name: "No collections for “xylophonequartz”", exact: true }),
+      ).toBeVisible();
+      await browserExpect(page.locator(".search-empty")).toContainText("Check the spelling");
+      // Punctuation alone finds nothing rather than failing.
+      await ready(page, "/discover?q=%21%21%21");
+      await browserExpect(page.locator(".search-empty")).toBeVisible();
+      // Clearing the search returns to Everything.
+      await page.getByLabel("Search collections").fill("");
+      await page.getByRole("button", { name: "Search", exact: true }).click();
+      await browserExpect(
+        page.getByRole("navigation", { name: "Discover", exact: true }),
+      ).toBeVisible();
+    } finally {
+      await close();
+    }
+  }
+}, 60000);
 
 it("finds only the title and validates the first link before sign-in, with a lookup-failure fallback", async () => {
   const { page, close } = await freshPage();
@@ -9827,6 +9927,7 @@ it("marks only signed-out, fully rendered public pages for the edge cache", asyn
       `/h/${hubId}?view=public`,
       "/capture",
       "/start",
+      "/discover?q=compost",
     ])
       expect(await policy(path)).toContain("no-store");
     // A render whose primary read failed shows a 200 error notice: never shared.

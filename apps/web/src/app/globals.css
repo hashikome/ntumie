@@ -3158,6 +3158,7 @@ main:has(> .band-page) {
   margin: 0;
 }
 .band-section-head .meta {
+  flex: none;
   font-size: 1rem;
 }
 .band-body .continuation {
@@ -3393,9 +3394,10 @@ main .action-form.search-box input[type="search"]:focus {
   outline: 2px solid var(--color-on-primary);
   outline-offset: 2px;
 }
-.search-box .button {
+.action-form.search-box > .button {
   min-height: 2.625rem;
   flex: none;
+  margin-top: 0;
 }
 .popular-tags {
   display: flex;
@@ -3463,6 +3465,9 @@ main .action-form.search-box input[type="search"]:focus {
   padding: 0;
   display: grid;
   gap: 1rem;
+}
+.hub-cards.cards-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .hub-cards.cards-4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3796,6 +3801,7 @@ button.switch[aria-checked="true"]::after {
 @media (max-width: 900px) {
   .collection-cards,
   .collection-cards.cards-3,
+  .hub-cards.cards-2,
   .hub-cards.cards-3,
   .hub-cards.cards-4,
   .profile-prompts {
@@ -6302,4 +6308,45 @@ body:has(.auth-stage):not(:has(.start-collection, .start-steps)) .session-nav .n
   min-height: 2.75rem;
   font-weight: 600;
   color: var(--color-ink);
+}
+
+/* Discover search results: matched words and the nothing-found state. */
+.collection-card mark {
+  padding: 0 0.125rem;
+  border-radius: 0.25rem;
+  background: var(--color-primary-soft);
+  color: var(--color-ink);
+}
+.search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.75rem;
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+.search-empty.after-hubs {
+  margin-top: 1.75rem;
+}
+.search-empty > h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.search-empty > p {
+  margin: 0;
+  color: var(--color-muted);
+}
+.search-empty-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.search-empty-tags a {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-tag);
+  background: var(--color-primary-soft);
+  color: var(--color-link);
+  font-weight: 600;
+  text-decoration: none;
 }
