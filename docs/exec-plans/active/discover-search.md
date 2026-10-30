@@ -45,6 +45,8 @@ private content never contributes to results, counts or highlights.
   JavaScript); removable tag chip; empty state with popular tags. The Discover
   `search` fake door is gone; the reader's "Search this hub" keeps it until
   milestone 3.
+  Card tags are links (owner, 2026-10-31): on results they keep the search and
+  add the filter, elsewhere they open the tag.
 - [ ] Milestone 3: in-hub search (reader "Search this hub", Ctrl K).
 - [ ] Docs, CHANGELOG, browser acceptance.
 

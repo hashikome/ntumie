@@ -3234,7 +3234,10 @@ main:has(> .band-page) {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* Tags are links of their own, above the title's card-wide link. */
 .card-tags {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
@@ -3245,6 +3248,10 @@ main:has(> .band-page) {
   background: var(--color-canvas);
   color: var(--color-muted);
   font-size: 0.875rem;
+  text-decoration: none;
+}
+.card-tags .tag:hover {
+  color: var(--color-link);
 }
 .card-meta {
   display: flex;
@@ -6349,4 +6356,16 @@ body:has(.auth-stage):not(:has(.start-collection, .start-steps)) .session-nav .n
   color: var(--color-link);
   font-weight: 600;
   text-decoration: none;
+}
+
+/* A finger-sized target around each card tag, without moving the layout. */
+@media (pointer: coarse) {
+  .card-tags .tag {
+    position: relative;
+  }
+  .card-tags .tag::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem 0;
+  }
 }

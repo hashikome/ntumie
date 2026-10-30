@@ -5202,6 +5202,19 @@ it("searches Discover: hubs, best matches with marked words, tags, more results 
       await browserExpect(cards.locator("p mark")).toHaveText(word);
       await page.getByRole("link", { name: `Remove tag filter ${word}` }).click();
       await browserExpect(page).toHaveURL(`${origin}/discover?q=${word}`);
+      // A tag on a result narrows that search; the card still opens the collection.
+      await ready(page, "/discover?q=Feeding");
+      const result = page.locator(".collection-card", { hasText: "Feeding your soil" });
+      await result.locator(".card-tags").getByRole("link", { name: word, exact: true }).click();
+      await browserExpect(page).toHaveURL(`${origin}/discover?q=Feeding&tag=${word}`);
+      await browserExpect(page.locator(".filter-chip")).toContainText(`Tag: ${word}`);
+      await browserExpect(cards).toHaveCount(1);
+      // Elsewhere a tag opens that tag's page.
+      await ready(page, `/discover?tag=${word}`);
+      await browserExpect(
+        page.locator(".card-tags").getByRole("link", { name: word, exact: true }),
+      ).toHaveAttribute("href", `/discover?tag=${word}`);
+      await ready(page, `/discover?q=${word}`);
       for (const width of [390, 1280]) {
         await page.setViewportSize({ width, height: 900 });
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(

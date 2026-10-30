@@ -160,6 +160,7 @@ export async function DiscoverSearch({
             </div>
             <SearchResults
               path={path}
+              query={q}
               initial={found.collections}
               nextCursor={nextCursor}
               nextHref={nextHref}

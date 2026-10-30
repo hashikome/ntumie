@@ -9,11 +9,13 @@ import { CollectionCard } from "./collection-card";
 // next page in place; without JavaScript it is a link to that page.
 export function SearchResults({
   path,
+  query,
   initial,
   nextCursor,
   nextHref,
 }: {
   path: ApiPath;
+  query: string;
   initial: CollectionSearchHit[];
   nextCursor: string | null;
   nextHref: string | null;
@@ -52,7 +54,12 @@ export function SearchResults({
     <>
       <ul className="collection-cards">
         {hits.map(({ collection, highlight }) => (
-          <CollectionCard key={collection.id} item={collection} highlight={highlight} />
+          <CollectionCard
+            key={collection.id}
+            item={collection}
+            highlight={highlight}
+            searchQuery={query}
+          />
         ))}
       </ul>
       {failed && <p role="status">Couldn't load more. Your current results are still here.</p>}

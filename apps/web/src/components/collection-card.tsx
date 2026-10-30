@@ -40,9 +40,12 @@ export function CollectionCard({
   item,
   showHub = true,
   highlight,
+  searchQuery,
 }: {
   item: Collection;
   showHub?: boolean;
+  /** On search results a tag narrows this search instead of leaving it. */
+  searchQuery?: string;
   /** A search's matched words, marked by the API. */
   highlight?: { title: string | null; description: string | null };
 }) {
@@ -59,9 +62,16 @@ export function CollectionCard({
       {item.tags.length > 0 && (
         <span className="card-tags">
           {item.tags.slice(0, 3).map((tag) => (
-            <span className="tag" key={tag}>
+            <a
+              className="tag"
+              key={tag}
+              href={`/discover?${new URLSearchParams({
+                ...(searchQuery ? { q: searchQuery } : {}),
+                tag,
+              })}`}
+            >
               {tag}
-            </span>
+            </a>
           ))}
         </span>
       )}
