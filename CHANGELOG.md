@@ -9,6 +9,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- License the repository under FSL-1.1-ALv2, copyright Shikome Technology
+  Limited. Each release becomes Apache 2.0 two years after it is published.
 - "Search this hub" (Ctrl K) now searches: it finds the collections, sections
   and links a viewer can read in that hub, in a dialog or, without JavaScript, on
   a page. `GET /api/v1/hubs/:hubId/search` goes through the policy service.

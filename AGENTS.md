@@ -3,6 +3,7 @@
 This repository is the source of truth for the ntumie. product and
 engineering decisions. External documents are references only. Keep this file
 short: it is a map for contributors and coding agents, not a complete manual.
+Public repository, licensed FSL-1.1-ALv2 (`LICENSE.md`).
 
 ## Start Here
 

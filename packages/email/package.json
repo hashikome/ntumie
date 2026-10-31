@@ -2,7 +2,7 @@
   "name": "@ntumie/email",
   "version": "0.0.1",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "FSL-1.1-ALv2",
   "type": "module",
   "description": "Backend-owned transactional email templates and rendering (React Email).",
   "exports": {

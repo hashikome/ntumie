@@ -2,7 +2,7 @@
   "name": "@ntumie/types",
   "version": "0.0.1",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "FSL-1.1-ALv2",
   "type": "module",
   "description": "Shared API request/response contract types for ntumie. clients.",
   "exports": {

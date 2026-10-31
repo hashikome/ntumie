@@ -146,3 +146,13 @@ Historical decisions and completed plans retain the earlier LinkHub and
 NSLinkHub names. [ADR-0060](docs/engineering-decisions/0060-ntumie-repository-and-branding.md)
 records the rename and compatibility boundaries. Shared IAM and infrastructure
 implementation remain separate work. Application authorization stays product-owned.
+
+## Licence
+
+[Functional Source License 1.1, Apache 2.0 future licence](LICENSE.md) (FSL-1.1-ALv2). You may
+use, modify and redistribute ntumie for any purpose except offering a competing commercial
+product or service; each release becomes available under the Apache License 2.0 two years
+after it is published. The fonts in `apps/web/src/fonts` keep their own licence (`OFL.txt`).
+
+Developed and maintained by **Shikome Technology Limited** ([@hashikome](https://github.com/hashikome)),
+a Tanzania-registered technology company.
