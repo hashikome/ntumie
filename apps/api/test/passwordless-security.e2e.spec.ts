@@ -134,6 +134,36 @@ describe("passwordless protection", () => {
     expect((await pending.clone().json()).twoFactorRedirect).toBe(true);
     expect((await call("/two-factor/verify-totp", { code }, cookies(pending))).status).toBe(401);
   });
+  it("tells a pending sign-in which factors its account has, and nobody else", async () => {
+    const read = (cookie: string) =>
+      auth.handler(
+        new Request(`${baseURL}/api/v1/auth/pending-factors`, {
+          headers: { origin: webOrigin, ...(cookie ? { cookie } : {}) },
+        }),
+      );
+    expect((await read("")).status).toBeGreaterThanOrEqual(400);
+    const owner = await enrolled();
+    const totp = await read(cookies(await login(owner.email)));
+    expect((await totp.json()).data).toEqual({ totp: true, passkey: false });
+    // A passkey alone also protects email: the challenge must ask for it, not a code.
+    const email = `passkey-only-${randomUUID()}@example.com`;
+    const user = (await (await login(email)).json()).user;
+    await prisma.passkey.create({
+      data: {
+        userId: user.id,
+        name: "Laptop",
+        publicKey: "key",
+        credentialID: randomUUID(),
+        counter: 0,
+        deviceType: "singleDevice",
+        backedUp: false,
+      },
+    });
+    const pending = await login(email);
+    expect((await pending.clone().json()).twoFactorRedirect).toBe(true);
+    const onlyPasskey = await read(cookies(pending));
+    expect((await onlyPasskey.json()).data).toEqual({ totp: false, passkey: true });
+  });
   it("requires factor confirmation, prevents replacement, and gates email before any usable session", async () => {
     const owner = await enrolled();
     await expectSignIns(prisma, owner.user.id, ["email"]);

@@ -9,6 +9,10 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Fix the second sign-in step asking people with only a passkey for an
+  authenticator code they never set up: it now asks for what the account has.
+  Password managers can also fill the six-digit code field, which they skipped
+  while it was invisible, and a wrong authenticator code now clears.
 - License the repository under FSL-1.1-ALv2, copyright Shikome Technology
   Limited. Each release becomes Apache 2.0 two years after it is published.
 - "Search this hub" (Ctrl K) now searches: it finds the collections, sections

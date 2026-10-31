@@ -148,6 +148,25 @@ export function securityPlugins(
   const policy: BetterAuthPlugin = {
     id: "account-security-policy",
     endpoints: {
+      // Which factors can finish a pending sign-in, so the challenge asks only
+      // for what this account has. Reachable only after the first proof.
+      pendingFactors: createAuthEndpoint("/pending-factors", { method: "GET" }, async (ctx) => {
+        const challenge = await ctx.getSignedCookie(factorCookieName(baseURL), secret);
+        const pending = challenge
+          ? await prisma.verification.findFirst({
+              where: { identifier: challenge, expiresAt: { gt: new Date() } },
+            })
+          : null;
+        if (!pending) throw reject();
+        const user = await prisma.user.findUnique({ where: { id: pending.value } });
+        if (!user) throw reject();
+        return ctx.json({
+          data: {
+            totp: user.twoFactorEnabled,
+            passkey: (await prisma.passkey.count({ where: { userId: user.id } })) > 0,
+          },
+        });
+      }),
       registerEmailAccount: createAuthEndpoint(
         "/email-registration/confirm",
         { method: "POST" },

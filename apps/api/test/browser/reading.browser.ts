@@ -8063,6 +8063,10 @@ it("protects passwordless sign-in with passkeys and native authenticator recover
     await browserExpect(
       page.getByRole("heading", { name: "Confirm it is you", exact: true }),
     ).toBeVisible();
+    // A passkey and no authenticator: it asks for the passkey, never a code.
+    await browserExpect(page.getByText("Use your passkey to finish signing in.")).toBeVisible();
+    await browserExpect(page.getByRole("button", { name: "Use a passkey" })).toBeVisible();
+    await browserExpect(page.locator(".code-boxes")).toHaveCount(0);
     await securityScreens(page, "factor");
     const guarded = await page.request.get(`${publicApiOrigin}/api/v1/profile`);
     expect(guarded.status()).toBe(401);
@@ -8126,6 +8130,13 @@ it("sets up an authenticator and uses recovery without JavaScript", async () => 
     await browserExpect(
       page.getByRole("heading", { name: "Confirm it is you", exact: true }),
     ).toBeVisible();
+    // With an authenticator the boxes return, over a field password managers can see.
+    await browserExpect(page.locator(".code-boxes")).toBeVisible();
+    expect(
+      await page
+        .locator("#code")
+        .evaluate((field) => [getComputedStyle(field).opacity, getComputedStyle(field).color]),
+    ).toEqual(["1", "rgba(0, 0, 0, 0)"]);
     await page.getByRole("link", { name: "Use a recovery code", exact: true }).click();
     await page.getByLabel("Recovery code", { exact: true }).fill(recovery);
     await page.getByRole("button", { name: verifyCode }).click();

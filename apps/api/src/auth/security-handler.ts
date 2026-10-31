@@ -27,6 +27,7 @@ const getPaths = new Set([
   "/email-registration",
   "/account/recovery",
   "/security/status",
+  "/pending-factors",
   "/methods",
   "/callback/google",
   "/google-connection",

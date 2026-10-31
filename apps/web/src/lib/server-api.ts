@@ -13,6 +13,7 @@ export async function serverRead<T>(path: ApiPath, shareToken?: string) {
       "/api/v1/auth/google-connection",
       "/api/v1/auth/account/recovery",
       "/api/v1/auth/email-registration",
+      "/api/v1/auth/pending-factors",
     ].includes(path)
       ? authCookies
       : sessionCookie

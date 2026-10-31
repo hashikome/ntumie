@@ -5495,12 +5495,27 @@ main .ops-filters select {
 .code-input {
   position: relative;
 }
-.code-input.is-enhanced > input {
+/* Transparent, not opacity: 0: password managers skip fields they read as
+   invisible, and authenticator codes come from them. */
+.code-input.is-enhanced > input#code {
   position: absolute;
   inset: 0;
   z-index: 1;
-  opacity: 0;
+  width: 100%;
+  height: 100%;
+  border-color: transparent;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
   caret-color: transparent;
+}
+.code-input.is-enhanced > input::selection {
+  background: transparent;
+}
+.code-input.is-enhanced > input:-webkit-autofill {
+  transition: background-color 86400s;
 }
 .code-boxes {
   display: grid;
