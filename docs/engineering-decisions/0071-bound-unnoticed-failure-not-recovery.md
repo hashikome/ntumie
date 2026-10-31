@@ -33,8 +33,10 @@ By layer:
   connection counts too. Then log fatal (`*.redis_unavailable`), exit non-zero
   and alert. The worker connection itself keeps commands waiting (no failing
   loop that could starve SIGTERM).
-- **Deployment.** The production worker restarts on failure after 30 s with
-  no attempt cap, so it resumes by itself once Redis is back.
+- **Deployment.** The production worker restarts after 30 s with no attempt
+  cap, whatever its exit code (`condition: any`), so it resumes by itself once
+  Redis is back. `on-failure` is not enough: the worker exits 0 on SIGTERM, so
+  the host reboot of 18 October 2026 left it stopped for 13 days, unnoticed.
 
 ## Consequences
 

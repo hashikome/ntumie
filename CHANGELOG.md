@@ -9,6 +9,10 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Restart the production worker on any exit (`condition: any`). It exits 0 on
+  SIGTERM, so under `on-failure` the host reboot of 18 October left it stopped
+  for 13 days with no email delivered.
+
 - Adopt the Hashikome secrets standard in the documents: env values for ordinary
   settings, Docker secrets for sensitive ones, each product standing alone
   (`docs/SECURITY.md`, Credentials). Remove the 1Password runtime example and

@@ -142,9 +142,10 @@ services:
       # A sustained Redis outage ends the worker (exit 1 after
       # REDIS_OUTAGE_LIMIT_MS, default 5 minutes, and an alert); Swarm keeps
       # restarting it every 30s with no attempt cap, so it resumes by itself
-      # once Redis is back (ADR-0071).
+      # once Redis is back (ADR-0071). `any`, not on-failure: the worker exits 0
+      # on SIGTERM, so after a host reboot on-failure leaves it stopped.
       restart_policy:
-        condition: on-failure
+        condition: any
         delay: 30s
 
 networks:
