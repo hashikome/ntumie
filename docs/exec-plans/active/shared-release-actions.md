@@ -64,8 +64,9 @@ reviewed version bump.
   Python, so no product's toolchain is required.
   Date/Author: 2026-10-31 / proposed
 
-- Decision: callers pin an exact version (`@v1.0.0`), edited by hand in each
-  product. No moving major tag, no Dependabot, no PRs.
+- Decision: callers pin an exact version (`@v1.0.0`), or a full commit for a
+  change not published yet, edited by hand in each product. Releases are
+  immutable. No moving major tag, no Dependabot, no PRs.
   Rationale: the deploy step receives the production deploy key, so what it runs
   must not change without an edit in that repository, and a version reads better
   than a commit.
@@ -104,7 +105,8 @@ To be filled in when `hashikome/actions` exists.
   including its migration step, and a forced failure leaves the previous version
   serving.
 - No credential or product configuration appears in `hashikome/actions`.
-- Each caller pins an exact version (`@v1.0.0`).
+- Each caller pins an exact version (`@v1.0.0`), or a full commit for a change
+  not published yet.
 
 ## Idempotence And Recovery
 
