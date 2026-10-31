@@ -55,13 +55,21 @@ reviewed version bump.
   Rationale: it is public, and the secrets standard has each product stand
   alone.
   Date/Author: 2026-10-31 / proposed
-- Decision: a composite action, pinned by full commit SHA in callers (not
+- Decision (superseded 2026-10-31 by the version decision below): a composite
+  action, pinned by full commit SHA in callers (not
   `@main`), written in Python with the standard library only.
   Rationale: a composite action runs inside the caller's job, so the product
   keeps its own `production` environment and credential. A pin means one push
   cannot change every product's next deploy unreviewed. Runners already have
   Python, so no product's toolchain is required.
   Date/Author: 2026-10-31 / proposed
+
+- Decision: callers use `@v1`, like `actions/*`, with exact `vX.Y.Z` releases
+  beside it.
+  Rationale: the owner controls both sides, so a moving major tag costs little
+  and fixes reach products without a bump in each. Product images stay pinned by
+  SHA and digest.
+  Date/Author: 2026-10-31 / owner
 
 ## Outcomes & Retrospective
 
@@ -96,7 +104,7 @@ To be filled in when `hashikome/actions` exists.
   including its migration step, and a forced failure leaves the previous version
   serving.
 - No credential or product configuration appears in `hashikome/actions`.
-- Each caller pins a full commit SHA.
+- Each caller uses a major version tag (`@v1`).
 
 ## Idempotence And Recovery
 

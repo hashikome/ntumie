@@ -9,6 +9,7 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Release through `hashikome/actions/dokploy-release@v1` instead of a commit.
 - Fix the second sign-in step asking people with only a passkey for an
   authenticator code they never set up: it now asks for what the account has.
   Password managers can also fill the six-digit code field, which they skipped
