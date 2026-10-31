@@ -9,6 +9,11 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Fix correct sign-in codes being refused after one wrong try: the six boxes
+  showed the first six digits of a field that kept its old value, so a new code
+  landed out of sight and never reached the API. The field now clears after a
+  rejected code, and the boxes always show what is sent.
+
 - Release through the shared `hashikome/actions/dokploy-release` action, pinned
   by commit. What is specific to ntumie stays in `deploy/release.json`, with a
   test that keeps it in step with the stack files.

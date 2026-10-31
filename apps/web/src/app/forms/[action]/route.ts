@@ -698,8 +698,9 @@ async function handlePost(request: Request, { params }: { params: Promise<{ acti
   if (action === "code-verify") {
     const flow = await readFlow();
     if (!flow) return redirectResponse("/sign-in?notice=expired");
-    // Pasted codes often carry spaces or dashes ("336 865"); only digits count.
-    const code = (form.get("code") ?? "").replace(/[\s-]/g, "");
+    // Pasted codes often carry spaces, dashes or invisible characters; only
+    // digits count.
+    const code = (form.get("code") ?? "").replace(/\D/g, "");
     if (!/^\d{6}$/.test(code)) return redirectResponse("/sign-in/code?notice=code-invalid");
     const result = await formPost(
       request,

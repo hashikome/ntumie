@@ -2458,7 +2458,16 @@ describe("management: production browser journey", () => {
       await waitForResend(page);
       await page.getByRole("button", { name: "Send a new code", exact: true }).click();
       await browserExpect(page.locator(".toast")).toContainText("sent a new code");
-      await page.getByLabel("Six-digit code").fill(await capturedCode(op.email));
+      await page.getByLabel("Six-digit code").fill("000001");
+      await page.getByRole("button", { name: verifyCode }).click();
+      await browserExpect(page.locator(".field-error")).toContainText("That code does not match");
+      // Typed as a person does, straight after a rejected code, with no reload:
+      // it must replace the old digits, and the boxes must show what is sent.
+      const fresh = await capturedCode(op.email);
+      await page.getByLabel("Six-digit code").click();
+      await page.keyboard.press("End");
+      await page.keyboard.type(fresh);
+      await browserExpect(page.locator(".code-boxes")).toHaveText(fresh);
       await page.getByRole("button", { name: verifyCode }).click();
       await browserExpect(page.locator("h1")).toHaveText("Good links belong together.");
       expect(new URL(page.url()).origin).toBe(origin);
