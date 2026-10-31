@@ -149,4 +149,86 @@ describe("Discover search (e2e)", () => {
     // Text past the limit is cut, not refused.
     await search({ q: `${pageWord} ${"x".repeat(300)}` }).expect(200);
   });
+
+  describe("inside one hub", () => {
+    const inHub = (hubId: string, q: string, token?: string) => {
+      const call = request(app.getHttpServer()).get(
+        `/api/v1/hubs/${hubId}/search?${new URLSearchParams({ q })}`,
+      );
+      return token ? call.auth(token, { type: "bearer" }) : call;
+    };
+    const hubOf = async (userId: string) =>
+      (await prisma.hub.findUniqueOrThrow({ where: { ownerUserId: userId } })).id;
+    const links = (body: { data: { links: Array<{ id: string }> } }) =>
+      body.data.links.map((link) => link.id);
+    const add = (collectionId: string, data: { kind: string; title?: string; note?: string }) =>
+      prisma.resource.create({
+        data: {
+          collectionId,
+          kind: data.kind,
+          url: data.kind === "heading" ? null : `https://example.com/${randomUUID()}`,
+          titleOverride: data.title ?? null,
+          note: data.note ?? null,
+          position: Math.floor(Math.random() * 1_000_000),
+        },
+      });
+
+    it("groups collections, sections and links, and marks the matched words", async () => {
+      const term = word("hubterm");
+      const me = await owner();
+      const hubId = await hubOf(me.userId);
+      const shelf = await me.create(`Shelf of ${term}`);
+      const section = await add(shelf, { kind: "heading", title: `All about ${term}` });
+      const titled = await add(shelf, { kind: "external_link", title: `Guide to ${term}` });
+      const noted = await add(shelf, { kind: "external_link", title: "Plain", note: `On ${term}` });
+      const found = (await inHub(hubId, term).expect(200)).body;
+      expect(found.data.collections.map((hit: { id: string }) => hit.id)).toEqual([shelf]);
+      expect(found.data.sections).toEqual([
+        {
+          id: section.id,
+          collectionId: shelf,
+          collectionTitle: `Shelf of ${term}`,
+          title: `All about ${searchMarkStart}${term}${searchMarkEnd}`,
+        },
+      ]);
+      // The title outranks the note.
+      expect(links(found)).toEqual([titled.id, noted.id]);
+      const other = await owner();
+      await other.create(`Elsewhere ${term}`);
+      expect((await inHub(hubId, term).expect(200)).body.data.collections).toHaveLength(1);
+      expect((await inHub(hubId, "  !!! ").expect(400)).body.error.code).toBe("bad_request");
+    });
+
+    it("shows each viewer only what the policy lets them read", async () => {
+      const term = word("hubsecret");
+      const me = await owner();
+      const hubId = await hubOf(me.userId);
+      await me.create(`Open ${term}`);
+      const hidden = await me.create(`Closed ${term}`, undefined, false);
+      const inside = await add(hidden, { kind: "external_link", title: `Inner ${term}` });
+      const shared = await owner("Helper");
+      const email = (await prisma.user.findUniqueOrThrow({ where: { id: shared.userId } })).email;
+      await request(app.getHttpServer())
+        .post(`/api/v1/collections/${hidden}/shares`)
+        .auth(me.token, { type: "bearer" })
+        .send({ email, role: "viewer" })
+        .expect((response) => expect(response.status).toBeLessThan(300));
+      const stranger = await owner("Stranger");
+      for (const viewer of [undefined, stranger.token]) {
+        const found = (await inHub(hubId, term, viewer).expect(200)).body;
+        expect(found.data.collections).toHaveLength(1);
+        expect(found.data.links).toEqual([]);
+      }
+      for (const viewer of [me.token, shared.token]) {
+        const found = (await inHub(hubId, term, viewer).expect(200)).body;
+        expect(found.data.collections).toHaveLength(2);
+        expect(links(found)).toEqual([inside.id]);
+      }
+      const answer = await inHub(hubId, term, me.token).expect(200);
+      expect(answer.headers["cache-control"]).toContain("no-store");
+      // An unknown hub answers like one with nothing readable.
+      const unknown = await inHub(randomUUID(), term).expect(200);
+      expect(unknown.body.data.collections).toEqual([]);
+    });
+  });
 });

@@ -27,3 +27,29 @@ export interface DiscoverSearchResult {
   collections: CollectionSearchHit[];
   collectionTotal: number;
 }
+
+/** A section or link found inside a hub, and the collection holding it. */
+export interface HubSearchEntry {
+  id: string;
+  collectionId: string;
+  collectionTitle: string;
+  /** The title with matched words marked. */
+  title: string;
+}
+
+/** A collection found inside a hub, with its matched words marked. */
+export interface HubSearchCollection {
+  id: string;
+  title: string;
+  /** The description, only when words matched there. */
+  description: string | null;
+}
+
+/** Search inside one hub: what this viewer can read, best match first in each group. */
+export interface HubSearchResult {
+  /** The words searched for, as the API read them. */
+  query: string;
+  collections: HubSearchCollection[];
+  sections: HubSearchEntry[];
+  links: HubSearchEntry[];
+}

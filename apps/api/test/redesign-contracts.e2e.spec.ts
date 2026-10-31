@@ -362,7 +362,7 @@ describe("cobalt redesign contracts", () => {
   });
 
   it("records interest in features that are on the way, signed in or not", async () => {
-    await request(server()).post("/api/v1/interest").send({ feature: "search" }).expect(201);
+    await request(server()).post("/api/v1/interest").send({ feature: "communities" }).expect(201);
     await auth(request(server()).post("/api/v1/interest"), reader)
       .send({ feature: "subscriptions" })
       .expect(201);

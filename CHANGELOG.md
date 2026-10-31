@@ -9,6 +9,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- "Search this hub" (Ctrl K) now searches: it finds the collections, sections
+  and links a viewer can read in that hub, in a dialog or, without JavaScript, on
+  a page. `GET /api/v1/hubs/:hubId/search` goes through the policy service.
 - Fix correct sign-in codes being refused after one wrong try: the six boxes
   showed the first six digits of a field that kept its old value, so a new code
   landed out of sight and never reached the API. The field now clears after a

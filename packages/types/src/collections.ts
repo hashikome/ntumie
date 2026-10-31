@@ -155,7 +155,6 @@ export interface TransferCollectionRequest extends CollectionImpactRequest {
  * (POST /api/v1/interest) and the client says it is on the way.
  */
 export const interestFeatures = [
-  "search",
   "subscriptions",
   "communities",
   "partners",

@@ -4579,7 +4579,7 @@ it("continues replies on an older question page with the share token and answer 
   }
 }, 30000);
 
-it("discusses an item from the reader: attached item, its section, the Answered filter and the hub search door", async () => {
+it("discusses an item from the reader: attached item, its section, the Answered filter and hub search", async () => {
   await prisma.requestBudget.deleteMany();
   const email = `discuss-item-${crypto.randomUUID()}@example.com`;
   const signed = await signInHubOwner(app.getHttpServer(), { email, name: "Item talker" });
@@ -4638,13 +4638,27 @@ it("discusses an item from the reader: attached item, its section, the Answered 
         "aria-current",
         "true",
       );
-      // Searching the hub is on the way: it records interest.
-      const searches = await prisma.featureInterest.count({ where: { feature: "search" } });
-      await page.getByRole("button", { name: /Search this hub/ }).click();
-      await browserExpect(page.locator(".toast")).toContainText("Search is on the way");
-      expect(await prisma.featureInterest.count({ where: { feature: "search" } })).toBe(
-        searches + 1,
-      );
+      // Searching the hub: a dialog, or the same results as a page without JavaScript.
+      const hubSearch = page.getByRole("link", { name: /Search this hub/ });
+      if (js) {
+        await page.keyboard.press("Control+k");
+        const dialog = page.getByRole("dialog", { name: "Search this hub" });
+        await dialog.getByRole("searchbox").fill("getting");
+        const found = dialog.getByRole("link", { name: /Getting started/ });
+        await browserExpect(found).toBeVisible();
+        await browserExpect(found.locator("mark")).toHaveText("Getting");
+        await page.keyboard.press("ArrowDown");
+        await browserExpect(dialog.getByRole("link").first()).toBeFocused();
+        await page.screenshot({ path: "/tmp/reader-hub-search.png" });
+        await page.keyboard.press("Escape");
+        await browserExpect(dialog).toBeHidden();
+        await browserExpect(hubSearch).toBeFocused();
+      } else {
+        await hubSearch.click();
+        await page.getByRole("searchbox").fill("getting");
+        await page.keyboard.press("Enter");
+        await browserExpect(page.getByRole("link", { name: /Getting started/ })).toBeVisible();
+      }
       if (js) await page.screenshot({ path: "/tmp/reader-discuss-item.png" });
     } finally {
       await close();
@@ -4666,7 +4680,7 @@ it("lays the reader out like its board: hub tree, band, sections, next and phone
       /Updated .* · (\d+ sections? · )?\d+ resources?/,
     );
     await browserExpect(page.locator(".made-with")).toContainText("Made with ntumie.");
-    await browserExpect(page.getByRole("button", { name: /Search this hub/ })).toBeVisible();
+    await browserExpect(page.getByRole("link", { name: /Search this hub/ })).toBeVisible();
     const sections = tree.locator("a[data-section-link]");
     if ((await sections.count()) > 0) {
       const last = sections.last();

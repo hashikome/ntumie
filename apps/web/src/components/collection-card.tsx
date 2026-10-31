@@ -19,7 +19,7 @@ export function CollectionCounts({ item }: { item: Collection }) {
 }
 
 // Text from the API with its matched words marked (search only).
-function Marked({ text }: { text: string }) {
+export function Marked({ text }: { text: string }) {
   return text.split(searchMarkStart).map((part, index) => {
     const [matched, rest] = part.split(searchMarkEnd);
     // biome-ignore lint/suspicious/noArrayIndexKey: A fixed split of one string.

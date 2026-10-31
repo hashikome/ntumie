@@ -1416,12 +1416,84 @@ main:has(> .reader-page) {
   color: var(--color-muted);
   font: inherit;
   font-size: 0.9375rem;
+  text-decoration: none;
   cursor: text;
 }
 .reader-sidebar .hub-search-button kbd {
   margin-left: auto;
   font: inherit;
   font-size: 0.875rem;
+}
+.hub-search-dialog {
+  margin: 12dvh auto auto;
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: 76dvh;
+  overflow: auto;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+.hub-search-dialog::backdrop {
+  background: oklch(0 0 0 / 45%);
+}
+.hub-search-dialog input[type="search"] {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1rem 1.25rem;
+  border: 0;
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font: inherit;
+}
+.hub-search-dialog input[type="search"]:focus {
+  outline: none;
+  border-bottom-color: var(--color-ink);
+}
+.hub-search-status {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  color: var(--color-muted);
+}
+.hub-search-results {
+  padding: 0.25rem 0.5rem 0.75rem;
+}
+.hub-search-results h2 {
+  margin: 0;
+  padding: 0.75rem 0.75rem 0.25rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.hub-search-results ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hub-search-results a {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-control);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.hub-search-results a:hover,
+.hub-search-results a:focus-visible {
+  background: var(--color-surface);
+}
+.hub-search-results small {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+.hub-search-page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
 }
 .tree-row {
   display: flex;
@@ -6318,7 +6390,8 @@ body:has(.auth-stage):not(:has(.start-collection, .start-steps)) .session-nav .n
 }
 
 /* Discover search results: matched words and the nothing-found state. */
-.collection-card mark {
+.collection-card mark,
+.hub-search-results mark {
   padding: 0 0.125rem;
   border-radius: 0.25rem;
   background: var(--color-primary-soft);

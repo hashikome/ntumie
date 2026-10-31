@@ -22,3 +22,11 @@ export class DiscoverSearchQueryDto extends CursorQueryDto {
   @IsIn(["all", "hubs"])
   scope?: "all" | "hubs";
 }
+
+export class HubSearchQueryDto {
+  /** The search text (longer text is cut, never rejected). */
+  @IsString()
+  @Transform(({ value }) => (typeof value === "string" ? value.slice(0, maxSearchLength) : value))
+  @MaxLength(maxSearchLength)
+  q!: string;
+}

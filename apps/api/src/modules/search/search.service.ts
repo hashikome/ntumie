@@ -2,15 +2,32 @@ import { Injectable } from "@nestjs/common";
 import {
   type CollectionSearchHit,
   type DiscoverSearchResult,
+  type HubSearchEntry,
+  type HubSearchResult,
   searchMarkEnd,
   searchMarkStart,
 } from "@ntumie/types";
+import { ResourceKind } from "src/common/enums/resource-kind.enum";
+import { AuthUser } from "src/common/interfaces/auth-user.interface";
 import { decodeCursor, encodeCursor } from "src/common/utils/cursor.util";
 import { PrismaService } from "src/database/prisma.service";
 import { Prisma } from "src/generated/prisma/client";
 import { appError } from "../../common/errors/app-exception";
 import { CollectionsService } from "../collections/collections.service";
+import { availableCollections } from "../hubs/availability";
+import { CollectionPolicyService } from "../hubs/collection-policy.service";
 import { type ParsedSearch, parseSearch } from "./search-query";
+
+const marks = `StartSel=${searchMarkStart}, StopSel=${searchMarkEnd}, HighlightAll=true`;
+const marked = (text: string | null) => (text?.includes(searchMarkStart) ? text : null);
+// Each group of a hub's results stops here; a hub search is a jump, not a list.
+const hubGroupLimit = 10;
+const toEntry = ({ id, collectionId, collectionTitle, title }: HubSearchEntry) => ({
+  id,
+  collectionId,
+  collectionTitle,
+  title,
+});
 
 // Search over what the public can read: published collections and public hubs
 // (a published collection, an active owner, no active hold). Postgres full-text
@@ -18,12 +35,15 @@ import { type ParsedSearch, parseSearch } from "./search-query";
 // similarity for typos and tag-prefix matches, then saves and recency.
 // Discover and the reader depend on this module only, so a dedicated engine
 // can replace it later (docs/exec-plans/active/discover-search.md).
+// In-hub search covers what the viewer can read, private collections included,
+// so it stays in Postgres behind the policy service whatever serves Discover.
 // The search text is never logged or recorded.
 @Injectable()
 export class SearchService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly collections: CollectionsService,
+    private readonly policy: CollectionPolicyService,
   ) {}
 
   async discover(input: {
@@ -58,16 +78,112 @@ export class SearchService {
     };
   }
 
+  // One hub's collections, sections and links. The policy service picks the
+  // collections first, so nothing unreadable can match, count or be marked; an
+  // unknown hub and one with nothing readable answer alike.
+  async hub(hubId: string, q: string, viewer: AuthUser | null): Promise<HubSearchResult> {
+    const search = parseSearch(q);
+    if (!search) throw appError("bad_request");
+    const candidates = await this.prisma.collection.findMany({
+      where: { hubId, ...availableCollections(viewer?.userId) },
+    });
+    const access = await this.policy.resolveMany(candidates, viewer);
+    const readable = candidates.flatMap(({ id }) => (access.get(id)?.canRead ? [id] : []));
+    if (!readable.length) return { query: search.text, collections: [], sections: [], links: [] };
+    const [collections, entries] = await Promise.all([
+      this.hubCollections(search, readable),
+      this.hubEntries(search, readable),
+    ]);
+    return {
+      query: search.text,
+      collections,
+      sections: entries.filter((entry) => entry.kind === ResourceKind.HEADING).map(toEntry),
+      links: entries.filter((entry) => entry.kind !== ResourceKind.HEADING).map(toEntry),
+    };
+  }
+
+  private async hubCollections(search: ParsedSearch, ids: string[]) {
+    const tagMatch = this.tagMatch(search);
+    const rows = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SET LOCAL pg_trgm.word_similarity_threshold = 0.5`;
+      return tx.$queryRaw<Array<{ id: string; title: string; description: string | null }>>`
+        WITH q AS (SELECT to_tsquery('simple', ${search.tsquery}) AS tsq, ${search.text}::text AS text)
+        SELECT c.id,
+               ts_headline('simple', c.title, q.tsq, ${marks}) AS title,
+               CASE WHEN c.description IS NULL THEN NULL
+                    ELSE ts_headline('simple', c.description, q.tsq, ${marks}) END AS description
+        FROM collections c
+        CROSS JOIN q
+        WHERE c.id = ANY(${ids}::uuid[])
+          AND (public.collection_search_vector(c.title, c.description) @@ q.tsq
+               OR q.text <% lower(c.title)
+               OR ${tagMatch})
+        ORDER BY ts_rank_cd(public.collection_search_vector(c.title, c.description), q.tsq)
+                 + 0.5 * word_similarity(q.text, lower(c.title))
+                 + CASE WHEN ${tagMatch} THEN 0.3 ELSE 0 END DESC,
+                 c.updated_at DESC, c.id DESC
+        LIMIT ${hubGroupLimit}
+      `;
+    });
+    return rows.map((row) => ({ ...row, description: marked(row.description) }));
+  }
+
+  // Sections and links: titles first, then descriptions, notes and sites, then
+  // tags. A hub is small enough to read this without an index of its own.
+  private async hubEntries(search: ParsedSearch, ids: string[]) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SET LOCAL pg_trgm.word_similarity_threshold = 0.5`;
+      return tx.$queryRaw<Array<HubSearchEntry & { kind: string }>>`
+        WITH q AS (SELECT to_tsquery('simple', ${search.tsquery}) AS tsq, ${search.text}::text AS text),
+        entries AS (
+          SELECT r.id, r.kind, r.collection_id, c.title AS collection_title, c.updated_at,
+                 coalesce(nullif(btrim(r.title_override), ''), nullif(btrim(m.title), ''), r.url, '') AS title,
+                 concat_ws(' ', r.section_description, r.note, m.description, m.site_name) AS body,
+                 (SELECT string_agg(t.name, ' ') FROM item_tags it JOIN tags t ON t.id = it.tag_id
+                  WHERE it.item_id = r.id) AS tags
+          FROM resources r
+          JOIN collections c ON c.id = r.collection_id
+          LEFT JOIN link_metadata m ON m.url = r.url AND m.state = 'ready'
+          WHERE r.collection_id = ANY(${ids}::uuid[])
+            AND r.kind IN (${ResourceKind.HEADING}, ${ResourceKind.EXTERNAL_LINK})
+        ),
+        weighted AS (
+          SELECT entries.*,
+                 setweight(to_tsvector('simple', title), 'A')
+                 || setweight(to_tsvector('simple', body), 'B')
+                 || setweight(to_tsvector('simple', coalesce(tags, '')), 'C') AS vector
+          FROM entries
+        ),
+        ranked AS (
+          SELECT weighted.*, ROW_NUMBER() OVER (
+                   PARTITION BY kind
+                   ORDER BY ts_rank_cd(vector, q.tsq) + 0.5 * word_similarity(q.text, lower(title)) DESC,
+                            updated_at DESC, id DESC) AS place
+          FROM weighted CROSS JOIN q
+          WHERE vector @@ q.tsq OR q.text <% lower(title)
+        )
+        SELECT ranked.id, kind, collection_id AS "collectionId", collection_title AS "collectionTitle",
+               ts_headline('simple', title, q.tsq, ${marks}) AS title
+        FROM ranked CROSS JOIN q
+        WHERE place <= ${hubGroupLimit}
+        ORDER BY kind, place
+      `;
+    });
+  }
+
+  private tagMatch(search: ParsedSearch) {
+    return Prisma.sql`EXISTS (
+      SELECT 1 FROM collection_tags ct JOIN tags t ON t.id = ct.tag_id
+      WHERE ct.collection_id = c.id AND lower(t.name) LIKE ANY (${search.tagPatterns}::text[]))`;
+  }
+
   private async collectionHits(
     search: ParsedSearch,
     tag: string | undefined,
     offset: number,
     limit: number,
   ): Promise<{ hits: CollectionSearchHit[]; total: number }> {
-    const marks = `StartSel=${searchMarkStart}, StopSel=${searchMarkEnd}, HighlightAll=true`;
-    const tagMatch = Prisma.sql`EXISTS (
-      SELECT 1 FROM collection_tags ct JOIN tags t ON t.id = ct.tag_id
-      WHERE ct.collection_id = c.id AND lower(t.name) LIKE ANY (${search.tagPatterns}::text[]))`;
+    const tagMatch = this.tagMatch(search);
     const rows = await this.prisma.$transaction(async (tx) => {
       // "compst" is close enough to "compost" (word similarity 0.71).
       await tx.$executeRaw`SET LOCAL pg_trgm.word_similarity_threshold = 0.5`;
@@ -105,7 +221,6 @@ export class SearchService {
     });
     const listings = await this.collections.listingsInOrder(rows.map((row) => row.id));
     const byId = new Map(rows.map((row) => [row.id, row]));
-    const marked = (text: string | null) => (text?.includes(searchMarkStart) ? text : null);
     return {
       hits: listings.map((collection) => {
         const row = byId.get(collection.id);

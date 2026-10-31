@@ -47,10 +47,22 @@ private content never contributes to results, counts or highlights.
   milestone 3.
   Card tags are links (owner, 2026-10-31): on results they keep the search and
   add the filter, elsewhere they open the tag.
-- [ ] Milestone 3: in-hub search (reader "Search this hub", Ctrl K).
+- [x] (2026-10-31) Milestone 3: in-hub search (reader "Search this hub", Ctrl K).
+  `GET /api/v1/hubs/:hubId/search` asks the policy service which of the hub's
+  collections the viewer can read, then searches only those: collections,
+  sections and links, ten per group. The dialog has no board; it uses the
+  existing tokens. The `search` fake door and interest feature are gone.
 - [ ] Docs, CHANGELOG, browser acceptance.
 
 ## Surprises & Discoveries
+
+- Observation: in-hub search needs no index of its own. The search is limited to
+  one hub's readable collections, so sections and links are read directly, with
+  no migration. Add an index if a large hub makes this slow.
+  Date/Author: 2026-10-31 / Claude
+- Observation: the page without JavaScript is `/h/:id/search`, not
+  `/@handle?q=`, so the hub page's two views stay as they are.
+  Date/Author: 2026-10-31 / Claude
 
 - Observation: Prisma's parity check ignores expression and partial indexes
   but would drop a plain extra index; the tag-prefix index is therefore on
@@ -172,7 +184,7 @@ links within this hub; visitors search published collections only, the
 owner and contributors also their readable private ones (through the policy
 service, never a separate rule). Selecting a link opens it in its
 collection (`?item=`). Without JavaScript, the button links to
-`/@handle?q=` which renders the same results as a page.
+`/h/:id/search`, which renders the same results as a page.
 
 ## Concrete Steps
 

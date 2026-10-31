@@ -14,9 +14,8 @@ import { Avatar } from "./avatar";
 import { CollectionFeedback } from "./collection-feedback";
 import { KeepBuilding, LivePanel } from "./collection-start";
 import { Comments, type DiscussionSection } from "./comments";
-import { FakeDoor } from "./fake-door";
 import { FormNotice } from "./form-notice";
-import { HubSearchShortcut } from "./hub-search-shortcut";
+import { HubSearch } from "./hub-search";
 import { Updated } from "./local-time";
 import { PaginatedList } from "./paginated-list";
 import { Tags } from "./primitives";
@@ -128,30 +127,9 @@ export async function CollectionReader({
   return (
     <div className="reader-page" data-reader>
       <SectionSpy />
-      <HubSearchShortcut />
       <ReaderMenu outline={outline} token={token} />
       <aside className="reader-sidebar" aria-label="In this hub">
-        <FakeDoor
-          feature="search"
-          returnTo={sourcePath(returnTo, query)}
-          className="hub-search-button"
-        >
-          <svg
-            width="17"
-            height="17"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="6" />
-            <path d="m20 20-4-4" />
-          </svg>
-          Search this hub
-          <kbd>Ctrl K</kbd>
-        </FakeDoor>
+        {outline.hub && <HubSearch hubId={outline.hub.id} />}
         <nav aria-label="Collections in this hub">
           <ReaderTree outline={outline} token={token} />
         </nav>
