@@ -16,7 +16,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 - Release through the shared `hashikome/actions/dokploy-release` action, pinned
   by commit. What is specific to ntumie stays in `deploy/release.json`, with a
-  test that keeps it in step with the stack files.
+  test that keeps it in step with the stack files. The old `tooling/release.ts`
+  is removed.
 
 - Restart the production worker on any exit (`condition: any`). It exits 0 on
   SIGTERM, so under `on-failure` the host reboot of 18 October left it stopped

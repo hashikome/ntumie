@@ -19,7 +19,9 @@ reviewed version bump.
   environment secret `DOKPLOY_API_KEY`.
 - [x] (2026-10-31) Created `hashikome/actions` (public) with `dokploy-release`
   (`78328e1`), ported from ntumie's coordinator with its tests.
-- [ ] Move ntumie onto it and prove one real release.
+- [x] (2026-10-31) ntumie moved: released through the action (run 41206935638),
+  then `tooling/release.ts`, its tests and `deploy/production.json` removed;
+  `tooling/release-config.test.ts` keeps ntumie's own stack checks.
 - [ ] Move HashiFi, then Soko; Pigfarm when it gains a release workflow.
 - [ ] Delete each product's copy of the coordinator, and promote this plan's
   decisions into an ADR and `docs/runbooks/release.md`.

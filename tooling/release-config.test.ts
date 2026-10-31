@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -35,4 +36,48 @@ test("the release configuration names the stacks' exact services", () => {
   ]);
   for (const { image } of Object.values<{ image: string }>(config.services))
     expect(Object.keys(config.images)).toContain(image);
+});
+
+test("Docker resolves the exact external names and images from the stored inputs", () => {
+  const revision = "a".repeat(40);
+  const images = {
+    API_IMAGE: `${config.images.API_IMAGE}:${revision}@sha256:${"b".repeat(64)}`,
+    WEB_IMAGE: `${config.images.WEB_IMAGE}:${revision}@sha256:${"c".repeat(64)}`,
+  };
+  const inputs = Object.fromEntries(
+    read("deploy/production.env.example")
+      .replace(/SET_[A-Z_]+/g, "fixture")
+      .split("\n")
+      .filter((line) => /^[A-Z0-9_]+=/.test(line))
+      .map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]),
+  );
+  const values = { ...inputs, ...images, RELEASE_SHA: revision, RELEASE_ATTEMPT: "1-1" };
+  for (const part of [config.application, config.migration]) {
+    const result = spawnSync("docker", ["stack", "config", "-c", part.manifest], {
+      cwd: new URL("..", import.meta.url).pathname,
+      encoding: "utf8",
+      env: { ...process.env, ...values, APP_REPLICAS: "1" },
+    });
+    expect(result.status).toBe(0);
+    const rendered = Bun.YAML.parse(result.stdout) as {
+      services: Record<string, { image: string; environment: Record<string, string> }>;
+      networks: Record<string, { name: string }>;
+      secrets: Record<string, { name: string }>;
+    };
+    const migrating = part === config.migration;
+    expect(rendered.networks.backend.name).toBe(values.BACKEND_NETWORK);
+    expect(rendered.services[migrating ? config.migration.service : "api"].image).toBe(
+      images.API_IMAGE,
+    );
+    expect(rendered.secrets.database_url.name).toBe(
+      values[migrating ? "MIGRATION_DATABASE_URL_SECRET" : "DATABASE_URL_SECRET"],
+    );
+    if (!migrating) {
+      expect(rendered.networks.ingress.name).toBe(values.INGRESS_NETWORK);
+      expect(rendered.services.web.image).toBe(images.WEB_IMAGE);
+      expect(rendered.services.worker.environment.EMAIL_FROM_ADDRESS).toBe(
+        values.EMAIL_FROM_ADDRESS,
+      );
+    }
+  }
 });

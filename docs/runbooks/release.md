@@ -242,10 +242,11 @@ production-launch requirements; they do not block this production CI/CD setup.
 
 The release workflow builds both immutable images after verification. Its optional
 `deploy` input defaults to false; every push to `main` also deploys. The deploy job
-reads the `production` environment secret `DOKPLOY_API_KEY`, and a missing or
-malformed value stops the release. No desktop approval or application SDK is
-involved.
-`deploy/production.json` selects the reviewed application/migration resources;
+runs the shared `hashikome/actions/dokploy-release` action, pinned by commit, with
+the `production` environment secret `DOKPLOY_API_KEY`. No desktop approval or
+application SDK is involved.
+`deploy/release.json` holds what is specific to ntumie: the reviewed
+application/migration resources, services, images and allowed inputs;
 `DOKPLOY_REGISTRY_ID` remains a GitHub environment variable. Prepare distinct local
 raw-source Stacks with base names `ntumie` and `ntumie-release`; Dokploy appends a
 six-character suffix. Service keys are `api`, `web`, `worker` and `migration`:
@@ -254,7 +255,7 @@ Leave Dokploy Git auto-deploy disabled. Both require the same private data netwo
 Application inputs follow `deploy/production.env.example`; migration inputs need
 only its backend network and migration secret name (image/attempt are supplied by CI).
 
-`tooling/release.ts` refuses a superseded main revision, foreign/mutable images,
+The action refuses a superseded main revision, foreign/mutable images,
 unresolved inputs, remote targets and failed or stale migration tasks. It verifies
 one exact migration container at exit zero before mutating the application Stack,
 then requires the selected attempt/images and healthy API/web tasks. Dokploy's
