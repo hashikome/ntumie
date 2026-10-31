@@ -42,6 +42,11 @@ reviewed version bump.
   Rationale: works for private and public repos alike. ntumie is public on
   purpose, so changing its visibility is not an option.
   Date/Author: 2026-10-31 / owner
+- Decision: `hashikome/actions` is GitHub's `actions` organisation for Hashikome:
+  a home for many small actions, one folder each, called as
+  `hashikome/actions/<name>@<sha>`. `dokploy-release` is the first.
+  Rationale: anything products share can sit beside it later.
+  Date/Author: 2026-10-31 / owner
 - Decision: `hashikome/actions` holds logic only: no credentials, no stack IDs,
   no product configuration.
   Rationale: it is public, and the secrets standard has each product stand
