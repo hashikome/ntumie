@@ -94,16 +94,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.4 }
-      - name: Validate secret provider
-        env:
-          SECRETS_PROVIDER: ${{ vars.SECRETS_PROVIDER || 'github' }}
-        run: |
-          case "$SECRETS_PROVIDER" in
-            github|1password) ;;
-            *) echo 'Unsupported SECRETS_PROVIDER; use github or 1password' >&2; exit 1 ;;
-          esac
-      - name: Load deployment credential from GitHub
-        if: vars.SECRETS_PROVIDER != '1password'
+      - name: Load deployment credential
         env:
           DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
         run: |
@@ -115,14 +106,6 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as output:
               output.write('DOKPLOY_API_KEY=' + key + '\n')
           PYTHON
-      - name: Load deployment credential from 1Password
-        if: vars.SECRETS_PROVIDER == '1password'
-        uses: 1password/load-secrets-action@eb2efd0703da22a93c467f2d1ffbb6826c11e19c # v4
-        with:
-          export-env: true
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          DOKPLOY_API_KEY: ${{ vars.OP_DOKPLOY_KEY_REF }}
       - name: Migrate, verify grants, then promote application images
         env:
           GH_TOKEN: ${{ github.token }}

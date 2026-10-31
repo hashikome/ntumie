@@ -241,14 +241,10 @@ production-launch requirements; they do not block this production CI/CD setup.
 ## Coordinated GitHub promotion
 
 The release workflow builds both immutable images after verification. Its optional
-`deploy` input defaults to false. When selected, the `production` environment
-selects `SECRETS_PROVIDER=1password` for the Hashikome installation and provides
-`OP_SERVICE_ACCOUNT_TOKEN` plus non-secret `OP_DOKPLOY_KEY_REF`. The pinned official
-1Password action reads the concealed Dokploy credential from Hashikome CI only in
-the deploy job. Alternatively, `SECRETS_PROVIDER=github` (the default when unset)
-uses the GitHub environment secret `DOKPLOY_API_KEY`. Unknown providers and failed
-selected providers stop the release; there is no automatic fallback. Both supply
-the same coordinator input. No desktop approval or application SDK is involved.
+`deploy` input defaults to false; every push to `main` also deploys. The deploy job
+reads the `production` environment secret `DOKPLOY_API_KEY`, and a missing or
+malformed value stops the release. No desktop approval or application SDK is
+involved.
 `deploy/production.json` selects the reviewed application/migration resources;
 `DOKPLOY_REGISTRY_ID` remains a GitHub environment variable. Prepare distinct local
 raw-source Stacks with base names `ntumie` and `ntumie-release`; Dokploy appends a

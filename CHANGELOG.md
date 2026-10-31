@@ -16,8 +16,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 - Adopt the Hashikome secrets standard in the documents: env values for ordinary
   settings, Docker secrets for sensitive ones, each product standing alone
   (`docs/SECURITY.md`, Credentials). Remove the 1Password runtime example and
-  personal paths from tracked configuration. The release's deploy credential
-  still loads through 1Password until its switch is proven.
+  personal paths from tracked configuration. The release's deploy credential is
+  now the `production` environment secret `DOKPLOY_API_KEY` (proven by a real
+  release); the 1Password step and `SECRETS_PROVIDER` are removed.
 
 - Search Discover: results as a shareable address (`/discover?q=compost`), with
   matching hubs first, then collections by best match with the matched words
