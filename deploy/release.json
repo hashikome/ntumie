@@ -1,0 +1,62 @@
+{
+  "title": "ntumie.",
+  "dokployUrl": "https://dokploy.hashikome.com",
+  "application": {
+    "compose": "tYDxvAaWd4GQXu-lKHvNv",
+    "stack": "ntumie-[a-z0-9]{6}",
+    "manifest": "docker-stack.prod.yml"
+  },
+  "migration": {
+    "compose": "oTJhOOlsXWARNdBqas43I",
+    "stack": "ntumie-release-[a-z0-9]{6}",
+    "manifest": "docker-stack.migrate.yml",
+    "service": "migration",
+    "image": "API_IMAGE",
+    "command": [
+      "--tsconfig-override",
+      "tsconfig.runtime.json",
+      "dist/src/operations/migrate-release.js"
+    ]
+  },
+  "previousApplication": {
+    "compose": "bkGtQ9pQiegdBU-LjN8Ab",
+    "stack": "ntumie-app-staging-g4feyf"
+  },
+  "services": {
+    "api": { "image": "API_IMAGE" },
+    "web": { "image": "WEB_IMAGE" },
+    "worker": { "image": "API_IMAGE", "healthcheck": false }
+  },
+  "images": {
+    "API_IMAGE": "ghcr.io/hashikome/ntumie/api",
+    "WEB_IMAGE": "ghcr.io/hashikome/ntumie/web"
+  },
+  "allowedInputs": [
+    "PUBLIC_HOST",
+    "INGRESS_NETWORK",
+    "BACKEND_NETWORK",
+    "HTTPS_ENTRYPOINT",
+    "TLS_RESOLVER",
+    "TRUSTED_PROXY_CIDRS",
+    "QUEUE_NAMESPACE",
+    "EMAIL_SUPPORT_URL",
+    "EMAIL_FROM_ADDRESS",
+    "SUPPORT_EMAIL",
+    "POSTHOG_PROJECT_TOKEN",
+    "BOOTSTRAP_ADMIN_EMAIL",
+    "GOOGLE_AUTH_ENABLED",
+    "DATABASE_URL_SECRET",
+    "MIGRATION_DATABASE_URL_SECRET",
+    "AUTH_SECRET",
+    "REDIS_URL_SECRET",
+    "WEB_SOURCE_SECRET_NAME",
+    "GOOGLE_CLIENT_ID_SECRET",
+    "GOOGLE_CLIENT_SECRET_NAME",
+    "RESEND_API_KEY_SECRET",
+    "RESEND_WEBHOOK_SECRET_NAME",
+    "EMAIL_SUPPRESSION_SECRET_NAME"
+  ],
+  "requiredValues": { "PUBLIC_HOST": "ntumie.link", "INGRESS_NETWORK": "dokploy-network" },
+  "sharedInputs": ["BACKEND_NETWORK", "MIGRATION_DATABASE_URL_SECRET"],
+  "secretNameSuffixes": ["_SECRET", "_SECRET_NAME"]
+}

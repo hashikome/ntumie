@@ -92,24 +92,12 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
-        with: { bun-version: 1.4.4 }
-      - name: Load deployment credential
-        env:
-          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
-        run: |
-          python3 - <<'PYTHON'
-          import os
-          key = os.environ['DOKPLOY_API_KEY']
-          if not key or any(c in key for c in '\r\n\0'):
-              raise SystemExit('DOKPLOY_API_KEY must be a nonempty single-line credential')
-          with open(os.environ['GITHUB_ENV'], 'a') as output:
-              output.write('DOKPLOY_API_KEY=' + key + '\n')
-          PYTHON
       - name: Migrate, verify grants, then promote application images
-        env:
-          GH_TOKEN: ${{ github.token }}
-          API_IMAGE: ${{ needs.image.outputs.api }}
-          WEB_IMAGE: ${{ needs.image.outputs.web }}
-          DOKPLOY_REGISTRY_ID: ${{ vars.DOKPLOY_REGISTRY_ID }}
-        run: bun tooling/release.ts
+        uses: hashikome/actions/dokploy-release@78328e13663b3409a8851906185bf0a405b53023
+        with:
+          images: |
+            API_IMAGE=${{ needs.image.outputs.api }}
+            WEB_IMAGE=${{ needs.image.outputs.web }}
+          dokploy-api-key: ${{ secrets.DOKPLOY_API_KEY }}
+          registry-id: ${{ vars.DOKPLOY_REGISTRY_ID }}
+          github-token: ${{ github.token }}

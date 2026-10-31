@@ -17,7 +17,8 @@ reviewed version bump.
 - [x] (2026-10-31) Direction decided by the owner.
 - [x] (2026-10-31) ntumie's deploy credential has one path: the `production`
   environment secret `DOKPLOY_API_KEY`.
-- [ ] Create `hashikome/actions` (public) with the Dokploy release action.
+- [x] (2026-10-31) Created `hashikome/actions` (public) with `dokploy-release`
+  (`78328e1`), ported from ntumie's coordinator with its tests.
 - [ ] Move ntumie onto it and prove one real release.
 - [ ] Move HashiFi, then Soko; Pigfarm when it gains a release workflow.
 - [ ] Delete each product's copy of the coordinator, and promote this plan's

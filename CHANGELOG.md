@@ -9,6 +9,10 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Release through the shared `hashikome/actions/dokploy-release` action, pinned
+  by commit. What is specific to ntumie stays in `deploy/release.json`, with a
+  test that keeps it in step with the stack files.
+
 - Restart the production worker on any exit (`condition: any`). It exits 0 on
   SIGTERM, so under `on-failure` the host reboot of 18 October left it stopped
   for 13 days with no email delivered.
