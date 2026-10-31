@@ -12,6 +12,7 @@ services:
       BETTER_AUTH_SECRET_FILE: /run/secrets/auth_secret
       EMAIL_SUPPRESSION_SECRET_FILE: /run/secrets/email_suppression
       REDIS_URL_FILE: /run/secrets/redis_url
+      SENTRY_DSN_FILE: /run/secrets/sentry_dsn
       BETTER_AUTH_URL: https://${PUBLIC_HOST:?PUBLIC_HOST_required}
       WEB_ORIGIN: https://${PUBLIC_HOST}
       WEB_SOURCE_SECRET_FILE: /run/secrets/web_source
@@ -31,6 +32,7 @@ services:
       - web_source
       - google_client_id
       - google_client_secret
+      - sentry_dsn
     networks:
       - ingress
       - backend
@@ -121,11 +123,12 @@ services:
       EMAIL_SUPPRESSION_SECRET_FILE: /run/secrets/email_suppression
       REDIS_URL_FILE: /run/secrets/redis_url
       RESEND_API_KEY_FILE: /run/secrets/resend_key
+      SENTRY_DSN_FILE: /run/secrets/sentry_dsn
       EMAIL_PROVIDER: resend
       EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:?EMAIL_FROM_ADDRESS_required}
       EMAIL_SUPPORT_URL: ${EMAIL_SUPPORT_URL:?EMAIL_SUPPORT_URL_required}
       QUEUE_NAMESPACE: ${QUEUE_NAMESPACE:?QUEUE_NAMESPACE_required}
-    secrets: [database_url, auth_secret, email_suppression, redis_url, resend_key]
+    secrets: [database_url, auth_secret, email_suppression, redis_url, resend_key, sentry_dsn]
     # Data stays internal; the worker needs outbound HTTPS to send through Resend.
     networks: [backend, egress]
     read_only: true
@@ -187,3 +190,6 @@ secrets:
   google_client_secret:
     external: true
     name: ${GOOGLE_CLIENT_SECRET_NAME:?GOOGLE_CLIENT_SECRET_NAME_required}
+  sentry_dsn:
+    external: true
+    name: ${SENTRY_DSN_SECRET:?SENTRY_DSN_SECRET_required}

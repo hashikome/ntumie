@@ -59,11 +59,14 @@ Secrets never enter the repository, `ref/` or logs. The application gets its
 configuration in two ways and needs nothing else to start:
 
 - **Docker secrets** for values that should not sit even in an env file
-  (database URLs, signing and encryption keys, provider keys): mounted by the
-  stack at `/run/secrets/<name>` and passed as `<NAME>_FILE`. A set `<NAME>_FILE`
-  wins; if it cannot be read, the application fails at startup.
-- **Environment variables** for everything else, and for local development
-  (`deploy/runtime.env.example` lists the ordinary inputs).
+  (database URLs, signing and encryption keys, provider keys, error-reporting
+  DSNs): mounted by the stack at `/run/secrets/<name>` and passed as
+  `<NAME>_FILE`. A set `<NAME>_FILE` wins; if it cannot be read or is empty, the
+  application fails at startup. The stack receives each secret's versioned name
+  (`<product>_<name>_YYYYMMDD_vN`), never its value.
+- **Environment variables** for everything else, and for local development.
+
+There is one template, `.env.example` at the repository root, listing each key.
 
 Each product stands alone: a credential shared between products still reaches
 this one as its own Docker secret, and the application never reads another

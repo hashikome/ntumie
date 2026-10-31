@@ -104,7 +104,7 @@ are excluded from the build input.
 
 ## Platform inputs before a live rehearsal
 
-`deploy/production.env.example` records the non-secret input contract. Replace
+`.env.example` records the input contract. Replace
 every `SET_` marker only with a verified value; do not deploy the template.
 The operator supplies non-secret references for:
 
@@ -252,7 +252,7 @@ raw-source Stacks with base names `ntumie` and `ntumie-release`; Dokploy appends
 six-character suffix. Service keys are `api`, `web`, `worker` and `migration`:
 Docker joins stack and service with `_`, while names we choose use `-` internally.
 Leave Dokploy Git auto-deploy disabled. Both require the same private data network and migration secret reference.
-Application inputs follow `deploy/production.env.example`; migration inputs need
+Application inputs follow `.env.example`; migration inputs need
 only its backend network and migration secret name (image/attempt are supplied by CI).
 
 The action refuses a superseded main revision, foreign/mutable images,
@@ -288,10 +288,9 @@ selection for existing local installations. Any other flag value fails startup.
 
 ## Portable application configuration
 
-`deploy/runtime.env.example` describes ordinary application variables, separate
-from the Stack names in `deploy/production.env.example`. The existing runtime
-accepts plain values or `_FILE` inputs; a supplied file takes precedence and an
-unreadable file fails startup. A downloaded installation can use its own env
+`.env.example` lists every key, the Stack inputs and the ordinary application
+variables. The runtime accepts plain values or `_FILE` inputs; a supplied file
+takes precedence, and an unreadable or empty file fails startup. A downloaded installation can use its own env
 files and local services. Never use the production private-network URLs as
 workstation development endpoints. Keep migrator credentials out of the
 application's configuration.

@@ -23,6 +23,15 @@ describe("readSecret", () => {
     expect(readSecret(NAME)).toBeUndefined();
   });
 
+  it("fails on an empty _FILE instead of running without the secret", () => {
+    const dir = mkdtempSync(join(tmpdir(), "secret-"));
+    const file = join(dir, "secret");
+    writeFileSync(file, " \n");
+    process.env[`${NAME}_FILE`] = file;
+    process.env[NAME] = "plain-value";
+    expect(() => readSecret(NAME)).toThrow(`${NAME}_FILE is empty`);
+  });
+
   it("prefers the _FILE content over the env var, trimmed", () => {
     const dir = mkdtempSync(join(tmpdir(), "secret-"));
     const file = join(dir, "secret");

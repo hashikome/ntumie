@@ -18,13 +18,17 @@ const services = (manifest: string) =>
 
 // The shared release action refuses anything the configuration doesn't name, so
 // a stack-file change that isn't reflected here would stop the next release.
-test("the release configuration covers every stack input and example", () => {
+test("the release configuration and .env.example cover every stack input", () => {
+  const example = new Set(
+    read(".env.example")
+      .split("\n")
+      .map((line) => /^([A-Z0-9_]+)=/.exec(line)?.[1]),
+  );
   for (const path of [config.application.manifest, config.migration.manifest])
-    for (const name of required(read(path))) expect(known).toContain(name);
-  for (const line of read("deploy/production.env.example").split("\n")) {
-    const name = /^([A-Z0-9_]+)=/.exec(line)?.[1];
-    if (name) expect(known).toContain(name);
-  }
+    for (const name of required(read(path))) {
+      expect(known).toContain(name);
+      expect(example.has(name)).toBe(true);
+    }
 });
 
 test("the release configuration names the stacks' exact services", () => {
@@ -45,7 +49,7 @@ test("Docker resolves the exact external names and images from the stored inputs
     WEB_IMAGE: `${config.images.WEB_IMAGE}:${revision}@sha256:${"c".repeat(64)}`,
   };
   const inputs = Object.fromEntries(
-    read("deploy/production.env.example")
+    read(".env.example")
       .replace(/SET_[A-Z_]+/g, "fixture")
       .split("\n")
       .filter((line) => /^[A-Z0-9_]+=/.test(line))

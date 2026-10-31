@@ -9,6 +9,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- One `.env.example` at the root replaces the two files in `deploy/`. The Sentry
+  DSN reaches the API and worker as a Docker secret, so production errors now
+  report, and an empty `<NAME>_FILE` fails startup.
 - Release through `hashikome/actions/dokploy-release@v1.0.0`, an exact version.
 - Fix the second sign-in step asking people with only a passkey for an
   authenticator code they never set up: it now asks for what the account has.
