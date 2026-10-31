@@ -249,8 +249,11 @@ application SDK is involved.
 application/migration resources, services, images and allowed inputs;
 `DOKPLOY_REGISTRY_ID` remains a GitHub environment variable. Prepare distinct local
 raw-source Stacks with base names `ntumie` and `ntumie-release`; Dokploy appends a
-six-character suffix. Service keys are `api`, `web`, `worker` and `migration`:
+six-character suffix. Service keys carry the product (`ntumie-api`, `ntumie-web`,
+`ntumie-worker`, `ntumie-migration`), so a service reads `ntumie-vezxq0_ntumie-api`:
 Docker joins stack and service with `_`, while names we choose use `-` internally.
+A key is also the service's hostname on its networks, and a bare `api` would be
+ambiguous on a shared network.
 Leave Dokploy Git auto-deploy disabled. Both require the same private data network and migration secret reference.
 Application inputs follow `.env.example`; migration inputs need
 only its backend network and migration secret name (image/attempt are supplied by CI).

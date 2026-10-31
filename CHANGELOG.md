@@ -9,6 +9,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Name services after the product: `ntumie-api`, `ntumie-web`, `ntumie-worker`
+  and `ntumie-migration`, so they read `ntumie-vezxq0_ntumie-api`.
 - Emails follow the reader's mail app theme instead of forcing a white page, and
   share one layout with a footer saying who an email was sent to and why. The
   invitation's expiry gives the date and time in the reader's saved timezone, or

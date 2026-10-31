@@ -10,7 +10,7 @@
     "compose": "oTJhOOlsXWARNdBqas43I",
     "stack": "ntumie-release-[a-z0-9]{6}",
     "manifest": "docker-stack.migrate.yml",
-    "service": "migration",
+    "service": "ntumie-migration",
     "image": "API_IMAGE",
     "command": [
       "--tsconfig-override",
@@ -19,9 +19,9 @@
     ]
   },
   "services": {
-    "api": { "image": "API_IMAGE" },
-    "web": { "image": "WEB_IMAGE" },
-    "worker": { "image": "API_IMAGE", "healthcheck": false }
+    "ntumie-api": { "image": "API_IMAGE" },
+    "ntumie-web": { "image": "WEB_IMAGE" },
+    "ntumie-worker": { "image": "API_IMAGE", "healthcheck": false }
   },
   "images": {
     "API_IMAGE": "ghcr.io/hashikome/ntumie/api",

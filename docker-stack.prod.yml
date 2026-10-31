@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  api:
+  ntumie-api:
     # Full SHA tag AND digest, supplied by the release workflow/operator.
     image: ${API_IMAGE:?API_IMAGE_required}
     environment:
@@ -69,7 +69,7 @@ services:
         traefik.http.services.ntumie-api.loadbalancer.server.port: '4000'
         traefik.http.services.ntumie-api.loadbalancer.healthcheck.path: /api/v1/status
         traefik.http.services.ntumie-api.loadbalancer.healthcheck.interval: 15s
-  web:
+  ntumie-web:
     image: ${WEB_IMAGE:?WEB_IMAGE_required}
     environment:
       NODE_ENV: production
@@ -78,7 +78,7 @@ services:
       RELEASE_ATTEMPT: ${RELEASE_ATTEMPT}
       BETTER_AUTH_URL: https://${PUBLIC_HOST}
       WEB_ORIGIN: https://${PUBLIC_HOST}
-      API_INTERNAL_ORIGIN: http://api:4000
+      API_INTERNAL_ORIGIN: http://ntumie-api:4000
       WEB_SOURCE_SECRET_FILE: /run/secrets/web_source
       WEB_TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS}
       SUPPORT_EMAIL: ${SUPPORT_EMAIL:?SUPPORT_EMAIL_required}
@@ -112,7 +112,7 @@ services:
         traefik.http.services.ntumie-web.loadbalancer.server.port: '3000'
         traefik.http.services.ntumie-web.loadbalancer.healthcheck.path: /healthz
         traefik.http.services.ntumie-web.loadbalancer.healthcheck.interval: 15s
-  worker:
+  ntumie-worker:
     image: ${API_IMAGE:?API_IMAGE_required}
     command: [bun, --tsconfig-override, tsconfig.runtime.json, dist/src/email/worker.js]
     environment:

@@ -70,7 +70,7 @@ test("Docker resolves the exact external names and images from the stored inputs
     };
     const migrating = part === config.migration;
     expect(rendered.networks.backend.name).toBe(values.BACKEND_NETWORK);
-    expect(rendered.services[migrating ? config.migration.service : "api"].image).toBe(
+    expect(rendered.services[migrating ? config.migration.service : "ntumie-api"].image).toBe(
       images.API_IMAGE,
     );
     expect(rendered.secrets.database_url.name).toBe(
@@ -78,8 +78,8 @@ test("Docker resolves the exact external names and images from the stored inputs
     );
     if (!migrating) {
       expect(rendered.networks.ingress.name).toBe(values.INGRESS_NETWORK);
-      expect(rendered.services.web.image).toBe(images.WEB_IMAGE);
-      expect(rendered.services.worker.environment.EMAIL_FROM_ADDRESS).toBe(
+      expect(rendered.services["ntumie-web"].image).toBe(images.WEB_IMAGE);
+      expect(rendered.services["ntumie-worker"].environment.EMAIL_FROM_ADDRESS).toBe(
         values.EMAIL_FROM_ADDRESS,
       );
     }
