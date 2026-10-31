@@ -339,9 +339,9 @@ Read:
    launch checks. [edge-cache.md](../runbooks/edge-cache.md) owns the Cloudflare rule
    behind edge-cached signed-out public pages.
    Production uses shared product PostgreSQL/queue Redis with scoped roles/ACLs;
-   migration and grant verification precede application promotion. Secret providers
-   are optional: plain env files remain supported, while our deploy job can fetch
-   credentials from 1Password. Local development and production are the permanent
+   migration and grant verification precede application promotion. Ordinary
+   settings arrive as environment variables and sensitive ones as Docker secrets
+   (`_FILE` inputs); the application starts from those two alone. Local development and production are the permanent
    environments; same-host PR previews remain planned. [Engineering decisions](../engineering-decisions/README.md)
    owns settled rationale; [PRODUCT.md §11](../../PRODUCT.md#11-delivery)
    owns delivery status and order.

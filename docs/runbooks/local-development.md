@@ -33,8 +33,7 @@ local defaults (`postgresql://postgres:postgres@127.0.0.1:5436/nslinkhub`,
 Redis on 127.0.0.1:6383, dev better-auth secret). Set `BETTER_AUTH_SECRET` to
 a real value for anything beyond local development.
 
-The workstation registry at `/home/ns/Person/stack/docs/local-port-registry.md`
-assigns this project offset +4: web uses 3004, API uses 4004, PostgreSQL uses
+The stack-wide local port registry assigns this project offset +4: web uses 3004, API uses 4004, PostgreSQL uses
 5436 and Redis uses 6383. Local services bind to `127.0.0.1`; the production API
 binds to `0.0.0.0` for container networking and its image explicitly sets internal
 port 4000. Host defaults do not change container routing. Pigfarm's coordinated

@@ -53,6 +53,25 @@ and 365-day retention policy; current restrictions outlive event cleanup.
 These rules preserve ordinary collection authorization and hidden/missing
 404 equivalence. Refer to the contract for recovery and atomic audit rules.
 
+## Credentials
+
+Secrets never enter the repository, `ref/` or logs. The application gets its
+configuration in two ways and needs nothing else to start:
+
+- **Docker secrets** for values that should not sit even in an env file
+  (database URLs, signing and encryption keys, provider keys): mounted by the
+  stack at `/run/secrets/<name>` and passed as `<NAME>_FILE`. A set `<NAME>_FILE`
+  wins; if it cannot be read, the application fails at startup.
+- **Environment variables** for everything else, and for local development
+  (`deploy/runtime.env.example` lists the ordinary inputs).
+
+Each product stands alone: a credential shared between products still reaches
+this one as its own Docker secret, and the application never reads another
+product's configuration. Where an operator keeps these values is their own
+concern, so no document, script or application code names a password manager or
+a path on someone's machine. The running application never receives migrator or
+administrator database credentials; migrations get their own `DATABASE_URL_FILE`.
+
 ## Tokens And Secrets
 
 - UUIDv7 identifiers are not secrets. Share links use separately generated,

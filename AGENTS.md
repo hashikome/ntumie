@@ -126,7 +126,10 @@ authoritative.
   `configureApp` so they run the production HTTP stack.
 - Production images are prebuilt (GHCR, SHA-pinned); nothing builds on the
   VPS. Secrets reach services as `_FILE` inputs and are never logged or baked
-  into images.
+  into images. The application starts from env values and Docker secrets alone
+  and never reads another product's configuration; no tracked file names a
+  password manager or a path on someone's machine (`docs/SECURITY.md`,
+  Credentials).
 - Keep product branding out of schemas, table/column names, API fields, and
   env-var names.
 

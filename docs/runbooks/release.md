@@ -295,20 +295,11 @@ selection for existing local installations. Any other flag value fails startup.
 from the Stack names in `deploy/production.env.example`. The existing runtime
 accepts plain values or `_FILE` inputs; a supplied file takes precedence and an
 unreadable file fails startup. A downloaded installation can use its own env
-files and local services without installing 1Password. Never use the production
-private-network URLs as workstation development endpoints.
+files and local services. Never use the production private-network URLs as
+workstation development endpoints. Keep migrator credentials out of the
+application's configuration.
 
-For our optional 1Password supply path, `ntumie/production` holds app-owned values;
-`deploy/runtime.1password.env.example` shows how shared Google/Resend fields join
-that bundle using `op run --environment ID --env-file=private-integrations.env --
-COMMAND`. Use a real ID and private reference file, and never run `env`/`printenv`
-to inspect the result. The application's resulting variable names are identical
-to plain dotenv input. Do not duplicate the integration keys inside the native
-Environment. Keep migrator credentials out of this application bundle.
-
-Swarm services continue receiving only their selected secret files. Vault edits
-do not update those immutable versions or rotate upstream credentials. The
+Swarm services continue receiving only their selected secret files. Changing a
+stored value does not update those immutable versions or rotate upstream credentials. The
 [shared secret contract](https://github.com/hashikome/infra/blob/main/docs/secrets-contract.md)
-defines provider selection, ownership and coordinated rotation. Native Environment
-import/readback is a separate acceptance step from the existing unattended CI
-control-plane credential and from live application release.
+defines ownership and coordinated rotation.
