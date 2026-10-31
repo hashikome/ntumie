@@ -64,11 +64,11 @@ reviewed version bump.
   Python, so no product's toolchain is required.
   Date/Author: 2026-10-31 / proposed
 
-- Decision: callers use `@v1`, like `actions/*`, with exact `vX.Y.Z` releases
-  beside it.
-  Rationale: the owner controls both sides, so a moving major tag costs little
-  and fixes reach products without a bump in each. Product images stay pinned by
-  SHA and digest.
+- Decision: callers pin an exact version (`@v1.0.0`), edited by hand in each
+  product. No moving major tag, no Dependabot, no PRs.
+  Rationale: the deploy step receives the production deploy key, so what it runs
+  must not change without an edit in that repository, and a version reads better
+  than a commit.
   Date/Author: 2026-10-31 / owner
 
 ## Outcomes & Retrospective
@@ -104,7 +104,7 @@ To be filled in when `hashikome/actions` exists.
   including its migration step, and a forced failure leaves the previous version
   serving.
 - No credential or product configuration appears in `hashikome/actions`.
-- Each caller uses a major version tag (`@v1`).
+- Each caller pins an exact version (`@v1.0.0`).
 
 ## Idempotence And Recovery
 

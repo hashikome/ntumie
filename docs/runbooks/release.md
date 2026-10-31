@@ -242,7 +242,7 @@ production-launch requirements; they do not block this production CI/CD setup.
 
 The release workflow builds both immutable images after verification. Its optional
 `deploy` input defaults to false; every push to `main` also deploys. The deploy job
-runs the shared `hashikome/actions/dokploy-release` action at `@v1`, with
+runs the shared `hashikome/actions/dokploy-release` action, pinned to an exact version (`@v1.0.0`), with
 the `production` environment secret `DOKPLOY_API_KEY`. No desktop approval or
 application SDK is involved.
 `deploy/release.json` holds what is specific to ntumie: the reviewed
