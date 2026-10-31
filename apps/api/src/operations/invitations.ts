@@ -24,11 +24,17 @@ export async function queueInvitation(tx: Prisma.TransactionClient, invite: Serv
   const origin = new URL(publicOrigins(process.env).webOrigin);
   if (!["http:", "https:"].includes(origin.protocol) || origin.username || origin.password)
     throw appError("service_unavailable");
+  const account = await tx.user.findUnique({
+    where: { email: invite.email },
+    select: { timeZone: true },
+  });
   const rendered = await renderServiceInvitation({
     role: invite.role as "admin" | "operator",
     invitationUrl: new URL(`/invitations/accept#token=${token}`, origin).href,
     expiresAt: invite.expiresAt,
     supportUrl: config.supportUrl,
+    recipient: invite.email,
+    timeZone: account?.timeZone,
   });
   const mail = await enqueueRenderedEmail(tx, {
     secret: config.secret,

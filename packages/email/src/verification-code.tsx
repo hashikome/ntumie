@@ -39,7 +39,7 @@ const messages: Record<VerificationPurpose, { subject: string } & CodeEmailCopy>
   "sign-in": {
     subject: "Your ntumie. sign-in code",
     preview: "Sign in or create your ntumie. account.",
-    lead: "Here's your verification code to sign in to ntumie.:",
+    lead: "Enter this code to sign in to ntumie.",
   },
   "first-link": {
     subject: "Verify your email to save your first link · ntumie.",

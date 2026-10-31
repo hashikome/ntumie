@@ -242,7 +242,7 @@ production-launch requirements; they do not block this production CI/CD setup.
 
 The release workflow builds both immutable images after verification. Its optional
 `deploy` input defaults to false; every push to `main` also deploys. The deploy job
-runs the shared `hashikome/actions/dokploy-release` action, pinned to an exact version (`@v1.0.0`), with
+runs the shared `hashikome/actions/dokploy-release` action, pinned to an exact version (`@v1.0.1`), with
 the `production` environment secret `DOKPLOY_API_KEY`. No desktop approval or
 application SDK is involved.
 `deploy/release.json` holds what is specific to ntumie: the reviewed
@@ -271,10 +271,7 @@ change. The first release migrates successfully before stopping the old applicat
 it observes old containers stopped before starting the replacement, avoiding duplicate
 routes and workers. An unsuccessful migration keeps the old application serving.
 If replacement startup fails, inspect and select a compatible release explicitly;
-there is no automatic schema rollback. Legacy stopped Stack definitions remain
-product-owned recovery evidence until independent live acceptance, then remove them
-with `deleteVolumes=false` and retire previous-target references in the profile.
-Infra's separate release controls shared data identities and preserves external
+there is no automatic schema rollback. Infra's separate release controls shared data identities and preserves external
 volumes and runtime DNS aliases. The product release works against either identity.
 
 Production defaults `GOOGLE_AUTH_ENABLED=false` while the OAuth redirect configuration

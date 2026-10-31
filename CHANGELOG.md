@@ -9,6 +9,11 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Emails follow the reader's mail app theme instead of forcing a white page, and
+  share one layout with a footer saying who an email was sent to and why. The
+  invitation's expiry gives the date and time in the reader's saved timezone, or
+  the date with a countdown; readers never see UTC.
+- Stop checking the retired staging stack on release, which refused any new input.
 - One `.env.example` at the root replaces the two files in `deploy/`. The Sentry
   DSN reaches the API and worker as a Docker secret, so production errors now
   report, and an empty `<NAME>_FILE` fails startup.

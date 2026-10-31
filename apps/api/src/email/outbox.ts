@@ -48,6 +48,7 @@ export async function enqueueEmail(
     locale: "en" as const,
     code: input.code,
     supportUrl: input.supportUrl,
+    recipient: input.to,
     expiresInMinutes: 5,
   };
   const rendered =

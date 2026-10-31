@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { renderServiceInvitation } from "./service-invitation.js";
+import { expiryWhen, renderServiceInvitation } from "./service-invitation.js";
 
 describe("service invitations", () => {
   it("renders both roles with an explicit acceptance link and expiry in both formats", async () => {
@@ -10,18 +10,34 @@ describe("service invitations", () => {
         invitationUrl: url,
         expiresAt: new Date("2026-10-13T12:00:00Z"),
         supportUrl: "https://links.example/support",
+        recipient: "reader@example.com",
       });
       expect(mail.subject).toContain(`ntumie. service ${role}`);
       expect(mail.html).toContain(url);
       expect(mail.text).toContain(url);
       expect(mail.text).toContain("explicitly accept");
-      expect(mail.text).toContain("2026-10-13");
+      expect(mail.text).not.toContain("UTC");
+      expect(mail.text).toMatch(/Expires on Tuesday, 13 October 2026 \(in \d+ days?\)\./);
       expect(mail.html).not.toContain("Pigfarm");
       for (const body of [mail.html, mail.text]) {
         expect(body).toContain("https://links.example/support");
         expect(body).toContain("Good links belong together.");
       }
     }
+  });
+  it("states the expiry in the reader's timezone, or as a duration without one", () => {
+    const expiresAt = new Date("2026-11-08T12:00:00Z");
+    const now = new Date("2026-11-01T12:00:00Z");
+    const local = expiryWhen(expiresAt, "Africa/Dar_es_Salaam", now);
+    expect(local).toContain("8 November 2026");
+    expect(local).toContain("15:00");
+    expect(local).not.toContain("UTC");
+    const countdown = "on Sunday, 8 November 2026 (in 7 days)";
+    expect(expiryWhen(expiresAt, null, now)).toBe(countdown);
+    expect(expiryWhen(expiresAt, "Not/AZone", now)).toBe(countdown);
+    expect(expiryWhen(new Date("2026-11-01T18:00:00Z"), null, now)).toBe(
+      "on Sunday, 1 November 2026 (in 1 day)",
+    );
   });
   it("rejects credential-bearing and non-web links", async () => {
     for (const invitationUrl of [
@@ -34,6 +50,7 @@ describe("service invitations", () => {
           invitationUrl,
           expiresAt: new Date(),
           supportUrl: "https://links.example/support",
+          recipient: "reader@example.com",
         }),
       ).rejects.toThrow();
   });

@@ -1,14 +1,5 @@
-import {
-  Body,
-  Container,
-  Head,
-  Hr,
-  Html,
-  Link,
-  Preview,
-  render,
-  Text,
-} from "@react-email/components";
+import { Body, Container, Head, Hr, Html, Preview, render, Text } from "@react-email/components";
+import type { ReactNode } from "react";
 
 // Codes-only authentication mail. Navigation links never carry proof.
 
@@ -19,6 +10,8 @@ export interface CodeEmailBaseInput {
   code: string;
   /** Support route for unexpected-message recovery (https). */
   supportUrl: string;
+  /** Who this is sent to, named in the footer so a reader can see why they have it. */
+  recipient: string;
   /** Validity window better-auth decided, in minutes (1–60). */
   expiresInMinutes: number;
 }
@@ -40,6 +33,9 @@ export function assertValidBaseInput(input: CodeEmailBaseInput): string[] {
   if (!CODE_RE.test(input.code)) {
     errors.push("code must be 4-10 digits");
   }
+  if (!/^[^\s@]+@[^\s@]+$/.test(input.recipient)) {
+    errors.push("recipient must be an email address");
+  }
   for (const [name, url] of [["supportUrl", input.supportUrl]] as const) {
     if (!/^https:\/\//.test(url)) {
       errors.push(`${name} must be an https:// URL`);
@@ -59,18 +55,21 @@ export function expiryPhrase(expiresInMinutes: number): string {
   return expiresInMinutes === 1 ? "1 minute" : `${expiresInMinutes} minutes`;
 }
 
+// No background or text colour anywhere: the reader's mail app supplies them,
+// so the email follows its light or dark theme. Secondary text is marked by
+// size, because a fixed grey fails on one theme or the other.
 const styles = {
   body: {
-    backgroundColor: "#ffffff",
     fontFamily:
       "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    color: "#1a1a1a",
+    fontSize: "16px",
+    lineHeight: "24px",
     margin: 0,
   },
-  container: { maxWidth: "560px", margin: "0 auto", padding: "40px 24px" },
+  container: { maxWidth: "560px", margin: "0 auto", padding: "32px 24px" },
   wordmark: {
-    fontSize: "28px",
-    lineHeight: "35px",
+    fontSize: "22px",
+    lineHeight: "28px",
     fontWeight: 700,
     letterSpacing: "-0.02em",
     margin: 0,
@@ -78,52 +77,88 @@ const styles = {
   lead: { fontSize: "16px", lineHeight: "24px", margin: "28px 0 0" },
   code: {
     fontSize: "32px",
-    fontWeight: 600,
+    lineHeight: "40px",
+    fontWeight: 700,
     letterSpacing: "0.35em",
     margin: "24px 0 0",
   },
-  validity: { fontSize: "16px", lineHeight: "24px", color: "#1a1a1a", margin: "24px 0 0" },
-  note: { fontSize: "14px", lineHeight: "21px", color: "#6b7280", margin: "24px 0 0" },
-  warning: { fontSize: "15px", lineHeight: "23px", fontWeight: 700, margin: "32px 0 0" },
+  validity: { fontSize: "16px", lineHeight: "24px", margin: "24px 0 0" },
+  note: { fontSize: "14px", lineHeight: "21px", margin: "16px 0 0" },
+  warning: { fontSize: "15px", lineHeight: "23px", fontWeight: 700, margin: "28px 0 0" },
 } as const;
 
 const footerStyles = {
-  hr: { borderColor: "#e5e7eb", margin: "40px 0 20px" },
-  prompt: { fontSize: "14px", lineHeight: "21px", color: "#4b5563", margin: "0 0 4px" },
-  support: { fontSize: "14px", lineHeight: "21px", color: "#4b5563", margin: "0 0 20px" },
-  link: { color: "#1e5ba1", textDecoration: "underline" },
-  brand: { fontSize: "14px", lineHeight: "28px", color: "#4b5563", margin: 0 },
-  wordmark: { fontSize: "20px", fontWeight: 700, letterSpacing: "-0.02em", color: "#1a1a1a" },
-  tagline: { fontSize: "14px", lineHeight: "21px", color: "#6b7280", margin: "2px 0 0" },
+  hr: { border: 0, borderTop: "1px solid #8884", margin: "40px 0 20px" },
+  small: { fontSize: "13px", lineHeight: "20px", margin: "0 0 8px" },
+  wordmark: {
+    fontSize: "15px",
+    lineHeight: "20px",
+    fontWeight: 700,
+    letterSpacing: "-0.02em",
+    margin: "16px 0 0",
+  },
+  closing: { fontSize: "13px", lineHeight: "20px", margin: "4px 0 0" },
 } as const;
 
-export function EmailWordmark() {
-  return <Text style={styles.wordmark}>ntumie.</Text>;
+// One layout for every email: the wordmark, the message, then the footer.
+export function EmailLayout({
+  lang,
+  preview,
+  children,
+  footer,
+}: {
+  lang: string;
+  preview: string;
+  children: ReactNode;
+  footer: EmailFooterProps;
+}) {
+  return (
+    <Html lang={lang}>
+      <Head>
+        <meta name="color-scheme" content="light dark" />
+        <meta name="supported-color-schemes" content="light dark" />
+      </Head>
+      <Preview>{preview}</Preview>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <Text style={styles.wordmark}>ntumie.</Text>
+          {children}
+          <EmailFooter {...footer} />
+        </Container>
+      </Body>
+    </Html>
+  );
 }
 
-// Shared email footer: a support prompt linking the support page (which
-// lists how to reach us), then "© <year> ntumie." over "Good links belong together.".
+export interface EmailFooterProps {
+  recipient: string;
+  /** Why this reached them, finishing "Sent to <recipient> ...". */
+  reason: string;
+  supportUrl: string;
+  /** What to do if they didn't expect it. */
+  prompt?: string;
+}
+
+// Why this came, what to do about it, then the name. Links stay plain so the
+// mail app colours them for its theme.
 export function EmailFooter({
+  recipient,
+  reason,
   supportUrl,
   prompt = "Didn't request this? You can safely ignore this email.",
-}: {
-  supportUrl: string;
-  prompt?: string;
-}) {
+}: EmailFooterProps) {
   return (
     <>
       <Hr style={footerStyles.hr} />
-      <Text style={footerStyles.prompt}>{prompt}</Text>
-      <Text style={footerStyles.support}>
-        Need help?{" "}
-        <Link href={supportUrl} style={footerStyles.link}>
-          Visit support
-        </Link>
+      <Text style={footerStyles.small}>{`Sent to ${recipient} ${reason}`}</Text>
+      <Text style={footerStyles.small}>{prompt}</Text>
+      <Text style={footerStyles.small}>
+        Need help? <a href={supportUrl}>Visit support</a>. This address doesn't take replies.
       </Text>
-      <Text style={footerStyles.brand}>
-        © {new Date().getUTCFullYear()} <span style={footerStyles.wordmark}>ntumie.</span>
+      <Text style={footerStyles.wordmark}>ntumie.</Text>
+      <Text style={footerStyles.closing}>
+        {`© ${new Date().getUTCFullYear()} ntumie. Good links belong together.`}
       </Text>
-      <Text style={footerStyles.tagline}>Good links belong together.</Text>
     </>
   );
 }
@@ -139,24 +174,24 @@ export interface CodeEmailCopy {
 
 export function CodeEmail({ input, copy }: { input: CodeEmailBaseInput; copy: CodeEmailCopy }) {
   return (
-    <Html lang={input.locale}>
-      <Head />
-      <Preview>{copy.preview}</Preview>
-      <Body style={styles.body}>
-        <Container style={styles.container}>
-          <EmailWordmark />
-          <Text style={styles.lead}>{copy.lead}</Text>
-          <Text style={styles.code}>{input.code}</Text>
-          <Text style={styles.validity}>
-            This code is only valid for the next {expiryPhrase(input.expiresInMinutes)}. Enter it in
-            the app to continue.
-          </Text>
-          {copy.note ? <Text style={styles.note}>{copy.note}</Text> : null}
-          <Text style={styles.warning}>Do not share this code with anyone.</Text>
-          <EmailFooter supportUrl={input.supportUrl} />
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout
+      lang={input.locale}
+      preview={copy.preview}
+      footer={{
+        recipient: input.recipient,
+        reason: "because this code was requested for ntumie.",
+        supportUrl: input.supportUrl,
+      }}
+    >
+      <Text style={styles.lead}>{copy.lead}</Text>
+      <Text style={styles.code}>{input.code}</Text>
+      <Text style={styles.validity}>
+        This code is only valid for the next {expiryPhrase(input.expiresInMinutes)}. Enter it in the
+        app to continue.
+      </Text>
+      {copy.note ? <Text style={styles.note}>{copy.note}</Text> : null}
+      <Text style={styles.warning}>Do not share this code with anyone.</Text>
+    </EmailLayout>
   );
 }
 

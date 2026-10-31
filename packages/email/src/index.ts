@@ -1,5 +1,4 @@
 export type { CodeEmailBaseInput, RenderedEmail } from "./code-email.js";
-export { EmailFooter } from "./code-email.js";
 export type { EmailChangeConfirmationInput } from "./email-change-confirm.js";
 export { renderEmailChangeConfirmation } from "./email-change-confirm.js";
 export { renderServiceInvitation } from "./service-invitation.js";

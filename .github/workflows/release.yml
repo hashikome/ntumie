@@ -93,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Migrate, verify grants, then promote application images
-        uses: hashikome/actions/dokploy-release@v1.0.0
+        uses: hashikome/actions/dokploy-release@v1.0.1
         with:
           images: |
             API_IMAGE=${{ needs.image.outputs.api }}

@@ -18,10 +18,6 @@
       "dist/src/operations/migrate-release.js"
     ]
   },
-  "previousApplication": {
-    "compose": "bkGtQ9pQiegdBU-LjN8Ab",
-    "stack": "ntumie-app-staging-g4feyf"
-  },
   "services": {
     "api": { "image": "API_IMAGE" },
     "web": { "image": "WEB_IMAGE" },

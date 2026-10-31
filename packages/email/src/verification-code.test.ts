@@ -10,6 +10,7 @@ const valid: CodeEmailBaseInput & { purpose: "sign-in" } = {
   locale: "en",
   code: "729337",
   supportUrl: "https://example.com/support",
+  recipient: "reader@example.com",
   expiresInMinutes: 10,
 };
 
@@ -37,6 +38,17 @@ describe("code emails", () => {
       expect(email.subject).not.toContain(valid.code);
       expect(email.subject.toLowerCase()).toContain("ntumie.");
     }
+  });
+
+  it("follows the reader's mail theme and says who it was sent to", async () => {
+    const { html, text } = await renderVerificationCode(valid);
+    expect(html).toContain('name="color-scheme" content="light dark"');
+    expect(html).toContain('name="supported-color-schemes" content="light dark"');
+    expect(html).not.toMatch(/background-color|[;"]color:/);
+    for (const body of [html, text]) expect(body).toContain("Sent to reader@example.com");
+    await expect(renderVerificationCode({ ...valid, recipient: "nobody" })).rejects.toThrow(
+      /recipient/,
+    );
   });
 
   it("matches subject, preview and body to each purpose", async () => {
