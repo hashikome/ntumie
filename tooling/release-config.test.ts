@@ -55,7 +55,13 @@ test("Docker resolves the exact external names and images from the stored inputs
       .filter((line) => /^[A-Z0-9_]+=/.test(line))
       .map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]),
   );
-  const values = { ...inputs, ...images, RELEASE_SHA: revision, RELEASE_ATTEMPT: "1-1" };
+  const values = {
+    ...inputs,
+    ...config.inputs,
+    ...images,
+    RELEASE_SHA: revision,
+    RELEASE_ATTEMPT: "1-1",
+  };
   for (const part of [config.application, config.migration]) {
     const result = spawnSync("docker", ["stack", "config", "-c", part.manifest], {
       cwd: new URL("..", import.meta.url).pathname,

@@ -9,6 +9,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Move to the shared `infra-postgres` and `infra-redis-queue` on `hashikome-network`.
+  Releases create missing Docker secrets from GitHub, and the stack's network and
+  secret names live in `deploy/release.json`, so a new server needs less by hand.
 - Name services after the product: `ntumie-api`, `ntumie-web`, `ntumie-worker`
   and `ntumie-migration`, so they read `ntumie-vezxq0_ntumie-api`.
 - Emails follow the reader's mail app theme instead of forcing a white page, and

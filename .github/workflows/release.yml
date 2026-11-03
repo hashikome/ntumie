@@ -92,8 +92,26 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v7
+      - name: Create missing Docker secrets
+        uses: hashikome/actions/docker-secrets@66a6e8f29d643f53b7f3c8b52df175b8eb7971db # v1.1.0
+        with:
+          # Only the secrets deploy/docker-secrets.json names: never the whole `secrets` context.
+          values: >-
+            {"DATABASE_URL": ${{ toJSON(secrets.DATABASE_URL) }},
+            "MIGRATION_DATABASE_URL": ${{ toJSON(secrets.MIGRATION_DATABASE_URL) }},
+            "REDIS_URL": ${{ toJSON(secrets.REDIS_URL) }},
+            "BETTER_AUTH_SECRET": ${{ toJSON(secrets.BETTER_AUTH_SECRET) }},
+            "EMAIL_SUPPRESSION_SECRET": ${{ toJSON(secrets.EMAIL_SUPPRESSION_SECRET) }},
+            "WEB_SOURCE_SECRET": ${{ toJSON(secrets.WEB_SOURCE_SECRET) }},
+            "GOOGLE_CLIENT_ID": ${{ toJSON(secrets.GOOGLE_CLIENT_ID) }},
+            "GOOGLE_CLIENT_SECRET": ${{ toJSON(secrets.GOOGLE_CLIENT_SECRET) }},
+            "RESEND_API_KEY": ${{ toJSON(secrets.RESEND_API_KEY) }},
+            "SENTRY_DSN": ${{ toJSON(secrets.SENTRY_DSN) }}}
+          ssh-key: ${{ secrets.SERVER_SSH_KEY }}
+          ssh-target: ${{ vars.SERVER_SSH_TARGET }}
+          ssh-host-key: ${{ vars.SERVER_HOST_KEY }}
       - name: Migrate, verify grants, then promote application images
-        uses: hashikome/actions/dokploy-release@v1.0.1
+        uses: hashikome/actions/dokploy-release@66a6e8f29d643f53b7f3c8b52df175b8eb7971db # v1.1.0
         with:
           images: |
             API_IMAGE=${{ needs.image.outputs.api }}

@@ -242,7 +242,7 @@ production-launch requirements; they do not block this production CI/CD setup.
 
 The release workflow builds both immutable images after verification. Its optional
 `deploy` input defaults to false; every push to `main` also deploys. The deploy job
-runs the shared `hashikome/actions/dokploy-release` action, pinned to an exact version (`@v1.0.1`), with
+runs the shared `hashikome/actions/dokploy-release` action, pinned to an exact version (`@v1.1.0`), with
 the `production` environment secret `DOKPLOY_API_KEY`. No desktop approval or
 application SDK is involved.
 `deploy/release.json` holds what is specific to ntumie: the reviewed
@@ -290,7 +290,10 @@ selection for existing local installations. Any other flag value fails startup.
 
 `.env.example` lists every key, the Stack inputs and the ordinary application
 variables. The runtime accepts plain values or `_FILE` inputs; a supplied file
-takes precedence, and an unreadable or empty file fails startup. A downloaded installation can use its own env
+takes precedence, and an unreadable or empty file fails startup. The release's
+`docker-secrets` step creates any Docker secret in `deploy/docker-secrets.json` that a
+server lacks, from this repository's `production` GitHub environment, and the stack's
+network and secret names are fixed under `inputs` in `deploy/release.json`. A downloaded installation can use its own env
 files and local services. Never use the production private-network URLs as
 workstation development endpoints. Keep migrator credentials out of the
 application's configuration.

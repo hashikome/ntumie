@@ -53,6 +53,19 @@
     "EMAIL_SUPPRESSION_SECRET_NAME",
     "SENTRY_DSN_SECRET"
   ],
+  "inputs": {
+    "BACKEND_NETWORK": "hashikome-network",
+    "DATABASE_URL_SECRET": "ntumie_database_url_20261101_v1",
+    "MIGRATION_DATABASE_URL_SECRET": "ntumie_migration_database_url_20261101_v1",
+    "REDIS_URL_SECRET": "ntumie_redis_url_20261101_v1",
+    "AUTH_SECRET": "ntumie_auth_20261012_v2",
+    "EMAIL_SUPPRESSION_SECRET_NAME": "ntumie_email_suppression_20261012_v2",
+    "WEB_SOURCE_SECRET_NAME": "ntumie_web_source_20261012_v2",
+    "GOOGLE_CLIENT_ID_SECRET": "ntumie_google_id_20261012_v2",
+    "GOOGLE_CLIENT_SECRET_NAME": "ntumie_google_secret_20261012_v2",
+    "RESEND_API_KEY_SECRET": "ntumie_resend_20261012_v2",
+    "SENTRY_DSN_SECRET": "ntumie_sentry_dsn_20261101_v1"
+  },
   "requiredValues": { "PUBLIC_HOST": "ntumie.link", "INGRESS_NETWORK": "dokploy-network" },
   "sharedInputs": ["BACKEND_NETWORK", "MIGRATION_DATABASE_URL_SECRET"],
   "secretNameSuffixes": ["_SECRET", "_SECRET_NAME"]
