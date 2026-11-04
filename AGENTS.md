@@ -142,6 +142,9 @@ authoritative.
 - Use `ref/` only for disposable, git-ignored implementation context (see
   `ref/README.md`). Never store secrets, PII, or the only copy of a durable
   decision there.
+- Design new screens and flows as plain HTML in `prototypes/`, testing each view
+  in browser DevTools as you go, and implement only what the owner approved (see
+  `prototypes/README.md`). Publish artifacts only when explicitly asked.
 - Maintain active ExecPlans according to `PLANS.md` at each stopping point.
 - Move completed execution plans from `docs/exec-plans/active/` to
   `docs/exec-plans/completed/`.

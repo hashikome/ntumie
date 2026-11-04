@@ -9,6 +9,7 @@ apps/api/src/generated
 **/.env
 **/.env.*
 ref
+prototypes
 .codex
 .agents
 .aws

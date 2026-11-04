@@ -62,6 +62,10 @@ apps/api/src/generated/
 ref/*
 !ref/README.md
 
+# Design prototypes, before implementation (prototypes/README.md)
+prototypes/*
+!prototypes/README.md
+
 # Impeccable plugin session cache
 .impeccable/
 
