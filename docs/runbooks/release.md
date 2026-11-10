@@ -291,8 +291,9 @@ selection for existing local installations. Any other flag value fails startup.
 `.env.example` lists every key, the Stack inputs and the ordinary application
 variables. The runtime accepts plain values or `_FILE` inputs; a supplied file
 takes precedence, and an unreadable or empty file fails startup. The release's
-`docker-secrets` step creates any Docker secret in `deploy/docker-secrets.json` that a
-server lacks, from this repository's `production` GitHub environment, and the stack's
+`docker-secrets` step creates any Docker secret a server lacks from `ntumie/docker-secrets.json` in
+the private `hashikome/secrets` repository, where each value is encrypted under the exact versioned
+name the stack mounts and opens only for this repository's `production` environment; the stack's
 network and secret names are fixed under `inputs` in `deploy/release.json`. A downloaded installation can use its own env
 files and local services. Never use the production private-network URLs as
 workstation development endpoints. Keep migrator credentials out of the

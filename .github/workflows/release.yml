@@ -90,23 +90,18 @@ jobs:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.deploy)
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      # GitHub's OIDC token, exchanged for ntumie's KMS key in hashikome/secrets
+      id-token: write
     steps:
       - uses: actions/checkout@v7
       - name: Create missing Docker secrets
-        uses: hashikome/actions/docker-secrets@66a6e8f29d643f53b7f3c8b52df175b8eb7971db # v1.1.0
+        uses: hashikome/actions/docker-secrets@3134a14f9e86352e1c13e97cd0716e57c391a817
         with:
-          # Only the secrets deploy/docker-secrets.json names: never the whole `secrets` context.
-          values: >-
-            {"DATABASE_URL": ${{ toJSON(secrets.DATABASE_URL) }},
-            "MIGRATION_DATABASE_URL": ${{ toJSON(secrets.MIGRATION_DATABASE_URL) }},
-            "REDIS_URL": ${{ toJSON(secrets.REDIS_URL) }},
-            "BETTER_AUTH_SECRET": ${{ toJSON(secrets.BETTER_AUTH_SECRET) }},
-            "EMAIL_SUPPRESSION_SECRET": ${{ toJSON(secrets.EMAIL_SUPPRESSION_SECRET) }},
-            "WEB_SOURCE_SECRET": ${{ toJSON(secrets.WEB_SOURCE_SECRET) }},
-            "GOOGLE_CLIENT_ID": ${{ toJSON(secrets.GOOGLE_CLIENT_ID) }},
-            "GOOGLE_CLIENT_SECRET": ${{ toJSON(secrets.GOOGLE_CLIENT_SECRET) }},
-            "RESEND_API_KEY": ${{ toJSON(secrets.RESEND_API_KEY) }},
-            "SENTRY_DSN": ${{ toJSON(secrets.SENTRY_DSN) }}}
+          product: ntumie
+          reader-client-id: ${{ vars.SECRETS_READER_CLIENT_ID }}
+          reader-private-key: ${{ secrets.SECRETS_READER_PRIVATE_KEY }}
           ssh-key: ${{ secrets.SERVER_SSH_KEY }}
           ssh-target: ${{ vars.SERVER_SSH_TARGET }}
           ssh-host-key: ${{ vars.SERVER_HOST_KEY }}
