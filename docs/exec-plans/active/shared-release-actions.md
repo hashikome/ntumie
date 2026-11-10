@@ -22,7 +22,7 @@ reviewed version bump.
 - [x] (2026-10-31) ntumie moved: released through the action (run 41206935638),
   then `tooling/release.ts`, its tests and `deploy/production.json` removed;
   `tooling/release-config.test.ts` keeps ntumie's own stack checks.
-- [ ] Move HashiFi, then Soko; Pigfarm when it gains a release workflow.
+- [ ] Move HashiNet, then Soko; Pigfarm when it gains a release workflow.
 - [ ] Delete each product's copy of the coordinator, and promote this plan's
   decisions into an ADR and `docs/runbooks/release.md`.
 
@@ -34,7 +34,7 @@ reviewed version bump.
   Evidence: `gh api repos/hashikome/infra` visibility private;
   `.../actions/permissions/access` access_level none.
 - Observation: three copies of one job exist: ntumie `tooling/release.ts`
-  (395 lines), HashiFi `tooling/release.ts` (361), Soko
+  (395 lines), HashiNet `tooling/release.ts` (361), Soko
   `tools/access-release.py` (378); `infra/scripts/dokploy_api.py` is a fourth
   Dokploy client (57).
 
@@ -92,7 +92,7 @@ the stack files. Moves to the action: the Dokploy client, the migration wait,
 promotion, health checks and rollback, taking images, targets and the credential
 as inputs. Build the action from ntumie's coordinator, which has tests
 (`tooling/release.test.ts`), and carry the tests with it. Compare against
-HashiFi's and Soko's versions first, so differences become inputs rather than
+HashiNet's and Soko's versions first, so differences become inputs rather than
 lost behaviour.
 
 ## Concrete Steps
