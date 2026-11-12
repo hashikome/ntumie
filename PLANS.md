@@ -145,6 +145,17 @@ During a migration, parallel implementations are acceptable when they preserve
 a working path and make behavior comparison possible. Document how to validate
 both paths and safely retire the old one.
 
+## Building From An Approved Prototype
+
+A product built from an approved prototype ships in vertical slices, each one
+complete journey accepted live before the next, ordered by one slice plan that
+the detailed plans defer to. Each slice is a list of resumable steps, each
+ending with `bun run verify` and a commit. Unlike a migration above, a slice
+keeps no parallel path: it deletes what it replaces. The ground rules (the
+review gate, local branches, per-screen audits, finish-work per slice, no
+backward compatibility) are in `prototypes/README.md` (From the approved
+prototype to the product).
+
 ## Deterministic Mechanics
 
 ExecPlans should refer to repository scripts instead of restating repeatable

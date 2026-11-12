@@ -94,6 +94,17 @@ authoritative.
   breaking changes. One commit per completed, reviewed milestone (see
   Working Rhythm).
 
+## Pre-Deployment Compatibility
+
+While ntumie. has no users, compatibility costs more than it earns. Until the
+owner changes this policy, the repository is one unreleased release unit, and
+what is built now is the authoritative code and the base for what follows.
+Remove dead code as you go: when something is replaced, delete the old route,
+module, model, screen, type, test and doc in the same change, with no shim,
+alias, adapter, deprecated path or feature flag left for it. This does not
+relax data safety: never rewrite an applied shared migration or discard user
+data without the owner's explicit go at the time.
+
 ## Non-Negotiable Invariants
 
 - Database identities are immutable UUIDv7 values. Human-facing values
@@ -145,6 +156,12 @@ authoritative.
 - Design new screens and flows as plain HTML in `prototypes/`, testing each view
   in browser DevTools as you go, and implement only what the owner approved (see
   `prototypes/README.md`). Publish artifacts only when explicitly asked.
+- From prototype to product: a journey and role review is the approval gate;
+  the build ships in vertical slices on local branches (never pushed, no pull
+  requests), each merged with `git merge --ff-only` and accepted live before
+  the next; screens are audited as they are built, and finish-work runs at
+  each slice's end (see `prototypes/README.md`, From the approved prototype to
+  the product).
 - Maintain active ExecPlans according to `PLANS.md` at each stopping point.
 - Move completed execution plans from `docs/exec-plans/active/` to
   `docs/exec-plans/completed/`.
