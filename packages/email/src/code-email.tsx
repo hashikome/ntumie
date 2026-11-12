@@ -130,6 +130,11 @@ export function EmailLayout({
   );
 }
 
+// The sign-off under the wordmark: the company, never the product (workspace brand/email.md).
+export function companyLine(): string {
+  return `© ${new Date().getUTCFullYear()} Shikome Technology Limited, Dar es Salaam, Tanzania.`;
+}
+
 export interface EmailFooterProps {
   recipient: string;
   /** Why this reached them, finishing "Sent to <recipient> ...". */
@@ -156,9 +161,7 @@ export function EmailFooter({
         Need help? <a href={supportUrl}>Visit support</a>. This address doesn't take replies.
       </Text>
       <Text style={footerStyles.wordmark}>ntumie.</Text>
-      <Text style={footerStyles.closing}>
-        {`© ${new Date().getUTCFullYear()} ntumie. Good links belong together.`}
-      </Text>
+      <Text style={footerStyles.closing}>{companyLine()}</Text>
     </>
   );
 }

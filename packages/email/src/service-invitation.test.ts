@@ -19,9 +19,12 @@ describe("service invitations", () => {
       expect(mail.text).not.toContain("UTC");
       expect(mail.text).toMatch(/Expires on Tuesday, 13 October 2026 \(in \d+ days?\)\./);
       expect(mail.html).not.toContain("Pigfarm");
+      // The plain-text footer reads in the HTML's order: who and why, then the sign-off.
+      expect(mail.text.indexOf("Sent to reader@example.com")).toBeLessThan(mail.text.indexOf("© "));
       for (const body of [mail.html, mail.text]) {
         expect(body).toContain("https://links.example/support");
-        expect(body).toContain("Good links belong together.");
+        expect(body).toContain("Shikome Technology Limited, Dar es Salaam, Tanzania.");
+        expect(body).not.toContain("Good links belong together.");
       }
     }
   });

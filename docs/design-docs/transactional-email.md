@@ -180,17 +180,20 @@ ordinary logs, Redis payloads, and external telemetry
 ### Shared footer and warning
 
 Code emails carry one warning line, “Do not share this code with anyone.”, and
-every email (codes and invitations) uses the shared email footer: a
-purpose-specific unexpected-message prompt, “Need help? Visit support”, then
-“© <year> ntumie.” over “Good links belong together.” Code emails say “Didn't
-request this? You can safely ignore this email.” Invitations say “Not expecting
-this invitation? You can ignore it; nothing changes.” The support link uses
+every email (codes and invitations) uses the shared footer from the workspace
+email standard (`brand/email.md`): who it was sent to and why, a
+purpose-specific unexpected-message prompt, “Need help? Visit support”, then the
+sign-off, the `ntumie.` wordmark over one line, “© <year> Shikome Technology
+Limited, Dar es Salaam, Tanzania.” The copyright names the company, never the
+product, and the slogan stays out of emails. Code emails say “Didn't request
+this? You can safely ignore this email.” Invitations say “Not expecting this
+invitation? You can ignore it; nothing changes.” The invitation's hand-written
+plain text says the same, in the same order. The support link uses
 `EMAIL_SUPPORT_URL`, the web `/support` page,
 which shows the support address (`SUPPORT_EMAIL`, web server config). Emails
 never carry the address themselves, so changing it needs no email change.
-The shared header wordmark is 28 px, weight 700. In the copyright line, the
-20 px bold wordmark is larger and darker than the 14 px muted copyright/year;
-the retained tagline is 14 px. These are inline email styles shared by codes
+The header wordmark is 22 px, weight 700, alone; the footer's wordmark is 15 px
+over the 13 px copyright line. These are inline email styles shared by codes
 and service invitations. Web footers use the separate About/navigation contract in the
 [interface system](web-interface-system.md).
 

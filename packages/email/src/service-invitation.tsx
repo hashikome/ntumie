@@ -1,5 +1,5 @@
 import { Button, render, Text } from "@react-email/components";
-import { EmailLayout, type RenderedEmail } from "./code-email.js";
+import { companyLine, EmailLayout, type RenderedEmail } from "./code-email.js";
 
 const text = { fontSize: "16px", lineHeight: "24px", margin: "16px 0 0" };
 const small = { fontSize: "14px", lineHeight: "21px", margin: "12px 0 0" };
@@ -88,6 +88,6 @@ export async function renderServiceInvitation(input: {
   return {
     subject,
     html,
-    text: `${subject}\n\nOpen the invitation and explicitly accept if you want this role. New users enter their name to create an account. Everyone must then verify a fresh email code before the role becomes active, including people who are already signed in. Opening the link does not grant access.\n\n${url.href}\n\nExpires ${expiry}. You can decline or ignore this invitation. Sign in with the email that received it.\n\nNot expecting this invitation? You can ignore it; nothing changes. Need help? Visit ${input.supportUrl}\n\n© ${new Date().getUTCFullYear()} ntumie.\nGood links belong together.\n\nSent to ${input.recipient}.`,
+    text: `${subject}\n\nOpen the invitation and explicitly accept if you want this role. New users enter their name to create an account. Everyone must then verify a fresh email code before the role becomes active, including people who are already signed in. Opening the link does not grant access.\n\n${url.href}\n\nExpires ${expiry}. You can decline or ignore this invitation. Sign in with the email that received it.\n\nSent to ${input.recipient} because you were invited to be a ntumie. ${role}.\nNot expecting this invitation? You can ignore it; nothing changes.\nNeed help? Visit ${input.supportUrl}. This address doesn't take replies.\n\nntumie.\n${companyLine()}`,
   };
 }
