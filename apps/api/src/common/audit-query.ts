@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { auditReadActions } from "@ntumie/types";
 import { isUUID } from "class-validator";
 import type { PrismaService } from "../database/prisma.service";
 import type { AuditLogQueryDto } from "./dto/audit-query.dto";
@@ -15,11 +14,8 @@ export async function resolveAuditFilters(prisma: PrismaService, query: AuditLog
     throw appError("bad_request");
   return {
     q,
-    // An explicit read-action search must remain discoverable from either view.
-    view:
-      query.action && (auditReadActions as readonly string[]).includes(query.action)
-        ? ("all" as const)
-        : (query.view ?? "all"),
+    // An explicit read-action search finds reads either way: the action filter wins.
+    include: query.include,
     actor: actor
       ? isUUID(actor)
         ? actor

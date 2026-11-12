@@ -57,7 +57,7 @@ export async function auditSearchIds(
       Prisma.sql`${filters.targetId}::uuid IN (a.target_user_id, a.collection_id, a.invitation_id, a.resource_id, a.hub_id)`,
     );
   if (filters.action) conditions.push(Prisma.sql`a.action = ${filters.action}`);
-  else if (filters.view === "actions")
+  else if (filters.include !== "reads")
     conditions.push(Prisma.sql`NOT (${read} AND (a.outcome IS NULL OR a.outcome = 'success'))`);
   if (filters.from) conditions.push(Prisma.sql`a.created_at >= ${new Date(filters.from)}`);
   if (filters.to) conditions.push(Prisma.sql`a.created_at <= ${new Date(filters.to)}`);

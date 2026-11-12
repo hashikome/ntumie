@@ -73,10 +73,11 @@ with Load more, one Search field for displayed row content, Action and From/To
 dates. Search matches current actor labels/IDs, actions, target IDs, outcomes
 and recorded changes within the owner's feed before pagination.
 
-Manage defaults to `view=actions`; `view=all` includes routine reads. The API
-defaults to all; selecting a specific read action normalizes
-the view to all. View filtering precedes pagination and is part of cursor scope.
-Read events are still recorded. Rows show the actual collection/item/invitation
+The log is for actions that change something: the API leaves successful routine
+reads out unless a request asks with `include=reads`, and the Manage page never
+asks. Selecting a specific read action still finds those reads. The filter
+precedes pagination and is part of cursor scope.
+Read events are still recorded, for an investigation or an export. Rows show the actual collection/item/invitation
 target, affected share recipient, known effects and results. Missing historical
 details are explicitly labelled. Timestamps show local `YYYY-MM-DD HH:mm:ss`;
 the no-JavaScript fallback is labelled UTC. Current usernames accompany stable IDs.

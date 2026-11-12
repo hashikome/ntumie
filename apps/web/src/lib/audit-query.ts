@@ -3,7 +3,7 @@ import type { CursorMeta } from "@ntumie/types";
 import { queryValue } from "./http";
 
 export function auditQuery(query: Record<string, string | string[] | undefined>) {
-  const filters = new URLSearchParams({ limit: "20", view: queryValue(query.view) ?? "actions" });
+  const filters = new URLSearchParams({ limit: "20" });
   for (const key of ["q", "actor", "targetId", "hub", "action", "from", "to", "cursor"]) {
     const value = queryValue(
       key === "from" || key === "to" ? (query[`${key}Instant`] ?? query[key]) : query[key],

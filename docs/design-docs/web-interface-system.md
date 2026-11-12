@@ -276,7 +276,7 @@ actions with consequences, a required bounded reason and confirmation. Account
 suspension, reactivation and session revocation are separate forms. Collection
 moderation uses minimal IDs/hold state; operators read any content through the
 ordinary reader. `/manage/audit` has one Search field for displayed actor, action, target, outcome and change,
-Action and From/To dates, with an Include read events checkbox. Search matches all words case-insensitively, including partial IDs; it stays
+Action and From/To dates. Search matches all words case-insensitively, including partial IDs; it stays
 bound to continuation. Explicit identity filters resolve to full IDs. Audit rows display the last UUID
 segment for Actor and Target; hover reveals the full ID, and clicking copies it
 with temporary “Copied” feedback.
@@ -285,8 +285,8 @@ the action's entity rather than a generic ID precedence. Audit Log columns are
 Timestamp, Actor, Action, Target, Outcome and Change, in that order. Outcome
 shows the recorded result separately; Change shows
 bounded hub effects and existing service states/reasons; missing evidence stays
-explicitly unavailable. Actions/decisions is the default; Include read events adds
-routine reads. Audit timestamps use the account's preferred timezone, or the device
+explicitly unavailable. The log shows actions and decisions only; routine reads stay
+out ([ADR-0072](../engineering-decisions/0072-audit-log-leaves-reads-out.md)). Audit timestamps use the account's preferred timezone, or the device
 in Automatic mode, as `YYYY-MM-DD HH:mm:ss`, with seconds and date rollover,
 without per-row offsets. Automatic without JS is labelled UTC; explicit choices
 render correctly on the server and without JS (ADR-0045).

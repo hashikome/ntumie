@@ -28,7 +28,7 @@ export default async function Page({
     <section className="reader ops-page ops-list-page">
       <h1>Audit Log</h1>
       <p className="meta">Recorded activity, changes and results.</p>
-      <AuditFilters query={{ ...query, view: result.meta?.auditFilters?.view }} />
+      <AuditFilters query={query} />
       <AuditEvents
         initial={result.data}
         nextCursor={result.meta?.nextCursor}

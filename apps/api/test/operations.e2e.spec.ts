@@ -705,7 +705,6 @@ describe("service operator authority (HTTP)", () => {
       from: at.toISOString(),
       to: new Date(at.getTime() + 1).toISOString(),
       limit: "1",
-      view: "actions",
     });
     const found: string[] = [];
     for (let i = 0; i < 3; i++) {
@@ -842,7 +841,9 @@ describe("service operator authority (HTTP)", () => {
         outcome: "success",
       },
     });
-    const history = await as("get", `/api/v1/manage/audit?targetId=${c.id}`).expect(200);
+    const history = await as("get", `/api/v1/manage/audit?targetId=${c.id}&include=reads`).expect(
+      200,
+    );
     expect(history.body.data.find((r: { id: string }) => r.id === legacy.id).hubId).toBeNull();
   });
   it("keeps changes and denials visible while paging past routine service reads", async () => {
@@ -866,7 +867,7 @@ describe("service operator authority (HTTP)", () => {
         outcome: "denied",
       },
     });
-    const first = await as("get", "/api/v1/manage/audit?view=actions&limit=1").expect(200);
+    const first = await as("get", "/api/v1/manage/audit?limit=1").expect(200);
     expect(first.body.data[0].outcome).toBe("denied");
     const query = new URLSearchParams({
       ...first.body.meta.auditFilters,
@@ -880,21 +881,15 @@ describe("service operator authority (HTTP)", () => {
       afterState: "held",
       outcome: "success",
     });
-    query.set("view", "all");
+    query.set("include", "reads");
     await as("get", `/api/v1/manage/audit?${query}`).expect(400);
-    const reads = await as(
-      "get",
-      "/api/v1/manage/audit?view=actions&action=accounts.list&limit=1",
-    ).expect(200);
-    expect(reads.body.meta.auditFilters.view).toBe("all");
+    const reads = await as("get", "/api/v1/manage/audit?action=accounts.list&limit=1").expect(200);
     expect(reads.body.data[0].action).toBe("accounts.list");
-    const byTarget = await as("get", `/api/v1/manage/audit?view=actions&q=${c.id}`).expect(200);
+    const byTarget = await as("get", `/api/v1/manage/audit?q=${c.id}`).expect(200);
     expect(byTarget.body.data[0].collectionId).toBe(c.id);
-    const held = await as("get", "/api/v1/manage/audit?view=actions&q=No%20hold%20Held").expect(
-      200,
-    );
+    const held = await as("get", "/api/v1/manage/audit?q=No%20hold%20Held").expect(200);
     expect(held.body.data[0].collectionId).toBe(c.id);
-    const denied = await as("get", "/api/v1/manage/audit?view=actions&q=Denied").expect(200);
+    const denied = await as("get", "/api/v1/manage/audit?q=Denied").expect(200);
     expect(denied.body.data.length).toBeGreaterThan(0);
     expect(denied.body.data.every((row: { outcome: string }) => row.outcome === "denied")).toBe(
       true,

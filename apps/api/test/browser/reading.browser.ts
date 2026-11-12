@@ -5852,7 +5852,7 @@ it("filters audit calendar days in the saved timezone with native and enhanced f
   }
 }, 60000);
 
-it("shows recorded audit effects, honest legacy gaps, international dates and optional reads", async () => {
+it("shows recorded audit effects, honest legacy gaps, international dates and no routine reads", async () => {
   const op = await operatorFixture("audit-effects");
   const created = await request(app.getHttpServer())
     .post("/api/v1/collections")
@@ -5953,17 +5953,13 @@ it("shows recorded audit effects, honest legacy gaps, international dates and op
       await page.screenshot({ path: `/tmp/audit-effects-hub-${js}.png`, fullPage: true });
       await page.emulateMedia({ colorScheme: "dark" });
       await page.screenshot({ path: `/tmp/audit-effects-dark-${js}.png`, fullPage: true });
-      await page.getByRole("checkbox", { name: "Include read events", exact: true }).check();
-      await page.getByRole("button", { name: "Apply filters", exact: true }).click();
-      await browserExpect(table).toContainText("View audit");
+      // Routine reads stay out of the page; it offers no switch for them.
+      await browserExpect(page.getByRole("checkbox")).toHaveCount(0);
       await page.getByRole("link", { name: "Clear filters" }).click();
       await browserExpect(table).not.toContainText("View audit");
       await browserExpect(page.getByRole("link", { name: "Clear filters" })).toHaveCount(0);
       await page.getByRole("combobox", { name: "Action", exact: true }).selectOption("audit.read");
       await page.getByRole("button", { name: "Apply filters", exact: true }).click();
-      await browserExpect(
-        page.getByRole("checkbox", { name: "Include read events", exact: true }),
-      ).toBeChecked();
       await browserExpect(table).toContainText("Read only");
       await ready(page, `/manage/audit?targetId=${invitationId}`);
       const invitation = table

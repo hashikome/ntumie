@@ -1,6 +1,7 @@
 # ADR-0021: Capture bounded effects for core audit actions
 
-**Status:** accepted  
+**Status:** accepted; its read-event default and checkbox are superseded by
+[ADR-0072](0072-audit-log-leaves-reads-out.md)  
 **Date:** 2026-10-09
 
 ## Context

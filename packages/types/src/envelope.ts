@@ -13,7 +13,8 @@ export interface CursorMeta {
   auditFilters?: {
     /** Case-insensitive search of displayed audit content; retained across pages. */
     q?: string;
-    view?: "actions" | "all";
+    /** Present only when routine reads were asked for. */
+    include?: "reads";
     actor?: string;
     hub?: string;
     targetId?: string;

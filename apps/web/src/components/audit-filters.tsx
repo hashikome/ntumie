@@ -6,15 +6,20 @@ import { AuditDates } from "./audit-dates";
 
 export function AuditFilters({ query }: { query: Record<string, string | string[] | undefined> }) {
   const search = queryValue(query.q) ?? queryValue(query.actor) ?? queryValue(query.targetId) ?? "";
-  const reads = queryValue(query.view) === "all";
-  const filtered =
-    reads ||
-    ["q", "actor", "targetId", "hub", "action", "from", "to", "fromInstant", "toInstant"].some(
-      (key) => Boolean(queryValue(query[key])),
-    );
+  const filtered = [
+    "q",
+    "actor",
+    "targetId",
+    "hub",
+    "action",
+    "from",
+    "to",
+    "fromInstant",
+    "toInstant",
+  ].some((key) => Boolean(queryValue(query[key])));
   // Client navigation keeps uncontrolled fields; remount so they show the applied,
   // server-normalised filters rather than what was typed.
-  const applied = ["q", "actor", "targetId", "hub", "action", "from", "to", "view"]
+  const applied = ["q", "actor", "targetId", "hub", "action", "from", "to"]
     .map((key) => `${key}=${queryValue(query[key]) ?? ""}`)
     .join("&");
   return (
@@ -52,12 +57,6 @@ export function AuditFilters({ query }: { query: Record<string, string | string[
         </label>
         <AuditDates from={queryValue(query.from)} to={queryValue(query.to)} />
         <div className="audit-filter-footer">
-          <div className="audit-filter-options">
-            <label className="audit-read-toggle">
-              <input type="checkbox" name="view" value="all" defaultChecked={reads} />
-              Include read events
-            </label>
-          </div>
           <div className="audit-filter-actions">
             <button type="submit" className="button">
               Apply filters

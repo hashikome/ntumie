@@ -18,9 +18,10 @@ authorizes a bounded interim capture/presentation slice. Manage shows recorded
 states, outcomes and reasons, with current actor usernames alongside stable IDs.
 Invitation targets use invitation IDs, not recipient IDs. Session revocations do
 not present account state as the session change; counts were not recorded.
-`view=actions` excludes successful routine reads before pagination but retains
-denials; `view=all` includes reads. The API default remains all. An explicit read
-action normalizes the view to all, and effective filters bind the cursor.
+By default the API excludes successful routine reads before pagination but keeps
+denials; `include=reads` brings reads back, and only an API request asks for it.
+An explicit read action still finds its reads, and effective filters bind the
+cursor.
 Dates use the viewer's local `YYYY-MM-DD HH:mm:ss`, with a labelled UTC fallback
 without JavaScript.
 

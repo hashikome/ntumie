@@ -28,7 +28,7 @@ Navigation is server-rendered and permission-scoped, including without JavaScrip
 | Audit Log | Owners: their hub changes and own authentication events. Operators/admins: also service and authentication evidence. One Search field matches actor, action, target, outcome and change; Action and From/To narrow the results. Immutable IDs accompany current actor usernames |
 
 Audit Log is one permission-scoped timeline with no context tabs, backed by one AuditLog model. Collections uses one viewer-scoped list with an ID/link search and backend-provided actions.
-Audit Log defaults to actions/decisions and offers an Include read events checkbox. It
+Audit Log shows actions and decisions only, with no switch for routine reads. It
 shows captured changes/results instead of a mostly empty Access column; the
 [bounded effects contract](../engineering-decisions/0021-bounded-audit-effects.md)
 defines its limited coverage and treatment of older records.
@@ -136,11 +136,11 @@ metadata rows begin User ID, Email, Hub, followed by the existing profile facts.
 Account detail uses compact metadata spacing and links the hub name to `/h/{hubId}` without displaying its handle or ID. Longer profiles and session lists retain normal page scrolling.
 
 
-Audit Log places Apply filters on a left-aligned row below Include read events
-and the search/action/date fields. It uses the standard secondary button,
-matching Search. Clear filters appears beside it only when filters are applied
-and returns to the default log. Additional optional filters can join Include
-read events above the buttons; a personal-only option is deferred.
+Audit Log places Apply filters on a left-aligned row below the search/action/date
+fields. It uses the standard secondary button, matching Search. Clear filters
+appears beside it only when filters are applied and returns to the default log.
+Additional optional filters go above the buttons; a personal-only option is
+deferred.
 
 
 ### Import workspace views

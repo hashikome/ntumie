@@ -4899,25 +4899,11 @@ main .ops-filters select {
   align-items: flex-start;
   gap: 0.75rem;
 }
-.audit-filter-options,
 .audit-filter-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem 1rem;
-}
-.audit-read-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: var(--control);
-  color: var(--color-muted);
-  font-size: var(--text-meta);
-}
-.audit-read-toggle input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  min-height: 0;
 }
 .audit-id-copy code {
   font-size: 0.8125rem;

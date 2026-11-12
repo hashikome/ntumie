@@ -9,6 +9,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- The audit log leaves routine read events out by default. They are still
+  recorded, and an API request can ask for them with `include=reads`; the Manage
+  page drops its Include read events checkbox. `view` is gone.
 - Emails sign off as the shared email standard says: the `ntumie.` wordmark over
   “© <year> Shikome Technology Limited, Dar es Salaam, Tanzania.”, without the
   slogan. The invitation's plain text follows its HTML's order.

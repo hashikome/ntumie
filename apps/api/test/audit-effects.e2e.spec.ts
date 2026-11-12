@@ -206,7 +206,7 @@ describe("bounded audit evidence (HTTP)", () => {
       })),
     });
     const before = await prisma.auditLog.count({ where: { hubId, action: "audit.read" } });
-    const first = await as("get", "/api/v1/manage/audit?view=actions&limit=1").expect(200);
+    const first = await as("get", "/api/v1/manage/audit?limit=1").expect(200);
     expect(first.body.data[0].action).not.toBe("audit.read");
     expect(await prisma.auditLog.count({ where: { hubId, action: "audit.read" } })).toBe(
       before + 1,
@@ -218,20 +218,18 @@ describe("bounded audit evidence (HTTP)", () => {
     });
     const next = await as("get", `/api/v1/manage/audit?${query}`).expect(200);
     expect(next.body.data[0].id).not.toBe(first.body.data[0].id);
-    query.set("view", "all");
+    query.set("include", "reads");
     await as("get", `/api/v1/manage/audit?${query}`).expect(400);
-    const all = await as("get", "/api/v1/manage/audit?view=all&limit=1").expect(200);
+    const all = await as("get", "/api/v1/manage/audit?include=reads&limit=1").expect(200);
     expect(all.body.data[0].action).toBe("audit.read");
-    const explicit = await as("get", "/api/v1/manage/audit?view=actions&action=audit.read").expect(
+    expect(all.body.meta.auditFilters.include).toBe("reads");
+    const explicit = await as("get", "/api/v1/manage/audit?action=audit.read").expect(200);
+    expect(explicit.body.data[0].action).toBe("audit.read");
+    await as("get", "/api/v1/manage/audit?include=invalid").expect(400);
+    await as("get", "/api/v1/manage/audit?view=all").expect(400);
+    const foreign = await as("get", `/api/v1/manage/audit?hub=${hubId}`, recipientToken).expect(
       200,
     );
-    expect(explicit.body.meta.auditFilters.view).toBe("all");
-    await as("get", "/api/v1/manage/audit?view=invalid").expect(400);
-    const foreign = await as(
-      "get",
-      `/api/v1/manage/audit?view=actions&hub=${hubId}`,
-      recipientToken,
-    ).expect(200);
     expect(foreign.body.data).toEqual([]);
   });
 
@@ -239,10 +237,7 @@ describe("bounded audit evidence (HTTP)", () => {
     const c = await create();
     await as("post", `/api/v1/collections/${c.id}/publish`).expect(201);
     const actor = await prisma.user.findUniqueOrThrow({ where: { id: actorId } });
-    const first = await as(
-      "get",
-      `/api/v1/manage/audit?view=actions&limit=1&q=${actor.username}`,
-    ).expect(200);
+    const first = await as("get", `/api/v1/manage/audit?limit=1&q=${actor.username}`).expect(200);
     expect(first.body.meta.auditFilters.q).toBe(actor.username);
     const query = new URLSearchParams({
       ...first.body.meta.auditFilters,
@@ -253,7 +248,7 @@ describe("bounded audit evidence (HTTP)", () => {
     expect(next.body.data[0].actorUserId).toBe(actorId);
     query.set("q", recipientId);
     await as("get", `/api/v1/manage/audit?${query}`).expect(400);
-    const target = await as("get", `/api/v1/manage/audit?view=actions&q=${c.id}`).expect(200);
+    const target = await as("get", `/api/v1/manage/audit?q=${c.id}`).expect(200);
     expect(
       target.body.data.every((row: { collectionId: string }) => row.collectionId === c.id),
     ).toBe(true);
@@ -263,10 +258,9 @@ describe("bounded audit evidence (HTTP)", () => {
       "Unpublished → Published",
       c.id.split("-").at(-1) ?? c.id,
     ]) {
-      const found = await as(
-        "get",
-        `/api/v1/manage/audit?view=actions&q=${encodeURIComponent(term)}`,
-      ).expect(200);
+      const found = await as("get", `/api/v1/manage/audit?q=${encodeURIComponent(term)}`).expect(
+        200,
+      );
       expect(
         found.body.data.some((row: { collectionId: string }) => row.collectionId === c.id),
       ).toBe(true);
