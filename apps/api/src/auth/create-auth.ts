@@ -118,7 +118,7 @@ export function createAuth({
     },
     advanced: {
       database: {
-        // Let PostgreSQL generate uuid-v7 ids (app_uuid_v7 defaults).
+        // Let PostgreSQL generate uuid-v7 ids (uuidv7() column defaults).
         generateId: false,
       },
     },

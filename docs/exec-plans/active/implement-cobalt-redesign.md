@@ -483,7 +483,7 @@ browser tests report no failures.
 
 Front-end milestones are safe to repeat. Migrations are additive (nullable
 columns, new preference column) and created with `--create-only`; never accept
-an auto-generated diff that drops `app_uuid_v7()`, triggers, CHECKs or partial
+an auto-generated diff that drops triggers, CHECKs or partial
 indexes. If a milestone is half done, the previous screens keep working because
 routes and API contracts are only extended until M6/M7 retire them. The
 `first` capture destination stays readable for receipt replay.

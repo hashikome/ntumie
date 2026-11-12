@@ -7,9 +7,8 @@ Run all Prisma CLI commands from `apps/api`.
 ## Rules
 
 - **Never trust an auto-generated diff blindly.** Several database objects
-  exist only in migration SQL and are invisible to the Prisma schema: the
-  `public.app_uuid_v7()` function, `set_updated_at` triggers, the
-  CHECK constraints, and partial unique
+  exist only in migration SQL and are invisible to the Prisma schema:
+  `set_updated_at` triggers, the CHECK constraints, and partial unique
   indexes. An unreviewed diff will try to drop them.
 - Evolve the schema with `bunx prisma migrate dev --create-only`, review and
   edit the generated SQL, then apply.

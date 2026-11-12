@@ -86,10 +86,10 @@ authoritative.
 - Run Prisma through `bunx prisma` from `apps/api` (configuration in
   `apps/api/prisma.config.ts`; the datasource URL lives there, not in the
   schema).
-- Schema changes use `prisma migrate dev --create-only` + review: the
-  `app_uuid_v7()` function, `set_updated_at` triggers,
-  CHECK constraints, and partial unique indexes exist only in migration SQL
-  and must never be dropped by an auto-generated diff.
+- Schema changes use `prisma migrate dev --create-only` + review:
+  `set_updated_at` triggers, CHECK constraints, and partial unique indexes
+  exist only in migration SQL and must never be dropped by an auto-generated
+  diff. A generated primary key defaults to PostgreSQL 18's `uuidv7()`.
 - `compose.yml` is local development only. Production topology is
   `docker-stack.<env>.yml` in the swarm dialect (see the infra direction doc).
 - Use Conventional Commit style: `feat: ...`, `fix: ...`, `docs: ...`,

@@ -1,7 +1,6 @@
 // Schema for the hub tenancy model (Hub → Collections → Resources).
 // The migration SQL remains the source of truth for objects Prisma cannot
-// model: the app_uuid_v7() function, set_updated_at triggers, the
-// CHECK constraints and the partial unique
+// model: set_updated_at triggers, the CHECK constraints and the partial unique
 // index uq_resources_collection_link. Future migrations: use `prisma migrate
 // dev --create-only` and review the SQL so those objects are never dropped.
 
@@ -16,7 +15,7 @@ datasource db {
 }
 
 model User {
-  id                     String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id                     String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   username               String    @unique @db.VarChar(20)
   selfDeactivated        Boolean   @default(false) @map("self_deactivated")
   name                   String    @db.VarChar(255)
@@ -69,7 +68,7 @@ model User {
 model Hub {
   handleChangedAt          DateTime? @map("handle_changed_at") @db.Timestamptz(6)
   showOwner                Boolean   @default(true) @map("show_owner")
-  id                       String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id                       String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   ownerUserId              String    @unique @map("owner_user_id") @db.Uuid
   handle                   String    @unique @db.VarChar(60)
   name                     String    @default("My hub") @db.VarChar(255)
@@ -91,7 +90,7 @@ model Hub {
 }
 
 model Collection {
-  id                 String   @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id                 String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   hubId              String   @map("hub_id") @db.Uuid
   title              String   @db.VarChar(255)
   description        String?
@@ -121,7 +120,7 @@ model Collection {
 
 // Shared normalized names; there is no public catalogue/usage endpoint.
 model Tag {
-  id          String          @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id          String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name        String          @unique(map: "tags_name_unique") @db.VarChar(80)
   items       ItemTag[]
   collections CollectionTag[]
@@ -187,7 +186,7 @@ model CollectionSave {
 }
 
 model Resource {
-  id                 String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id                 String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   collectionId       String    @map("collection_id") @db.Uuid
   kind               String    @db.VarChar(24)
   url                String?
@@ -219,7 +218,7 @@ model Resource {
 model Session {
   authenticationMethod String?   @map("authentication_method") @db.VarChar(16)
   verifiedAt           DateTime? @map("verified_at") @db.Timestamptz(6)
-  id                   String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id                   String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   expiresAt            DateTime  @map("expires_at") @db.Timestamptz(6)
   token                String    @unique
   ipAddress            String?   @map("ip_address")
@@ -235,7 +234,7 @@ model Session {
 }
 
 model Account {
-  id                    String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id                    String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   accountId             String    @map("account_id")
   providerId            String    @map("provider_id")
   userId                String    @map("user_id") @db.Uuid
@@ -257,7 +256,7 @@ model Account {
 }
 
 model Verification {
-  id         String   @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   identifier String
   value      String
   expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
@@ -293,7 +292,7 @@ model EmailChangeIntent {
 }
 
 model EmailOutbox {
-  id           String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id           String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   challengeKey String    @map("challenge_key") @db.VarChar(64)
   recipientKey String    @map("recipient_key") @db.VarChar(64)
   payload      String?
@@ -369,7 +368,7 @@ model AdminBootstrap {
 
 model ServiceInvitation {
   tokenHash     String?  @unique @map("token_hash") @db.VarChar(64)
-  id            String   @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id            String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   role          String   @db.VarChar(16)
   email         String   @db.VarChar(254)
   inviteeUserId String?  @map("invitee_user_id") @db.Uuid
@@ -394,7 +393,7 @@ model ServiceInvitation {
 // A pending row is also the durable lookup job (outbox shape, like email):
 // written in the save's transaction, relayed and claimed by the worker.
 model LinkMetadata {
-  id          String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   url         String    @unique
   title       String?   @db.VarChar(255)
   description String?   @db.VarChar(500)
@@ -428,7 +427,7 @@ model CaptureReceipt {
 // Access follows the collection policy; moderation is owner/contributor hiding and,
 // for the author, edit/delete. A deleted comment with replies keeps its place.
 model CollectionComment {
-  id             String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id             String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   collectionId   String    @map("collection_id") @db.Uuid
   authorUserId   String?   @map("author_user_id") @db.Uuid
   parentId       String?   @map("parent_id") @db.Uuid
@@ -461,7 +460,7 @@ model CollectionComment {
 // References survive target deletion; content access remains scoped by immutable hubId.
 // One evidence store. Category governs visibility and retention, never a separate log.
 model AuditLog {
-  id            String   @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id            String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   category      String   @default("content") @db.VarChar(16)
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   actorKind     String   @default("user") @map("actor_kind") @db.VarChar(16)
@@ -496,7 +495,7 @@ model AuditLog {
 // Personal sharing history, separate from collection access grants. Resource
 // references survive deletion; resolution always checks current visibility.
 model ShareEntry {
-  id              String      @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id              String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
   createdByUserId String      @map("created_by_user_id") @db.Uuid
   kind            String      @db.VarChar(16)
   resourceId      String?     @map("resource_id") @db.Uuid
@@ -519,7 +518,7 @@ model ShareEntry {
 
 // Idempotent client reports, without IPs, user agents, or recipient identities.
 model ShareOpen {
-  id          String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   shareId     String    @map("share_id") @db.Uuid
   eventId     String    @map("event_id") @db.Uuid
   attribution Json?     @db.JsonB
@@ -537,7 +536,7 @@ model ShareOpen {
 
 // Reservations outlive hub/account deletion. hubId is provenance, not a live FK.
 model HubHandleReservation {
-  id        String   @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   handle    String   @unique @db.VarChar(60)
   hubId     String   @map("hub_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -547,7 +546,7 @@ model HubHandleReservation {
 
 // Better Auth owns encrypted factor secrets and atomic recovery-code consumption.
 model TwoFactor {
-  id                      String    @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id                      String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   userId                  String    @unique @map("user_id") @db.Uuid
   secret                  String
   backupCodes             String    @map("backup_codes")
@@ -560,7 +559,7 @@ model TwoFactor {
 }
 
 model Passkey {
-  id           String   @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id           String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   userId       String   @map("user_id") @db.Uuid
   name         String?  @db.VarChar(100)
   publicKey    String   @map("public_key")
@@ -580,7 +579,7 @@ model Passkey {
 // Private review state. Destination and imported IDs are durable receipts, not
 // cascading relations: deleting a collection must not make a row import again.
 model ImportDraft {
-  id         String         @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id         String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
   userId     String         @map("user_id") @db.Uuid
   hubId      String         @map("hub_id") @db.Uuid
   sourceKind String         @map("source_kind") @db.VarChar(24)
@@ -600,7 +599,7 @@ model ImportDraft {
 }
 
 model ImportFolder {
-  id                 String         @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id                 String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
   draftId            String         @map("draft_id") @db.Uuid
   parentId           String?        @map("parent_id") @db.Uuid
   name               String         @db.VarChar(255)
@@ -627,7 +626,7 @@ model ImportFolder {
 }
 
 model ImportRow {
-  id             String       @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id             String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
   draftId        String       @map("draft_id") @db.Uuid
   folderId       String       @map("folder_id") @db.Uuid
   position       Int
@@ -659,7 +658,7 @@ model PendingActionPayload {
 // Demand for features that are designed but not built yet (fake doors): one
 // row per use. Holds no content, only which feature and who (when signed in).
 model FeatureInterest {
-  id        String   @id @default(dbgenerated("app_uuid_v7()")) @db.Uuid
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   feature   String   @db.VarChar(48)
   userId    String?  @map("user_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

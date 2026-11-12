@@ -9,6 +9,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Generated keys default to PostgreSQL 18's own `uuidv7()`; the `app_uuid_v7()`
+  wrapper, whose fallback to random v4 ids could only hide an older database, is
+  dropped. Existing ids are unchanged.
 - The audit log leaves routine read events out by default. They are still
   recorded, and an API request can ask for them with `include=reads`; the Manage
   page drops its Include read events checkbox. `view` is gone.

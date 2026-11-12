@@ -248,7 +248,7 @@ explicit shared boundary.
 
 Conventions: Bun toolchain + runtime; Prisma as the
 backend-only persistence boundary behind a Nest `PrismaService`; PostgreSQL 18
-with `app_uuid_v7()` defaults; `timestamptz` UTC; camelCase API / snake_case
+with `uuidv7()` defaults; `timestamptz` UTC; camelCase API / snake_case
 DB; global `ValidationPipe`; self-hosted better-auth with passwordless authentication; Biome; `bun test`; committed `bun.lock`.
 
 The non-negotiable invariants for contributors are listed in `AGENTS.md`;
