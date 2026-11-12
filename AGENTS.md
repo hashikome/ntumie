@@ -41,8 +41,11 @@ authoritative.
    decision record; a change that contradicts an accepted record supersedes it
    explicitly (new evidence, tradeoff, reason) — never silently.
 5. **Present for review**: summarize the result and the diff.
-6. **Commit once per completed, reviewed milestone — then push.** No
-   micro-commits, no pushing half-reviewed states.
+6. **Commit once per completed, reviewed milestone.** No micro-commits.
+   Substantial work goes on a local branch, then
+   `git switch main && git merge --ff-only <branch>` and `main` is pushed
+   with the owner's go; never push the branch or open a pull request. Every
+   push to `main` releases, so no half-reviewed state reaches it.
 
 ## Focused References
 
