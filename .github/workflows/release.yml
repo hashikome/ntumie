@@ -106,7 +106,7 @@ jobs:
           ssh-target: ${{ vars.SERVER_SSH_TARGET }}
           ssh-host-key: ${{ vars.SERVER_HOST_KEY }}
       - name: Migrate, verify grants, then promote application images
-        uses: hashikome/actions/dokploy-release@66a6e8f29d643f53b7f3c8b52df175b8eb7971db # v1.1.0
+        uses: hashikome/actions/dokploy-release@777680327841a8e614ffe8ec53be28e85fd662af # main after v1.2.0: Swarm's verdict
         with:
           images: |
             API_IMAGE=${{ needs.image.outputs.api }}

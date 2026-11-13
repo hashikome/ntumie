@@ -242,9 +242,12 @@ production-launch requirements; they do not block this production CI/CD setup.
 
 The release workflow builds both immutable images after verification. Its optional
 `deploy` input defaults to false; every push to `main` also deploys. The deploy job
-runs the shared `hashikome/actions/dokploy-release` action, pinned to an exact version (`@v1.1.0`), with
-the `production` environment secret `DOKPLOY_API_KEY`. No desktop approval or
-application SDK is involved.
+runs the shared `hashikome/actions/dokploy-release` action, pinned to an exact commit (`7776803`, after
+v1.2.0), with the `production` environment secret `DOKPLOY_API_KEY`. No desktop approval or
+application SDK is involved. Each deploy ends with Swarm's verdict, printed to the run's log and
+summary: **released** once every service's new tasks are healthy and Swarm reports the update
+completed; **paused** (the stack's `failure_action`, ADR-0061) or **rolled back** fails the run, and
+the previous release keeps serving. The action's own `rollback` and `accept` inputs stay off.
 `deploy/release.json` holds what is specific to ntumie: the reviewed
 application/migration resources, services, images and allowed inputs;
 `DOKPLOY_REGISTRY_ID` remains a GitHub environment variable. Prepare distinct local
