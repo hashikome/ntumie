@@ -66,7 +66,7 @@ packages/
   email/           @ntumie/email — backend-owned React Email templates
 tooling/           boundaries, docs, guide pin, isolated test runner, image rehearsal
 compose.yml        local dev services
-docker-stack.*.yml local Swarm rehearsal and production topology
+docker-stack*.yml  production topology and the one-shot migration
 docs/              design docs, decisions, exec plans, runbooks, guides
 ref/               disposable, git-ignored implementation context
 ```

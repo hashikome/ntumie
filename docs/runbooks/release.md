@@ -57,17 +57,10 @@ page ([edge cache](edge-cache.md)) and its absence with a session cookie. It nev
 Swarm, sends mail, or sends remote telemetry. Local Sentry-envelope capture
 is covered by API unit tests. This restore is local, not off-host proof.
 
-`docker-stack.local.yml` is the separate Swarm rehearsal artifact. Validate
-its dialect with `API_IMAGE` and `LOCAL_SECRETS_DIR` set using
-`docker stack config -c docker-stack.local.yml`. On an explicitly selected
-disposable Swarm host, create synthetic `postgres_password`, `database_url`,
-`auth_secret` and `email_suppression` files. Use independent random auth and
-suppression secrets of at least 32 characters; the database URL uses host
-`postgres`, database `rehearsal`. Deploy with `API_REPLICAS=0`, run the migration as a one-shot
-service on `<stack>_local` using secret `<stack>_database_url`, check its exit
-code, then redeploy with `API_REPLICAS=1`. Probe through the attachable overlay
-network; no host ports are exposed. Remove that stack and its owned volumes
-afterward. A passing bridge-network rehearsal or `stack config` does not
+There is no local Swarm rehearsal (retired 13 November 2026): when a change to
+the stack's dialect (secrets, `deploy.*` policies, rolling updates) needs proof
+before a release, deploy `docker-stack.yml` to a throwaway server with synthetic
+secrets and captured email, then remove it. The image rehearsal above does not
 prove Swarm scheduling, ingress, secrets distribution, or rolling updates.
 
 ## Image and release workflow

@@ -47,12 +47,10 @@ product-owned release contracts below remain the intended approach:
     ports, healthchecks, whatever makes `docker compose up -d` pleasant.
   - `docker-stack.yml` — the production topology, consumed by Dokploy's
     Stack mode. Never contains `build:`.
-  - `docker-stack.local.yml` — a required artifact, not a contingency: the
-    local single-node-swarm simulation of the production topology
-    (`docker swarm init` + `docker stack deploy`), the established practice
-    in other projects. It is how stack-dialect behavior
-    (secrets, `deploy.*` policies, ordering without `depends_on`) is
-    rehearsed before anything reaches the VPS.
+  - No local Swarm stack (retired 13 November 2026, owner): stack-dialect
+    behaviour (secrets, `deploy.*` policies, ordering without `depends_on`)
+    is rehearsed on the server or a throwaway server, which is faster and
+    closer to production than a single-node Swarm on a workstation.
 - **Local development and production are the permanent environments.** The single
   VPS is production; a host upgrade or replacement does not change that role.
   Configuration bundles identify the environment while internal service names
@@ -61,10 +59,10 @@ product-owned release contracts below remain the intended approach:
   feature.** Dokploy's built-in GitHub Application previews do not directly cover
   this raw multi-service Stack. Any preview coordinator must use GitHub-built
   images, separate preview data/queue credentials, captured email, bounded
-  capacity and teardown on PR closure. The local Swarm simulation remains the
-  pre-release topology check; no permanent staging server is planned.
+  capacity and teardown on PR closure. A throwaway server is the pre-release
+  topology check when one is needed; no permanent staging server is planned.
 - **Each product repository owns its own runtime definition**: Dockerfiles,
-  both topology files above, health/readiness checks, environment and
+  the topology files above, health/readiness checks, environment and
   secret-file contracts, migration commands, and release ordering. Dokploy
   values are deployment inputs; durable runtime decisions stay documented in
   source control.
