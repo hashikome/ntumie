@@ -182,13 +182,19 @@ ordinary logs, Redis payloads, and external telemetry
 Code emails carry one warning line, “Do not share this code with anyone.”, and
 every email (codes and invitations) uses the shared footer from the workspace
 email standard (`brand/email.md`): who it was sent to and why, a
-purpose-specific unexpected-message prompt, “Need help? Visit support”, then the
+purpose-specific unexpected-message prompt, “Need help? Visit support <url>. This
+address doesn't take replies.”, then the
 sign-off, the `ntumie.` wordmark over one line, “© <year> Shikome Technology
 Limited, Dar es Salaam, Tanzania.” The copyright names the company, never the
 product, and the slogan stays out of emails. Code emails say “Didn't request
 this? You can safely ignore this email.” Invitations say “Not expecting this
 invitation? You can ignore it; nothing changes.” The invitation's hand-written
-plain text says the same, in the same order. The support link uses
+plain text says the same, in the same words and order.
+
+Every link shows its full URL as its text, never a label alone, so a reader can
+type it on another device: the support link reads its address in full,
+and the invitation's Review invitation button is followed by “Or open <url>”. The
+support link uses
 `EMAIL_SUPPORT_URL`, the web `/support` page,
 which shows the support address (`SUPPORT_EMAIL`, web server config). Emails
 never carry the address themselves, so changing it needs no email change.

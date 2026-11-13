@@ -144,6 +144,12 @@ export interface EmailFooterProps {
   prompt?: string;
 }
 
+// A link shows its full address, never a label alone, so a reader can type it on
+// another device (workspace brand/email.md).
+export function supportLine(supportUrl: string): string {
+  return `Need help? Visit support ${supportUrl}. This address doesn't take replies.`;
+}
+
 // Why this came, what to do about it, then the name. Links stay plain so the
 // mail app colours them for its theme.
 export function EmailFooter({
@@ -158,7 +164,8 @@ export function EmailFooter({
       <Text style={footerStyles.small}>{`Sent to ${recipient} ${reason}`}</Text>
       <Text style={footerStyles.small}>{prompt}</Text>
       <Text style={footerStyles.small}>
-        Need help? <a href={supportUrl}>Visit support</a>. This address doesn't take replies.
+        Need help? Visit support <a href={supportUrl}>{supportUrl}</a>. This address doesn't take
+        replies.
       </Text>
       <Text style={footerStyles.wordmark}>ntumie.</Text>
       <Text style={footerStyles.closing}>{companyLine()}</Text>

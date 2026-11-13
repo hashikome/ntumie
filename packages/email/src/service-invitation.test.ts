@@ -13,11 +13,13 @@ describe("service invitations", () => {
         recipient: "reader@example.com",
       });
       expect(mail.subject).toContain(`ntumie. service ${role}`);
-      expect(mail.html).toContain(url);
+      expect(mail.html).toContain(`>${url}</a>`);
       expect(mail.text).toContain(url);
-      expect(mail.text).toContain("explicitly accept");
+      expect(mail.text).toContain("Review the invitation and accept if you want this role.");
       expect(mail.text).not.toContain("UTC");
-      expect(mail.text).toMatch(/Expires on Tuesday, 13 October 2026 \(in \d+ days?\)\./);
+      expect(mail.text).toMatch(
+        /This invitation expires on Tuesday, 13 October 2026 \(in \d+ days?\)\./,
+      );
       expect(mail.html).not.toContain("Pigfarm");
       // The plain-text footer reads in the HTML's order: who and why, then the sign-off.
       expect(mail.text.indexOf("Sent to reader@example.com")).toBeLessThan(mail.text.indexOf("© "));

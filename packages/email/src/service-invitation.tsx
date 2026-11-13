@@ -1,5 +1,5 @@
 import { Button, render, Text } from "@react-email/components";
-import { companyLine, EmailLayout, type RenderedEmail } from "./code-email.js";
+import { companyLine, EmailLayout, type RenderedEmail, supportLine } from "./code-email.js";
 
 const text = { fontSize: "16px", lineHeight: "24px", margin: "16px 0 0" };
 const small = { fontSize: "14px", lineHeight: "21px", margin: "12px 0 0" };
@@ -44,6 +44,12 @@ export async function renderServiceInvitation(input: {
   const role = input.role === "admin" ? "service admin" : "service operator";
   const expiry = expiryWhen(input.expiresAt, input.timeZone);
   const subject = `You're invited to be a ntumie. ${role}`;
+  // The HTML and plain text say the same thing in the same words.
+  const heading = `You have been invited to be a ${role}.`;
+  const steps =
+    "Review the invitation and accept if you want this role. If you are new, enter your name to create your account. Everyone must then verify a fresh email code before the role becomes active, including people who are already signed in. Opening this email or its link does not give you access.";
+  const expires = `This invitation expires ${expiry}. You can decline it or ignore it.`;
+  const signIn = "Sign in with the email address that received this invitation.";
   const html = await render(
     <EmailLayout
       lang="en"
@@ -56,14 +62,9 @@ export async function renderServiceInvitation(input: {
       }}
     >
       <Text style={{ fontSize: "20px", lineHeight: "28px", fontWeight: 700, margin: "28px 0 0" }}>
-        You have been invited to be a {role}.
+        {heading}
       </Text>
-      <Text style={text}>
-        Review the invitation and accept if you want this role. If you are new, enter your name to
-        create your account. Everyone must then verify a fresh email code before the role becomes
-        active, including people who are already signed in. Opening this email or its link does not
-        give you access.
-      </Text>
+      <Text style={text}>{steps}</Text>
       <Button
         href={url.href}
         style={{
@@ -79,15 +80,16 @@ export async function renderServiceInvitation(input: {
       >
         Review invitation
       </Button>
-      <Text style={{ ...small, marginTop: "24px" }}>
-        {`This invitation expires ${expiry}. You can decline it or ignore it.`}
+      <Text style={{ ...small, marginTop: "16px" }}>
+        Or open <a href={url.href}>{url.href}</a>
       </Text>
-      <Text style={small}>Sign in with the email address that received this invitation.</Text>
+      <Text style={{ ...small, marginTop: "24px" }}>{expires}</Text>
+      <Text style={small}>{signIn}</Text>
     </EmailLayout>,
   );
   return {
     subject,
     html,
-    text: `${subject}\n\nOpen the invitation and explicitly accept if you want this role. New users enter their name to create an account. Everyone must then verify a fresh email code before the role becomes active, including people who are already signed in. Opening the link does not grant access.\n\n${url.href}\n\nExpires ${expiry}. You can decline or ignore this invitation. Sign in with the email that received it.\n\nSent to ${input.recipient} because you were invited to be a ntumie. ${role}.\nNot expecting this invitation? You can ignore it; nothing changes.\nNeed help? Visit ${input.supportUrl}. This address doesn't take replies.\n\nntumie.\n${companyLine()}`,
+    text: `${heading}\n\n${steps}\n\nReview invitation: ${url.href}\n\n${expires}\n${signIn}\n\nSent to ${input.recipient} because you were invited to be a ntumie. ${role}.\nNot expecting this invitation? You can ignore it; nothing changes.\n${supportLine(input.supportUrl)}\n\nntumie.\n${companyLine()}`,
   };
 }

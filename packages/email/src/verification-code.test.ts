@@ -35,6 +35,9 @@ describe("code emails", () => {
         expect(body).not.toContain("Good links belong together.");
         expect(body).not.toContain("mailto:");
       }
+      // A link shows its full address, not a label alone.
+      expect(email.html).toContain(`>${valid.supportUrl}</a>`);
+      expect(email.text).toContain(`Need help? Visit support ${valid.supportUrl}.`);
       // Subjects never carry the code.
       expect(email.subject).not.toContain(valid.code);
       expect(email.subject.toLowerCase()).toContain("ntumie.");

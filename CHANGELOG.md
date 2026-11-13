@@ -17,7 +17,10 @@ summary of what changed after completed work has been promoted out of `ref/`.
   page drops its Include read events checkbox. `view` is gone.
 - Emails sign off as the shared email standard says: the `ntumie.` wordmark over
   “© <year> Shikome Technology Limited, Dar es Salaam, Tanzania.”, without the
-  slogan. The invitation's plain text follows its HTML's order.
+  slogan. The invitation's plain text follows its HTML's order and words.
+- Email links show their full URL, never a label alone, so a reader can type one
+  on another device: “Need help? Visit support https://…”, and the invitation's
+  button is followed by its address.
 - Move to the shared `infra-postgres` and `infra-redis-queue` on `hashikome-network`.
   Releases create missing Docker secrets from GitHub, and the stack's network and
   secret names live in `deploy/release.json`, so a new server needs less by hand.
