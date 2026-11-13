@@ -130,7 +130,7 @@ export function EmailLayout({
   );
 }
 
-// The sign-off under the wordmark: the company, never the product (workspace brand/email.md).
+// The sign-off under the wordmark: the company, never the product (workspace templates/email.md).
 export function companyLine(): string {
   return `© ${new Date().getUTCFullYear()} Shikome Technology Limited, Dar es Salaam, Tanzania.`;
 }
@@ -144,8 +144,8 @@ export interface EmailFooterProps {
   prompt?: string;
 }
 
-// A link shows its full address, never a label alone, so a reader can type it on
-// another device (workspace brand/email.md).
+// A typeable address is written out as its link's text, so a reader can type it
+// on another device; one-time links stay behind buttons (workspace templates/email.md).
 // The product's own address, under its wordmark: the support page is on the web
 // app, so its origin is the product's site.
 export function productSite(supportUrl: string): string {

@@ -13,7 +13,10 @@ describe("service invitations", () => {
         recipient: "reader@example.com",
       });
       expect(mail.subject).toContain(`ntumie. service ${role}`);
-      expect(mail.html).toContain(`>${url}</a>`);
+      // A one-time link stays behind its button; the plain text writes it after its words.
+      expect(mail.html).toContain(`href="${url}"`);
+      expect(mail.html).not.toContain(`>${url}</a>`);
+      expect(mail.text).toContain(`Review invitation: ${url}`);
       expect(mail.text).toContain(url);
       expect(mail.text).toContain("Review the invitation and accept if you want this role.");
       expect(mail.text).not.toContain("UTC");

@@ -86,9 +86,6 @@ export async function renderServiceInvitation(input: {
       >
         Review invitation
       </Button>
-      <Text style={{ ...small, marginTop: "16px" }}>
-        Or open <a href={url.href}>{url.href}</a>
-      </Text>
       <Text style={{ ...small, marginTop: "24px" }}>{expires}</Text>
       <Text style={small}>{signIn}</Text>
     </EmailLayout>,

@@ -18,9 +18,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 - Emails sign off as the shared email standard says: the `ntumie.` wordmark over
   “© <year> Shikome Technology Limited, Dar es Salaam, Tanzania.”, without the
   slogan. The invitation's plain text follows its HTML's order and words.
-- Email links show their full URL, never a label alone, so a reader can type one
-  on another device: “Need help? Visit support https://…”, and the invitation's
-  button is followed by its address. The footer's wordmark is followed by the
+- Emails write out the addresses a reader could type (“Need help? Visit support
+  https://…”), so they can open one on another device; the invitation's one-time
+  link stays behind its button. The footer's wordmark is followed by the
   product's site, so every email shows where it came from.
 - Move to the shared `infra-postgres` and `infra-redis-queue` on `hashikome-network`.
   Releases create missing Docker secrets from GitHub, and the stack's network and
