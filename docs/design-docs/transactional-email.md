@@ -184,8 +184,9 @@ every email (codes and invitations) uses the shared footer from the workspace
 email standard (`brand/email.md`): who it was sent to and why, a
 purpose-specific unexpected-message prompt, “Need help? Visit support <url>. This
 address doesn't take replies.”, then the
-sign-off, the `ntumie.` wordmark over one line, “© <year> Shikome Technology
-Limited, Dar es Salaam, Tanzania.” The copyright names the company, never the
+sign-off: the `ntumie.` wordmark, the product's site (the origin of
+`EMAIL_SUPPORT_URL`), then “© <year> Shikome Technology Limited, Dar es Salaam,
+Tanzania.”, so every email shows where it came from. The copyright names the company, never the
 product, and the slogan stays out of emails. Code emails say “Didn't request
 this? You can safely ignore this email.” Invitations say “Not expecting this
 invitation? You can ignore it; nothing changes.” The invitation's hand-written

@@ -146,6 +146,12 @@ export interface EmailFooterProps {
 
 // A link shows its full address, never a label alone, so a reader can type it on
 // another device (workspace brand/email.md).
+// The product's own address, under its wordmark: the support page is on the web
+// app, so its origin is the product's site.
+export function productSite(supportUrl: string): string {
+  return new URL(supportUrl).origin;
+}
+
 export function supportLine(supportUrl: string): string {
   return `Need help? Visit support ${supportUrl}. This address doesn't take replies.`;
 }
@@ -168,6 +174,9 @@ export function EmailFooter({
         replies.
       </Text>
       <Text style={footerStyles.wordmark}>ntumie.</Text>
+      <Text style={footerStyles.closing}>
+        <a href={productSite(supportUrl)}>{productSite(supportUrl)}</a>
+      </Text>
       <Text style={footerStyles.closing}>{companyLine()}</Text>
     </>
   );

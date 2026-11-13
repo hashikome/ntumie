@@ -32,7 +32,9 @@ describe("code emails", () => {
         expect(body).toContain("Do not share this code with anyone.");
         expect(body).not.toContain("Do not forward this email");
         expect(body).toContain("Shikome Technology Limited, Dar es Salaam, Tanzania.");
-        expect(body).not.toContain("Good links belong together.");
+        // The product's site sits between its wordmark and the copyright.
+        const signOff = body.slice(body.lastIndexOf("ntumie."), body.indexOf("© "));
+        expect(signOff).toContain("https://example.com");
         expect(body).not.toContain("mailto:");
       }
       // A link shows its full address, not a label alone.

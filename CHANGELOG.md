@@ -20,7 +20,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
   slogan. The invitation's plain text follows its HTML's order and words.
 - Email links show their full URL, never a label alone, so a reader can type one
   on another device: “Need help? Visit support https://…”, and the invitation's
-  button is followed by its address.
+  button is followed by its address. The footer's wordmark is followed by the
+  product's site, so every email shows where it came from.
 - Move to the shared `infra-postgres` and `infra-redis-queue` on `hashikome-network`.
   Releases create missing Docker secrets from GitHub, and the stack's network and
   secret names live in `deploy/release.json`, so a new server needs less by hand.

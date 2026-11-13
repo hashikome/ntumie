@@ -26,7 +26,9 @@ describe("service invitations", () => {
       for (const body of [mail.html, mail.text]) {
         expect(body).toContain("https://links.example/support");
         expect(body).toContain("Shikome Technology Limited, Dar es Salaam, Tanzania.");
-        expect(body).not.toContain("Good links belong together.");
+        // The product's site sits between its wordmark and the copyright.
+        const signOff = body.slice(body.lastIndexOf("ntumie."), body.indexOf("© "));
+        expect(signOff).toContain("https://links.example");
       }
     }
   });

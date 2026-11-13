@@ -1,5 +1,11 @@
 import { Button, render, Text } from "@react-email/components";
-import { companyLine, EmailLayout, type RenderedEmail, supportLine } from "./code-email.js";
+import {
+  companyLine,
+  EmailLayout,
+  productSite,
+  type RenderedEmail,
+  supportLine,
+} from "./code-email.js";
 
 const text = { fontSize: "16px", lineHeight: "24px", margin: "16px 0 0" };
 const small = { fontSize: "14px", lineHeight: "21px", margin: "12px 0 0" };
@@ -90,6 +96,6 @@ export async function renderServiceInvitation(input: {
   return {
     subject,
     html,
-    text: `${heading}\n\n${steps}\n\nReview invitation: ${url.href}\n\n${expires}\n${signIn}\n\nSent to ${input.recipient} because you were invited to be a ntumie. ${role}.\nNot expecting this invitation? You can ignore it; nothing changes.\n${supportLine(input.supportUrl)}\n\nntumie.\n${companyLine()}`,
+    text: `${heading}\n\n${steps}\n\nReview invitation: ${url.href}\n\n${expires}\n${signIn}\n\nSent to ${input.recipient} because you were invited to be a ntumie. ${role}.\nNot expecting this invitation? You can ignore it; nothing changes.\n${supportLine(input.supportUrl)}\n\nntumie.\n${productSite(input.supportUrl)}\n${companyLine()}`,
   };
 }
