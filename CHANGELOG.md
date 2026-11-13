@@ -9,6 +9,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Releases keep the newest 3 tagged images of `ntumie/api` and `ntumie/web` in GHCR, with their
+  attestations, through a `prune-images` job after a successful deploy.
 - Releases end with Swarm's verdict: the deploy step moves to the shared release action's
   current commit, which reports released, paused or rolled back and fails the run unless released.
 - A failed update rolls back: the api, web and worker take Swarm's `failure_action: rollback`

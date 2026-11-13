@@ -114,3 +114,20 @@ jobs:
           dokploy-api-key: ${{ secrets.DOKPLOY_API_KEY }}
           registry-id: ${{ vars.DOKPLOY_REGISTRY_ID }}
           github-token: ${{ github.token }}
+
+  prune-images:
+    # GHCR keeps the newest 3 tagged images of each package, with their attestations, once the
+    # release is live (workspace service-naming.md, "Images"). Its own job, so package deletion never
+    # shares a runner with production secrets. Retires with Dokploy for a desired-state-aware cleanup.
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      packages: write
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          packages: ntumie/api,ntumie/web
+          keep-n-tagged: 3
+          delete-untagged: true
+          validate: true
