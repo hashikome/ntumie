@@ -11,6 +11,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 - Releases end with Swarm's verdict: the deploy step moves to the shared release action's
   current commit, which reports released, paused or rolled back and fails the run unless released.
+- A failed update rolls back: the api, web and worker take Swarm's `failure_action: rollback`
+  (ADR-0073, superseding ADR-0061's pause for review).
 - Generated keys default to PostgreSQL 18's own `uuidv7()`; the `app_uuid_v7()`
   wrapper, whose fallback to random v4 ids could only hide an older database, is
   dropped. Existing ids are unchanged.

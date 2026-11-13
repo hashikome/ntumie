@@ -11,7 +11,7 @@ interface Service {
   deploy: {
     replicas: number | string;
     restart_policy?: { condition: string };
-    update_config?: { failure_action: string };
+    update_config?: { failure_action: string; monitor?: string };
     labels?: Record<string, string>;
   };
 }
@@ -53,9 +53,10 @@ test("web has only attribution credentials and no direct data-service network", 
   expect(web.environment?.API_INTERNAL_ORIGIN).toBe("http://ntumie-api:4000");
 });
 
-test("schema-changing releases pause instead of automatically selecting an older binary", () => {
-  for (const name of ["ntumie-api", "ntumie-web"]) {
-    expect(stack.services[name].deploy.update_config?.failure_action).toBe("pause");
+test("a failed update rolls back to the previous tasks (ADR-0073)", () => {
+  for (const name of ["ntumie-api", "ntumie-web", "ntumie-worker"]) {
+    expect(stack.services[name].deploy.update_config?.failure_action).toBe("rollback");
+    expect(stack.services[name].deploy.update_config?.monitor).toBe("30s");
   }
 });
 

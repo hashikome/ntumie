@@ -51,12 +51,15 @@ services:
       restart_policy:
         condition: on-failure
         delay: 5s
+      # A failed update rolls back to the previous tasks (ADR-0073).
       update_config:
         parallelism: 1
         order: start-first
-        failure_action: pause
+        failure_action: rollback
+        monitor: 30s
       rollback_config:
         parallelism: 1
+        order: start-first
       labels:
         traefik.enable: 'true'
         traefik.swarm.network: ${INGRESS_NETWORK:?INGRESS_NETWORK_required}
@@ -98,8 +101,9 @@ services:
       update_config:
         parallelism: 1
         order: start-first
-        failure_action: pause
-      rollback_config: { parallelism: 1, order: stop-first }
+        failure_action: rollback
+        monitor: 30s
+      rollback_config: { parallelism: 1, order: start-first }
       labels:
         traefik.enable: 'true'
         traefik.swarm.network: ${INGRESS_NETWORK}
@@ -150,6 +154,13 @@ services:
       restart_policy:
         condition: any
         delay: 30s
+      # No health check: Swarm judges an update by whether its task keeps running for 30s (ADR-0073).
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        monitor: 30s
+      rollback_config: { parallelism: 1, order: stop-first }
 
 networks:
   egress:

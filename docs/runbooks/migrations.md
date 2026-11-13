@@ -17,6 +17,9 @@ Run all Prisma CLI commands from `apps/api`.
   allowed with the same method (apply the chain to a scratch database, dump the
   schema, confirm `migrate diff` reports no difference) plus a local reset;
   never rewrite migrations applied in production.
+- A release's migration leaves the previous release working: a failed update rolls back to it on the
+  migrated schema (ADR-0073). Add first; remove or rename what the previous release still uses only
+  in a later release.
 - Verify parity after schema work:
   `bunx prisma migrate diff --from-config-datasource --to-schema
   prisma/schema.prisma` must report "No difference detected".

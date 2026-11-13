@@ -33,8 +33,8 @@ older product infrastructure/release prose; it changes no implemented telemetry.
 Application replicas default to zero. A separate one-shot migration uses only its
 scoped migration database credential. GitHub verifies and publishes both immutable
 images; live promotion needs successful migration completion plus platform/provider
-acceptance. Failed application updates pause for review: do not automatically
-select an old binary after an unreviewed schema change.
+acceptance. Failed application updates roll back (superseded 13 November 2026 by
+ADR-0073; this record first chose pausing for review).
 
 ## Delivery trigger and neutral identities (12 October 2026)
 
