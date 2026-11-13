@@ -90,8 +90,9 @@ authoritative.
   `set_updated_at` triggers, CHECK constraints, and partial unique indexes
   exist only in migration SQL and must never be dropped by an auto-generated
   diff. A generated primary key defaults to PostgreSQL 18's `uuidv7()`.
-- `compose.yml` is local development only. Production topology is
-  `docker-stack.<env>.yml` in the swarm dialect (see the infra direction doc).
+- `compose.yml` is local development only, for infrastructure services. Production topology is
+  `docker-stack.yml` in the swarm dialect, deployed through Dokploy; a suffix names a different
+  shape, never an environment (workspace `stack-files.md`; the infra direction doc).
 - Use Conventional Commit style: `feat: ...`, `fix: ...`, `docs: ...`,
   `chore: ...`, `test: ...`, with `!` and a `BREAKING CHANGE:` footer for
   breaking changes. One commit per completed, reviewed milestone (see

@@ -39,12 +39,13 @@ product-owned release contracts below remain the intended approach:
   only** (relative-path bind mounts don't persist reliably), and
   `--with-registry-auth` on deploys since GHCR images are private. Swarm's
   native secrets (`/run/secrets/<name>`) are exactly the `_FILE` convention.
-- **Topology files per product, one purpose each** (stack files are
-  environment-suffixed `docker-stack.<env>.yml`):
+- **Topology files per product, one purpose each** (`docker-stack.yml`; a
+  suffix names a different shape, such as `.migrate`, never an environment:
+  workspace `stack-files.md`):
   - `compose.yml` — local development only (the modern Compose default
     filename). Full compose dialect is fine here: localhost-bound published
     ports, healthchecks, whatever makes `docker compose up -d` pleasant.
-  - `docker-stack.prod.yml` — the production topology, consumed by Dokploy's
+  - `docker-stack.yml` — the production topology, consumed by Dokploy's
     Stack mode. Never contains `build:`.
   - `docker-stack.local.yml` — a required artifact, not a contingency: the
     local single-node-swarm simulation of the production topology

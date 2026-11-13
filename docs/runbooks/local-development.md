@@ -111,7 +111,7 @@ SEED_OFFLINE=1 bun run db:seed                     # no network: curated fallbac
   (`src/app.setup.ts`); e2e tests boot through the same `configureApp` so
   local behavior matches tests.
 - `compose.yml` is local development only — production topology is
-  `docker-stack.<env>.yml` (see `docs/design-docs/infra-deployment.md`).
+  `docker-stack.yml` (see `docs/design-docs/infra-deployment.md`).
 
 
 ## Email delivery

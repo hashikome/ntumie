@@ -172,7 +172,7 @@ Inspect the task's `Status.State` and `Status.ContainerStatus.ExitCode` using
 `docker inspect` on its task ID. **Require completed with exit code 0** before
 promotion; a submitted task is not a completed migration. Preserve sanitized
 logs and remove the one-shot service. Then let Dokploy deploy the reviewed
-`docker-stack.prod.yml` with registry authentication. Never run migration
+`docker-stack.yml` with registry authentication. Never run migration
 automatically in every API replica.
 
 Review rollback compatibility for the exact image pair and migration set being

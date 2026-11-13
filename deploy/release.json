@@ -4,7 +4,7 @@
   "application": {
     "compose": "tYDxvAaWd4GQXu-lKHvNv",
     "stack": "ntumie-[a-z0-9]{6}",
-    "manifest": "docker-stack.prod.yml"
+    "manifest": "docker-stack.yml"
   },
   "migration": {
     "compose": "oTJhOOlsXWARNdBqas43I",

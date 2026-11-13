@@ -15,7 +15,7 @@ interface Service {
     labels?: Record<string, string>;
   };
 }
-const stack = Bun.YAML.parse(source("docker-stack.prod.yml")) as {
+const stack = Bun.YAML.parse(source("docker-stack.yml")) as {
   services: Record<string, Service>;
   networks: Record<string, { internal?: boolean; external?: boolean }>;
 };
