@@ -153,7 +153,7 @@ export function productSite(supportUrl: string): string {
 }
 
 export function supportLine(supportUrl: string): string {
-  return `Need help? Visit support ${supportUrl}. This address doesn't take replies.`;
+  return `Need help? Visit support ${supportUrl}.`;
 }
 
 // Why this came, what to do about it, then the name. Links stay plain so the
@@ -170,8 +170,7 @@ export function EmailFooter({
       <Text style={footerStyles.small}>{`Sent to ${recipient} ${reason}`}</Text>
       <Text style={footerStyles.small}>{prompt}</Text>
       <Text style={footerStyles.small}>
-        Need help? Visit support <a href={supportUrl}>{supportUrl}</a>. This address doesn't take
-        replies.
+        Need help? Visit support <a href={supportUrl}>{supportUrl}</a>.
       </Text>
       <Text style={footerStyles.wordmark}>ntumie.</Text>
       <Text style={footerStyles.closing}>

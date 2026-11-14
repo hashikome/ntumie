@@ -24,7 +24,7 @@ async function main() {
   const prisma = new PrismaService();
   const provider =
     config.provider === "resend"
-      ? new ResendProvider(config.apiKey ?? "", config.from ?? "")
+      ? new ResendProvider(config.apiKey ?? "", config.from ?? "", config.replyTo ?? "")
       : new CaptureProvider();
   // A sustained Redis outage ends the worker (exit 1) rather than reconnecting
   // forever; the stack's capped restart policy decides what happens next.

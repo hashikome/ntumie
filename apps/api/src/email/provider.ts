@@ -27,6 +27,7 @@ export class ResendProvider implements EmailProvider {
   constructor(
     private readonly apiKey: string,
     private readonly from: string,
+    private readonly replyTo: string,
     private readonly transport: typeof fetch = fetch,
   ) {}
   async send(key: string, payload: DeliveryPayload, reference: string): Promise<string> {
@@ -40,6 +41,7 @@ export class ResendProvider implements EmailProvider {
       },
       body: JSON.stringify({
         from: this.from,
+        reply_to: this.replyTo,
         to: [payload.to],
         subject: payload.subject,
         html: payload.html,

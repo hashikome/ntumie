@@ -434,7 +434,12 @@ describe("durable email delivery", () => {
       seen = init;
       return Response.json({ id: "synthetic-provider-id" });
     }) as typeof fetch;
-    const provider = new ResendProvider("synthetic-key", "sender@example.com", transport);
+    const provider = new ResendProvider(
+      "synthetic-key",
+      "sender@example.com",
+      "support@example.com",
+      transport,
+    );
     expect(
       await provider.send(
         "opaque-key",
@@ -451,9 +456,12 @@ describe("durable email delivery", () => {
     expect(JSON.parse(String(seen?.body)).tags).toEqual([
       { name: "delivery_id", value: "opaque-delivery-reference" },
     ]);
+    // Replies reach the support inbox (workspace templates/email.md, "Sender and replies").
+    expect(JSON.parse(String(seen?.body)).reply_to).toBe("support@example.com");
     expect(Object.keys(JSON.parse(String(seen?.body))).sort()).toEqual([
       "from",
       "html",
+      "reply_to",
       "subject",
       "tags",
       "text",

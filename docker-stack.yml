@@ -131,6 +131,7 @@ services:
       EMAIL_PROVIDER: resend
       EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:?EMAIL_FROM_ADDRESS_required}
       EMAIL_SUPPORT_URL: ${EMAIL_SUPPORT_URL:?EMAIL_SUPPORT_URL_required}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:?SUPPORT_EMAIL_required}
       QUEUE_NAMESPACE: ${QUEUE_NAMESPACE:?QUEUE_NAMESPACE_required}
     secrets: [database_url, auth_secret, email_suppression, redis_url, resend_key, sentry_dsn]
     # Data stays internal; the worker needs outbound HTTPS to send through Resend.

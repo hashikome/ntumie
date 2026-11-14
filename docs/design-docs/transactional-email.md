@@ -182,8 +182,7 @@ ordinary logs, Redis payloads, and external telemetry
 Code emails carry one warning line, “Do not share this code with anyone.”, and
 every email (codes and invitations) uses the shared footer from the workspace
 email standard (`templates/email.md`): who it was sent to and why, a
-purpose-specific unexpected-message prompt, “Need help? Visit support <url>. This
-address doesn't take replies.”, then the
+purpose-specific unexpected-message prompt, “Need help? Visit support <url>.”, then the
 sign-off: the `ntumie.` wordmark, the product's site (the origin of
 `EMAIL_SUPPORT_URL`), then “© <year> Shikome Technology Limited, Dar es Salaam,
 Tanzania.”, so every email shows where it came from. The copyright names the company, never the
@@ -198,8 +197,11 @@ the invitation's, stays behind its button; the plain text writes it after its
 words. The
 support link uses
 `EMAIL_SUPPORT_URL`, the web `/support` page,
-which shows the support address (`SUPPORT_EMAIL`, web server config). Emails
-never carry the address themselves, so changing it needs no email change.
+which shows the support address (`SUPPORT_EMAIL`). Emails never write the address
+out; the sender is a named address (`ntumie. <ntumie@notify.ntumie.link>`, never
+`no-reply`), and every email's Reply-To is `SUPPORT_EMAIL`, so clicking Reply
+reaches support (the worker requires it when sending through Resend). One setting
+serves the web's support page and the worker.
 The header wordmark is 22 px, weight 700, alone; the footer's wordmark is 15 px
 over the 13 px copyright line. These are inline email styles shared by codes
 and service invitations. Web footers use the separate About/navigation contract in the
