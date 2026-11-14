@@ -182,7 +182,8 @@ ordinary logs, Redis payloads, and external telemetry
 Code emails carry one warning line, “Do not share this code with anyone.”, and
 every email (codes and invitations) uses the shared footer from the workspace
 email standard (`templates/email.md`): who it was sent to and why, a
-purpose-specific unexpected-message prompt, “Need help? Visit support <url>.”, then the
+purpose-specific unexpected-message prompt, “Need help? Visit support.” with “Visit
+support” as the link (the plain text writes the address after it), then the
 sign-off: the `ntumie.` wordmark, the product's site (the origin of
 `EMAIL_SUPPORT_URL`), then “© <year> Shikome Technology Limited, Dar es Salaam,
 Tanzania.”, so every email shows where it came from. The copyright names the company, never the
@@ -191,10 +192,10 @@ this? You can safely ignore this email.” Invitations say “Not expecting this
 invitation? You can ignore it; nothing changes.” The invitation's hand-written
 plain text says the same, in the same words and order.
 
-A typeable address (the product's site, the support page) is written out as its
-link's text, so a reader can type it on another device. A one-time link, such as
-the invitation's, stays behind its button; the plain text writes it after its
-words. The
+Links sit on their words: support is a link on “Visit support”, since help is
+wanted on the device the reader is on, and the invitation's one-time link stays
+behind its button. Only the sign-off writes an address out, the product's site.
+The plain text writes every address after its words. The
 support link uses
 `EMAIL_SUPPORT_URL`, the web `/support` page,
 which shows the support address (`SUPPORT_EMAIL`). Emails never write the address

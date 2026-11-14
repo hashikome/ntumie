@@ -144,8 +144,8 @@ export interface EmailFooterProps {
   prompt?: string;
 }
 
-// A typeable address is written out as its link's text, so a reader can type it
-// on another device; one-time links stay behind buttons (workspace templates/email.md).
+// Support is a link on its words, opened on the device the reader is on; the plain
+// text writes the address after them (workspace templates/email.md).
 // The product's own address, under its wordmark: the support page is on the web
 // app, so its origin is the product's site.
 export function productSite(supportUrl: string): string {
@@ -170,7 +170,7 @@ export function EmailFooter({
       <Text style={footerStyles.small}>{`Sent to ${recipient} ${reason}`}</Text>
       <Text style={footerStyles.small}>{prompt}</Text>
       <Text style={footerStyles.small}>
-        Need help? Visit support <a href={supportUrl}>{supportUrl}</a>.
+        Need help? <a href={supportUrl}>Visit support</a>.
       </Text>
       <Text style={footerStyles.wordmark}>ntumie.</Text>
       <Text style={footerStyles.closing}>

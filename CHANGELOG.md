@@ -11,7 +11,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 - Emails reply to support: every email's Reply-To is `SUPPORT_EMAIL`, the sender is the named
   `ntumie. <ntumie@notify.ntumie.link>`, and the footer no longer says replies aren't read
-  (workspace email standard, 14 November).
+  (workspace email standard, 14 November). Support is a link on “Visit support” rather than a
+  written-out address.
 - Releases keep the newest 3 tagged images of `ntumie/api` and `ntumie/web` in GHCR, with their
   attestations, through a `prune-images` job after a successful deploy.
 - Releases end with Swarm's verdict: the deploy step moves to the shared release action's

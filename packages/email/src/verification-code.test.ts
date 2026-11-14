@@ -37,8 +37,8 @@ describe("code emails", () => {
         expect(signOff).toContain("https://example.com");
         expect(body).not.toContain("mailto:");
       }
-      // A link shows its full address, not a label alone.
-      expect(email.html).toContain(`>${valid.supportUrl}</a>`);
+      // Support is a link on its words; the plain text writes the address after them.
+      expect(email.html).toContain(`<a href="${valid.supportUrl}">Visit support</a>`);
       expect(email.text).toContain(`Need help? Visit support ${valid.supportUrl}.`);
       // Subjects never carry the code.
       expect(email.subject).not.toContain(valid.code);
