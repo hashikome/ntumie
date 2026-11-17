@@ -69,8 +69,6 @@
   --ease-feedback: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* ---------- Document frame ---------- */
-
 /* Reduced motion must beat every component transition, so it is declared first
    and marked important: state changes become immediate, nothing animates. */
 @media (prefers-reduced-motion: reduce) {
@@ -315,8 +313,6 @@ main:focus-visible {
   margin-top: 0;
 }
 
-/* ---------- Page headings ---------- */
-
 .page-heading {
   padding-bottom: 2rem;
 }
@@ -367,8 +363,6 @@ main:focus-visible {
   font-size: var(--text-meta);
   color: var(--color-muted);
 }
-
-/* ---------- Rows: one vocabulary for collections and resources ---------- */
 
 .resource-list {
   list-style: none;
@@ -617,8 +611,6 @@ a.person:hover .person-handle:only-child {
   margin: 0;
 }
 
-/* ---------- Buttons ---------- */
-
 .button,
 .text-button {
   min-height: var(--button-control);
@@ -708,8 +700,6 @@ a.person:hover .person-handle:only-child {
   gap: 0.75rem;
 }
 
-/* ---------- Pagination ---------- */
-
 .continuation {
   margin-top: 1.5rem;
 }
@@ -720,8 +710,6 @@ a.person:hover .person-handle:only-child {
   color: var(--color-muted);
   margin: 0 0 0.75rem;
 }
-
-/* ---------- Forms ---------- */
 
 .action-form {
   display: flex;
@@ -1081,8 +1069,6 @@ main .tag-input input:not([type="hidden"]):not([type="checkbox"]):not([type="rad
   accent-color: var(--color-primary);
 }
 
-/* ---------- Feedback and loading ---------- */
-
 .feedback h1 {
   margin-bottom: 0.5rem;
 }
@@ -1109,8 +1095,6 @@ html[data-revalidating="true"] .navigation-recovery {
   left: max(var(--gutter), calc((100% - var(--shell)) / 2 + var(--gutter)));
   width: min(calc(100% - 2 * var(--gutter)), 48rem);
 }
-
-/* ---------- Account navigation ---------- */
 
 .session-nav {
   display: flex;
@@ -1252,8 +1236,6 @@ html[data-revalidating="true"] .session-nav {
   font-weight: 650;
 }
 
-/* ---------- Toasts and collection actions ---------- */
-
 .toast-region {
   position: fixed;
   z-index: 50;
@@ -1370,8 +1352,6 @@ html[data-revalidating="true"] .session-nav {
   background: var(--color-primary-soft);
   color: var(--color-primary-pressed);
 }
-
-/* ---------- Reader: a collection (Round 2 board "Collection") ---------- */
 
 /* Full width like its board: the hub sidebar at the window's edge, the band
    beside it, discussion in the right column. The page scrolls; the sidebar and
@@ -1592,7 +1572,6 @@ main:has(> .reader-page) {
   display: none;
 }
 
-/* The band: what the collection is, who made it, how much is in it. */
 .reader-band {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1702,7 +1681,6 @@ main:has(> .reader-page) {
   display: none;
 }
 
-/* Links, then discussion beside them. */
 .reader-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 22.5rem;
@@ -1867,8 +1845,6 @@ main:has(> .reader-page) {
   margin-bottom: 2rem;
   text-align: center;
 }
-
-/* ---------- Discussion ---------- */
 
 .comments {
   position: sticky;
@@ -2395,8 +2371,6 @@ main .comment-about select {
     flex: 1;
   }
 }
-
-/* ---------- Brand pages: home and About ---------- */
 
 /* The header joins the cobalt band on brand pages only. */
 body:is(:has(.brand-page), :has(.auth-stage), :has(.topbar.signed-out):has(.band-page)) .topbar {
@@ -3123,8 +3097,6 @@ body:has(.brand-page) {
   }
 }
 
-/* ---------- Band pages: Discover, hubs and profiles ---------- */
-
 /* The boards' 48 px gutters, capped at 100rem; signed out, the header
    joins the band (above). */
 body:has(.band-page) {
@@ -3245,7 +3217,6 @@ main:has(> .band-page) {
   color: var(--color-muted);
 }
 
-/* Cards: Discover and a hub to its visitors. */
 .collection-cards {
   list-style: none;
   margin: 0;
@@ -3340,7 +3311,6 @@ main:has(> .band-page) {
   font-weight: 600;
 }
 
-/* Rows: the owner's collections and a person's contributions. */
 .collection-rows {
   list-style: none;
   margin: 0;
@@ -3441,7 +3411,6 @@ main:has(> .band-page) {
   white-space: nowrap;
 }
 
-/* Discover's band: search, popular tags and the list tabs. */
 .action-form.search-box {
   flex-direction: row;
   align-items: center;
@@ -3650,7 +3619,6 @@ main .action-form.search-box input[type="search"]:focus {
   color: inherit;
 }
 
-/* Band statistics (a hub's collection saves). */
 .band-stats {
   margin: 1rem 0 0;
   color: var(--color-on-primary-muted);
@@ -3951,16 +3919,12 @@ button.switch[aria-checked="true"]::after {
   }
 }
 
-/* ---------- Collection management ---------- */
-
 .page-heading:has(.collection-edit) {
   padding-bottom: 1rem;
 }
 .collection-edit .description {
   margin-block: 0.25rem 1rem;
 }
-
-/* ---------- Settings ---------- */
 
 .settings-page .page-heading {
   padding-bottom: 0;
@@ -4129,8 +4093,6 @@ button.switch[aria-checked="true"]::after {
   color: var(--color-success);
 }
 
-/* ---------- Notifications ---------- */
-
 .notifications-heading {
   display: flex;
   align-items: flex-start;
@@ -4221,8 +4183,6 @@ button.switch[aria-checked="true"]::after {
   color: var(--color-muted);
 }
 
-/* ---------- Manage ---------- */
-
 .operation-section {
   margin-top: 2.5rem;
   padding-top: 2rem;
@@ -4296,7 +4256,6 @@ button.switch[aria-checked="true"]::after {
     margin-bottom: 0;
   }
 }
-/* ---------- Manage ---------- */
 
 .ops-page {
   max-width: 64rem;
@@ -4559,8 +4518,6 @@ main .ops-filters select {
     white-space: normal;
   }
 }
-
-/* ---------- Responsive ---------- */
 
 @media (max-width: 639px) {
   :root {

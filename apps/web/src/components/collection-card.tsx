@@ -88,7 +88,6 @@ export function CollectionCard({
   );
 }
 
-// The owner's hub: rows with who can see each collection and who shapes it.
 export function OwnedCollectionRow({ item }: { item: Collection }) {
   const others = item.contributors?.people ?? [];
   return (

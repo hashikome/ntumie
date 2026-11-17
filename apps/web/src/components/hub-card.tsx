@@ -4,7 +4,6 @@ import { HubMark } from "./hub-mark";
 
 const plural = (count: number, one: string) => `${count} ${count === 1 ? one : `${one}s`}`;
 
-// Discover's hub card: who runs it, what it is about and how much is in it.
 export function HubCard({ hub, returnTo }: { hub: HubCardData; returnTo: string }) {
   const ownerName = hub.ownerName?.trim();
   return (

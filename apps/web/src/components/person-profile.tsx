@@ -172,7 +172,6 @@ export async function PersonProfile({
 
 const plural = (count: number, one: string) => `${count} ${count === 1 ? one : `${one}s`}`;
 
-// A collection the person helped make, with its hub and what they did there.
 function ContributionRow({ item }: { item: Collection }) {
   const done = item.contribution;
   return (

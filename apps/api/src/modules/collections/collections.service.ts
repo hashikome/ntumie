@@ -53,8 +53,6 @@ export class CollectionsService {
     private readonly policy: CollectionPolicyService,
   ) {}
 
-  // --- creation -----------------------------------------------------------
-
   async createHub(user: AuthUser): Promise<{ hubId: string }> {
     const hub = await ensurePersonalHub(this.prisma, user.userId);
     return { hubId: hub.id };
@@ -75,8 +73,6 @@ export class CollectionsService {
     });
     return privateAllowance(this.prisma, hub?.id ?? null);
   }
-
-  // --- settings / lifecycle ----------------------------------------------
 
   async update(id: string, user: AuthUser, dto: UpdateCollectionDto) {
     const collection = await this.requireCollection(id);
@@ -240,8 +236,6 @@ export class CollectionsService {
     };
   }
 
-  // --- direct sharing -----------------------------------------------------
-
   async createShare(id: string, user: AuthUser, dto: CreateShareDto) {
     const collection = await this.requireCollection(id);
     await this.policy.requireManage(collection, user);
@@ -322,8 +316,6 @@ export class CollectionsService {
       source: wireToken(share.source, ["direct", "link"]),
     }));
   }
-
-  // --- ownership transfer -------------------------------------------------
 
   // Google-Drive ownership transfer: only the current owner can transfer, and
   // only to a user who is already a contributor. The collection moves into
@@ -420,8 +412,6 @@ export class CollectionsService {
     };
   }
 
-  // --- saves --------------------------------------------------------------
-
   async save(id: string, user: AuthUser) {
     const collection = await this.requireCollection(id);
     await this.policy.requireRead(collection, user);
@@ -447,8 +437,6 @@ export class CollectionsService {
     });
     return { collectionId: id, saved: false };
   }
-
-  // --- user surfaces ------------------------------------------------------
 
   async listShared(user: AuthUser): Promise<SharedCollection[]> {
     const shares = await this.prisma.collectionShare.findMany({
@@ -505,8 +493,6 @@ export class CollectionsService {
       total: saves.length,
     };
   }
-
-  // --- discovery / lookup -------------------------------------------------
 
   async discover(query: CursorQueryDto, tag?: string) {
     return this.listPublishedCollections(query, {
@@ -1320,9 +1306,6 @@ export class CollectionsService {
     };
   }
 
-  // --- internals ----------------------------------------------------------
-
-  // Collections are independent containers.
   private async createInHub(user: AuthUser, hubId: string, dto: CreateCollectionDto) {
     const saved = await this.prisma.$transaction(async (tx) => {
       if (dto.published === false) await requirePrivateRoom(tx, hubId);

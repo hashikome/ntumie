@@ -155,7 +155,6 @@ function contribution(person: HubContributor) {
   return `Edited${where}`;
 }
 
-// Everyone who changed the hub's collections, with what they did.
 function HubContributors({ people }: { people: HubContributor[] }) {
   if (!people.length) return <p className="empty">No contributions to show yet.</p>;
   return (

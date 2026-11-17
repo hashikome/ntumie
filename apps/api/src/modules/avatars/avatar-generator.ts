@@ -1,4 +1,3 @@
-// avatar-generator.ts
 const PALETTE: ReadonlyArray<readonly [string, string]> = [
   ["#D4537E", "#F4C0D1"],
   ["#7F77DD", "#CECBF6"],

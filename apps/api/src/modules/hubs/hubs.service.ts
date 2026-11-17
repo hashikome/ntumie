@@ -18,7 +18,6 @@ import { handleChangeAvailableAt, hasValidHandleFormat, isReservedHandle } from 
 export class HubsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // The user's one hub (their space).
   async getUserHubId(userId: string): Promise<string | null> {
     const hub = await this.prisma.hub.findUnique({
       where: { ownerUserId: userId },

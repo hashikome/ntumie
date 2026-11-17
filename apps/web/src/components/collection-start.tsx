@@ -38,7 +38,6 @@ export function LivePanel({ id, published }: { id: string; published: boolean })
   );
 }
 
-// ...and the next few steps, below them.
 export function KeepBuilding({ id, returnTo }: { id: string; returnTo: string }) {
   return (
     <section className="keep-building" aria-labelledby="keep-building-title">
