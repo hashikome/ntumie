@@ -503,9 +503,13 @@ Purpose: find good collections and come back to them. Status: Discover Built;
 saves API only; subscriptions and home tabs Planned
 (`docs/design-docs/hub-home-and-following.md`).
 
-- **Discover** lists published collections, newest first, page by page. Search
-  by text and tags, tag filters (popular tags from published collections over
-  the last 90 days) and full-text search are planned; no date-range filter.
+- **Discover** lists published collections, newest first, page by page, and
+  searches them: matching hubs first, then collections by best match with the
+  matched words marked, a removable tag filter, and popular tags when nothing
+  matches ([ADR-0074](docs/engineering-decisions/0074-search-in-postgres.md)).
+  No date-range filter.
+- **Search this hub** (Ctrl K in the reader) finds the collections, sections
+  and links the viewer can read in that hub.
 - **Public hub page:** the hub's name, handle, description, the planned **Join community** action, and
   published collections. The contextual Share page is implemented for hubs,
   profiles, collections and the site, with site sharing on the About ntumie. page. Planned
@@ -889,7 +893,8 @@ Nothing is deployed; everything built runs and is verified locally. The API
 | 6.5 Access requests, targeted invitations | Planned | Planned |
 | 6.6 Discover | Built | Built |
 | 6.6 Saves, shared with me | Not yet | Built |
-| 6.6 Subscriptions, your home, search | Planned | Planned |
+| 6.6 Search: Discover and in-hub | Built | Built |
+| 6.6 Subscriptions, your home | Planned | Planned |
 | 6.7 Discussion | Built | Built |
 | 6.8 Notifications | Invitations only | Invitations only |
 | 6.9 Manage | Core built; extensions planned | Core built; extensions planned |
@@ -942,34 +947,33 @@ Delivery sequence and remaining work (completed foundations are marked):
     item/reference editing and export. Sections, reordering, contextual sharing,
     publishing and transfer are built. Social destinations remain deferred;
     site sharing lives on `/about`, alongside Support and the maker’s portfolio.
-11. **Discover search** (§6.6).
-12. **Rest of the internals pass** — one write-lock opt-out per controller,
+11. **Rest of the internals pass** — one write-lock opt-out per controller,
     the forms route as an action table, Save a link drafts in Redis, smaller
     consolidations and focus rings. Batched reference access and discussion
     queries are complete; remaining milestones are tracked in the
     [internals plan](docs/exec-plans/active/final-pass-internals.md).
-13. **Account** (§6.11) — controlled email change is backlog; standard profile edits exclude email and user UUID. Passkeys, confirmed Google onboarding/sign-in, authenticator-app codes and protected recovery are built.
+12. **Account** (§6.11) — controlled email change is backlog; standard profile edits exclude email and user UUID. Passkeys, confirmed Google onboarding/sign-in, authenticator-app codes and protected recovery are built.
     Hub-handle changes with a 30-day cooldown and permanent retirement are built
     (ADR-0043). Self-service deactivation/recovery and deletion/cancellation are
     built (ADR-0033/0040).
-14. **Browser extension** (§7).
-15. **Targeted sharing by invitation** (§6.5).
-16. **Shared Hashikome identity** (§6.11) — `docs/design-docs/identity-sso.md`.
-17. **Audit logging strategy and redesign** — dedicated milestone after the
+13. **Browser extension** (§7).
+14. **Targeted sharing by invitation** (§6.5).
+15. **Shared Hashikome identity** (§6.11) — `docs/design-docs/identity-sso.md`.
+16. **Audit logging strategy and redesign** — dedicated milestone after the
     fundamental product and service operations above are complete. Start from
     investigative needs and an inventory of real operations; settle event
     semantics, evidence, access, integrity, retention and the reading experience
     together. Existing activity/attribution and operator recording continue;
     further audit redesign is deferred ([ADR-0020](docs/engineering-decisions/0020-logging-after-core-operations.md)).
-18. **Wide event logging** — separate dedicated milestone once most operations
+17. **Wide event logging** — separate dedicated milestone once most operations
     are implemented. Define useful request/job/workflow context, final outcomes,
     correlation, privacy, sampling and query acceptance from those operations.
     The existing sanitized telemetry foundation remains; no broad domain
     instrumentation rollout is part of the current feature work
     ([observability](docs/design-docs/observability.md)).
-19. **Before public release** — live email provider and webhooks, browser and
+18. **Before public release** — live email provider and webhooks, browser and
     worker telemetry, deployment (`docs/design-docs/infra-deployment.md`).
-20. **Curator accounts** (§6.13), then pricing. First complete
+19. **Curator accounts** (§6.13), then pricing. First complete
     [curation and paid-service delivery](docs/exec-plans/active/evaluate-curation-and-paid-services.md);
     document extraction and AI use the reviewed-import foundation, not a parallel
     unreviewed importer.

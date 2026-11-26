@@ -5238,13 +5238,21 @@ it("searches Discover: hubs, best matches with marked words, tags, more results 
         page.locator(".card-tags").getByRole("link", { name: word, exact: true }),
       ).toHaveAttribute("href", `/discover?tag=${word}`);
       await ready(page, `/discover?q=${word}`);
-      for (const width of [390, 1280]) {
-        await page.setViewportSize({ width, height: 900 });
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-          true,
-        );
-        await page.screenshot({ path: `/tmp/discover-search-${js}-${width}.png`, fullPage: true });
+      for (const colorScheme of ["light", "dark"] as const) {
+        // Reduced motion drops the 160 ms colour fade, so a shot shows settled colours.
+        await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
+        for (const width of [390, 1440]) {
+          await page.setViewportSize({ width, height: 900 });
+          expect(
+            await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+          ).toBe(true);
+          await page.screenshot({
+            path: `/tmp/discover-search-${js}-${colorScheme}-${width}.png`,
+            fullPage: true,
+          });
+        }
       }
+      await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
       // Nothing found names the problem and offers a way forward.
       await ready(page, "/discover?q=xylophonequartz");
       await browserExpect(

@@ -34,7 +34,7 @@ const toEntry = ({ id, collectionId, collectionTitle, title }: HubSearchEntry) =
 // search ranked by ts_rank_cd (title A, description B), with pg_trgm word
 // similarity for typos and tag-prefix matches, then saves and recency.
 // Discover and the reader depend on this module only, so a dedicated engine
-// can replace it later (docs/exec-plans/active/discover-search.md).
+// can replace it later (ADR-0074).
 // In-hub search covers what the viewer can read, private collections included,
 // so it stays in Postgres behind the policy service whatever serves Discover.
 // The search text is never logged or recorded.

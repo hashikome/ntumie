@@ -9,6 +9,11 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Analytics never receives private parts of an address: page and link addresses
+  keep their path and only `tab` and `tag`, so share tokens, invitation tokens and
+  search text stay out of PostHog. Analytics is off in production, so nothing was sent.
+- Close the search plan: ADR-0074 records search in Postgres, the docs describe
+  Discover and in-hub search as built, and the Discover browser test covers dark mode.
 - Emails reply to support: every email's Reply-To is `SUPPORT_EMAIL`, the sender is the named
   `ntumie. <ntumie@notify.ntumie.link>`, and the footer no longer says replies aren't read
   (workspace email standard, 14 November). Support is a link on “Visit support” rather than a

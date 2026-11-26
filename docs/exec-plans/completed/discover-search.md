@@ -52,7 +52,11 @@ private content never contributes to results, counts or highlights.
   collections the viewer can read, then searches only those: collections,
   sections and links, ten per group. The dialog has no board; it uses the
   existing tokens. The `search` fake door and interest feature are gone.
-- [ ] Docs, CHANGELOG, browser acceptance.
+- [x] (2026-11-27) Docs, CHANGELOG, browser acceptance. The Discover browser
+  test now covers light and dark at 390 and 1440 with and without JavaScript,
+  compared with `ref/boards/render/r2-discover.png`. ADR-0074 records the
+  decisions; PRODUCT.md, the web product experience and the tags design are
+  current.
 
 ## Surprises & Discoveries
 
@@ -131,7 +135,18 @@ private content never contributes to results, counts or highlights.
 
 ## Outcomes & Retrospective
 
-Not started.
+Shipped: Discover search (31 October) and in-hub search with Ctrl K (31 October),
+both to the board, on Postgres full-text search with trigram typo tolerance and
+no new service. Closing it (27 November) found that search text, and worse,
+private-collection share tokens (`?s=`) and the invitation's one-time token
+(`#token=`), would have reached PostHog in page addresses: analytics records the
+full address, and it starts before the invitation page clears its token. Analytics
+was off in production (no project token), so nothing leaked; every address sent to
+analytics now keeps its path and only `tab` and `tag`
+(`apps/web/src/lib/analytics-privacy.ts`, tested). The dark-mode screenshots first
+showed buttons at 3.5:1 contrast: a 160 ms colour fade caught mid-way, not a
+defect, so the test now shoots with reduced motion. Left: an index for in-hub
+search if a large hub makes it slow.
 
 ## Context And Orientation
 

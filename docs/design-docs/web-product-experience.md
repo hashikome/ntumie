@@ -89,7 +89,14 @@ linking is an internal implementation detail, not onboarding language.
 
 Discover shows the API's recency-ordered publications. Collection rows include
 title, up to two description lines, hub context and update time. Do not imply
-ranking quality or popularity; text/tag search is planned.
+ranking quality or popularity in that list.
+
+Searching Discover keeps the query in the address (`/discover?q=&tag=`, `tab=hubs` for
+every hub) and shows matching hubs, then collections by best match with the matched words
+marked, a removable tag chip and Show more results; nothing found offers popular tags.
+"Search this hub" (Ctrl K) opens a dialog over the reader, grouping collections, sections
+and links; without JavaScript it is the page `/h/:id/search`. See
+[ADR-0074](../engineering-decisions/0074-search-in-postgres.md).
 
 Hub pages show the hub's independent name, `@handle`, description and optional
 “@handle by Owner Name” attribution. Never substitute email for a missing name.

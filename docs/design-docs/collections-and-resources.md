@@ -167,8 +167,8 @@ contents of reference destinations do not. Existing section tags are preserved.
 
 There is no public catalogue/usage endpoint, cross-account autocomplete or tag
 hierarchy. Unused catalogue names remain reusable, without exposing previous use.
-Authorization still precedes collection/item tag reads. Planned text search can
-include these relations. See [ADR-0032](../engineering-decisions/0032-relational-item-and-collection-tags.md).
+Authorization still precedes collection/item tag reads. Search matches collection
+tags and item tags ([ADR-0074](../engineering-decisions/0074-search-in-postgres.md)). See [ADR-0032](../engineering-decisions/0032-relational-item-and-collection-tags.md).
 
 ## First-link capture command
 
