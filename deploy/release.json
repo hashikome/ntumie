@@ -66,7 +66,7 @@
     "RESEND_API_KEY_SECRET": "ntumie_resend_20261012_v2",
     "SENTRY_DSN_SECRET": "ntumie_sentry_dsn_20261101_v1"
   },
-  "requiredValues": { "PUBLIC_HOST": "ntumie.link", "INGRESS_NETWORK": "dokploy-network" },
+  "requiredValues": { "PUBLIC_HOST": "ntumie.link", "INGRESS_NETWORK": "hashikome-edge" },
   "sharedInputs": ["BACKEND_NETWORK", "MIGRATION_DATABASE_URL_SECRET"],
   "secretNameSuffixes": ["_SECRET", "_SECRET_NAME"]
 }
