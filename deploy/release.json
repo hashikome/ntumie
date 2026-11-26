@@ -54,6 +54,7 @@
     "SENTRY_DSN_SECRET"
   ],
   "inputs": {
+    "INGRESS_NETWORK": "hashikome-edge",
     "BACKEND_NETWORK": "hashikome-network",
     "DATABASE_URL_SECRET": "ntumie_database_url_20261101_v1",
     "MIGRATION_DATABASE_URL_SECRET": "ntumie_migration_database_url_20261101_v1",
