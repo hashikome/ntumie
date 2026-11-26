@@ -140,7 +140,7 @@ Deactivation is reversible without a cleanup deadline. Deletion has a 14-day
 grace period; cancellation before expiry leaves the account inactive. Recovery
 never lifts operator restrictions or restores revoked privileges. Administrators
 must relinquish their service role before using these actions. See
-[ADR-0033](../engineering-decisions/0033-permanent-hub-handles-and-self-service-accounts.md).
+[ADR-0033](../engineering-decisions/0033-self-service-account-lifecycle.md).
 
 ## Delivery and privacy
 

@@ -1,6 +1,6 @@
 # Passwordless account security
 
-Status: implemented. Decisions: [ADR-0035](../engineering-decisions/0035-passwordless-account-security.md) and [ADR-0039](../engineering-decisions/0039-confirmed-google-account-creation.md).
+Status: implemented. Decisions: [ADR-0035](../engineering-decisions/0035-passwordless-account-security.md) and [ADR-0039](../engineering-decisions/0039-google-sign-in-and-account-creation.md).
 Better Auth and `@better-auth/passkey` are pinned to 1.6.23 by the lockfile.
 
 ## Sign-in policy

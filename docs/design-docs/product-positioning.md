@@ -120,7 +120,7 @@ at the time. He chose `.link` for its meaning and decided against reserving an
 extra domain. This records a choice, not a completed registration or deployment.
 
 [ADR-0059](../engineering-decisions/0059-ntumie-product-name.md) settled the
-name. [ADR-0060](../engineering-decisions/0060-ntumie-repository-and-branding.md)
+name. [ADR-0059](../engineering-decisions/0059-ntumie-product-name.md)
 subsequently applies it to the app and repository, superseding the earlier choice
 to retain the `linkhub` codebase name. The repository and packages use `ntumie`;
 the display name is **ntumie.** LinkHub remains in historical accounts and explicit

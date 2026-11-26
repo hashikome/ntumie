@@ -1,7 +1,7 @@
 # ADR-0021: Capture bounded effects for core audit actions
 
-**Status:** accepted; its read-event default and checkbox are superseded by
-[ADR-0072](0072-audit-log-leaves-reads-out.md)  
+**Status:** accepted; which events a request sees is
+[ADR-0072](0072-audit-log-leaves-reads-out.md)'s  
 **Date:** 2026-10-09
 
 ## Context
@@ -33,13 +33,12 @@ the collection being changed. Missing comment IDs are not substituted with their
 parent collection or author. Current usernames may label immutable actor IDs;
 they are not historical snapshots. UUID copying remains available.
 
-Default the web to actions/decisions; keep recorded reads accessible through All
-events or an explicit action filter. Filter in the API before pagination and bind
-the effective view to the cursor. Existing API callers without a view continue to
-receive all events. Service read denials remain visible in the actions view.
+Reads are recorded; which ones a request sees is
+[ADR-0072](0072-audit-log-leaves-reads-out.md)'s decision. Filter in the API before
+pagination and bind the filters to the cursor. Service read denials stay visible.
 
-The filter form has one Search field, Action and From/To dates, plus an Include
-read events checkbox. Following the user's review, Search matches displayed
+The filter form has one Search field, Action and From/To dates. Following the
+user's review, Search matches displayed
 actor usernames/IDs, action labels, target IDs, outcomes and recorded changes,
 including partial IDs and multiple words. It does not search email, hidden hub
 handles or authored content. Shared display labels keep API matches aligned with

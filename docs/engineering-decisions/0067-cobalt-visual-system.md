@@ -3,10 +3,9 @@
 Status: Accepted
 Date: 2026-10-14
 
-Partially supersedes [ADR-0063](0063-wordmark-footer-and-appearance.md): its
-"keep the existing font and color tokens" clause no longer covers color. The
-font (Schibsted Grotesk), the wordmark sizes and the rest of ADR-0063 remain
-binding.
+Colour is this record's; the font (Schibsted Grotesk) and wordmark sizes are
+[ADR-0063](0063-wordmark-and-account-appearance.md)'s. This replaced ADR-0063's first choice to keep
+the existing colour tokens.
 
 ## Context
 

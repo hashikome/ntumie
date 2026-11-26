@@ -5,7 +5,7 @@
 **Amends:** ADR-0001 (a hub is optional, created on first use; still one per
 person, owned by them, never transferred).
 
-[ADR-0044](0044-explicit-auth-entry-and-optional-hub.md) supersedes the unified
+[ADR-0044](0044-separate-sign-in-and-sign-up.md) supersedes the unified
 entry and implicit ordinary email creation policy, adds a shared verified creation
 screen and permits an optional named hub during signup. Other decisions remain
 accepted unless already marked superseded.
@@ -114,7 +114,7 @@ created hub from returned profile data while preserving newer profile edits.
 
 ## Amendment (2026-10-10)
 
-[ADR-0033](0033-permanent-hub-handles-and-self-service-accounts.md) introduced
+[ADR-0033](0033-self-service-account-lifecycle.md) introduced
 self-service account lifecycle and retained handle reservations. Its permanent
 handle rule was superseded by [ADR-0042](0042-editable-hub-handles.md), then
 [ADR-0043](0043-deliberate-hub-handle-changes.md) settled the current policy:

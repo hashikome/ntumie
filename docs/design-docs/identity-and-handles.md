@@ -95,7 +95,7 @@ before confirmation; whole-account export automation remains planned. Cancellati
 before the deadline leaves the account inactive for explicit reactivation. Cleanup
 removes owned content and anonymizes retained contributions using existing behavior.
 Hub handles remain reserved permanently. See
-[ADR-0033](../engineering-decisions/0033-permanent-hub-handles-and-self-service-accounts.md)
+[ADR-0033](../engineering-decisions/0033-self-service-account-lifecycle.md)
 and [ADR-0023](../engineering-decisions/0023-account-lifecycle-and-unified-collection-actions.md).
 
 ## Profile pictures

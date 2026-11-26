@@ -78,7 +78,7 @@ latter cancels the pending Google association and returns to ordinary sign-in wi
 the destination intact, so the person can enter their email or choose Google again.
 Creation uses Google's verified email and name; no extra inbox code. Never silently register someone who chose the wrong Google account.
 Invitations keep their own email-code acceptance journey. See
-[ADR-0039](../engineering-decisions/0039-confirmed-google-account-creation.md).
+[ADR-0039](../engineering-decisions/0039-google-sign-in-and-account-creation.md).
 
 Google's verified email must equal the product account email on every sign-in,
 including after linking. Mismatches roll back authentication and redirect to
@@ -216,7 +216,7 @@ Product footers show a right-aligned About ntumie. link. On About, signed-out
 visitors see Join ntumie. to `/sign-up`; signed-in visitors see no footer link.
 The web footer has no tagline, year or divider. About holds site sharing, Support
 and the maker’s portfolio. See
-[ADR-0063](../engineering-decisions/0063-wordmark-footer-and-appearance.md).
+[ADR-0063](../engineering-decisions/0063-wordmark-and-account-appearance.md).
 Readiness is API monitoring, with no client status page.
 
 Notifications currently lists service invitations as expandable messages,

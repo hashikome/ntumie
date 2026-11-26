@@ -423,7 +423,7 @@ no-store responses and account.read audit recording.
 
 [ADR-0023](../engineering-decisions/0023-account-lifecycle-and-unified-collection-actions.md)
 defines operator deactivation and admin-scheduled deletion.
-[ADR-0033](../engineering-decisions/0033-permanent-hub-handles-and-self-service-accounts.md)
+[ADR-0033](../engineering-decisions/0033-self-service-account-lifecycle.md)
 adds separate email-confirmed owner deactivation/recovery and deletion/cancellation.
 Operator lifecycle commands clear the self-recovery marker and invalidate pending
 recovery proofs through the operations version. Owners cannot use self-service to

@@ -235,7 +235,7 @@ tagline, year or divider. About shows Join ntumie. to `/sign-up` for signed-out
 visitors and no footer link for signed-in visitors. All variants render in initial
 HTML and remain native links. The header wordmark is 24 px on phones and 28 px
 from 640 px, weight 700; it serves as the logo. See
-[ADR-0063](../engineering-decisions/0063-wordmark-footer-and-appearance.md).
+[ADR-0063](../engineering-decisions/0063-wordmark-and-account-appearance.md).
 About uses “Good links belong together.” as its headline and the shared question animation with the prompts “Found a
 good read?”, “Built a useful collection?” and “Know someone who would enjoy it?”.
 Its paragraph reads “Give someone else a place for their good finds. Get a little
@@ -253,7 +253,6 @@ that item on direct entry, with a native item link when JavaScript is disabled.
 Unknown or section identifiers fall back to Support. Internal links stay in this tab, and the portfolio follows the device
 preference. Add Terms/Privacy only once actual pages exist. Embedded collections
 follow reader typography, with heading levels offset beneath the hero h1.
-See [ADR-0056](../engineering-decisions/0056-about-collection-and-footer-navigation.md).
 Service status remains API monitoring without a navigation entry.
 Settings → On this device offers System, Light and Dark buttons with a visible
 selected state and an Appearance saved confirmation. System remains the default.

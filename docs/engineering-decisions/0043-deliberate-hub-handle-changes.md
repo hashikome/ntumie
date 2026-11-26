@@ -1,14 +1,20 @@
 # ADR-0043: Retired handles and a 30-day rename cooldown
 
-Status: accepted (2026-10-10). Supersedes ADR-0042's same-hub reuse and unrestricted
-rename cadence. Editable names, stable UUID routes and removal of permanent
-claiming remain accepted.
+Status: accepted (2026-10-10). Handles stay editable with stable UUID routes
+([ADR-0042](0042-editable-hub-handles.md)); this record replaced ADR-0042's first rule,
+that a hub could return to its own earlier spellings and rename at any time, because a
+spelling people learned should never come to mean another page, even the same hub's.
 
 ## Decision
 
 A retired handle can never be used again by any hub or account, including its
 original owner. Reservations survive deletion. Keeping the current spelling is a
 no-op, not reuse: it remains valid and does not extend the cooldown.
+
+Every issued spelling, generated ones included, is recorded in
+`hub_handle_reservations`, which keeps only the handle, the immutable hub ID and
+timestamps: no email or profile data. Onboarding and availability consult the same
+store. A retired spelling has no alias or redirect.
 
 A hub may change its handle once every 30 days (720 elapsed hours). This chooses
 the conservative end of the requested 14–30-day window. Generated initial handles

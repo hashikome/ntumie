@@ -143,7 +143,7 @@ and [repository guide](AGENTS.md), then read the relevant authorities:
 - [Changelog](CHANGELOG.md)
 
 Historical decisions and completed plans retain the earlier LinkHub and
-NSLinkHub names. [ADR-0060](docs/engineering-decisions/0060-ntumie-repository-and-branding.md)
+NSLinkHub names. [ADR-0059](docs/engineering-decisions/0059-ntumie-product-name.md)
 records the rename and compatibility boundaries. Shared IAM and infrastructure
 implementation remain separate work. Application authorization stays product-owned.
 

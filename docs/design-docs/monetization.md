@@ -91,8 +91,7 @@ reader access to a curator's content is separate and uncommitted.
 ## Delivery references
 
 [ADR-0028](../engineering-decisions/0028-free-public-curation-paid-private-sharing.md)
-explicitly supersedes the conflicting parts of ADR-0016 and earlier private creation
-defaults. See the [backlog](../backlog/curation-and-paid-services.md),
+records this packaging and the constraints that bind it. See the [backlog](../backlog/curation-and-paid-services.md),
 [delivery plan](../exec-plans/active/evaluate-curation-and-paid-services.md),
 [bulk import](bulk-import.md) and [assisted curation](ai-curation.md).
 

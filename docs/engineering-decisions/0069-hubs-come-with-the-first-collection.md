@@ -3,26 +3,10 @@
 Status: Accepted
 Date: 2026-10-14
 
-Partially supersedes [ADR-0044](0044-explicit-auth-entry-and-optional-hub.md)
-(the optional **Start with a hub** on account creation) and the explicit
-**Create hub** action in [people and hubs](../design-docs/people-and-hubs.md)
-and [ADR-0018](0018-people-and-hubs-are-separate.md)'s "created explicitly".
-Everything else in those records stays binding: hubs remain optional, at most
-one per person, never transferred, with the same handle rules.
-
-## Context
-
-A hub exists to keep collections. Today a person can create one at sign-up or
-with Create hub and never add anything, which leaves empty public pages with a
-claimed @handle and nothing to read. The owner wants no empty hubs.
-
-## Options considered
-
-- **Keep explicit creation.** Simple, but empty hubs keep accumulating.
-- **Create the hub with the first collection (chosen).** Every new hub starts
-  with something in it.
-- **Hide empty hubs.** Avoids dead pages but still claims handles and adds a
-  hidden state to every listing.
+Replaced the optional **Start with a hub** on account creation (first chosen in
+ADR-0044), the explicit **Create hub** action in [people and hubs](../design-docs/people-and-hubs.md)
+and [ADR-0018](0018-people-and-hubs-are-separate.md)'s "created explicitly". Hubs remain optional, at
+most one per person, never transferred, with the same handle rules.
 
 ## Decision
 

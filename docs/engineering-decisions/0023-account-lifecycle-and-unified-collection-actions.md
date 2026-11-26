@@ -76,7 +76,7 @@ no-JavaScript navigation and backend authority remain unchanged.
 
 ## Amendment (2026-10-10)
 
-[ADR-0033](0033-permanent-hub-handles-and-self-service-accounts.md) introduced
+[ADR-0033](0033-self-service-account-lifecycle.md) introduced
 self-service account lifecycle and retained handle reservations. Its permanent
 handle rule was superseded by [ADR-0042](0042-editable-hub-handles.md), then
 [ADR-0043](0043-deliberate-hub-handle-changes.md) settled the current policy:

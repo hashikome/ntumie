@@ -123,7 +123,7 @@ The selected name is **ntumie.**, drawn from the everyday Swahili request
 “ntumie link.” The trailing dot is part of the name in both plain text and the
 wordmark. Use `ntumie.link` as the chosen product domain; reserving the `.com` is
 not part of the decision. The repository and application now use the selected name.
-See [ADR-0060](docs/engineering-decisions/0060-ntumie-repository-and-branding.md). Keep
+See [ADR-0059](docs/engineering-decisions/0059-ntumie-product-name.md). Keep
 **“Good links belong together.”** as the slogan. The existing GoodLinks product
 helped clarify this positioning, including the overlap in organizing and sharing
 links. The comparison, decision questions and limits are recorded in
@@ -139,7 +139,7 @@ collections is free; private links and invitations require the owner's paid
 entitlement for both viewers and contributors. AI curator and DOCX import
 (including Google Docs exported as DOCX) are paid features.
 
-This accepted direction supersedes the conflicting portions of ADR-0016; see
+See
 [ADR-0028](docs/engineering-decisions/0028-free-public-curation-paid-private-sharing.md)
 and [monetization](docs/design-docs/monetization.md). Prices and private allowance
 counts remain open. Billing and quotas are not yet implemented; existing development collections are never automatically published.

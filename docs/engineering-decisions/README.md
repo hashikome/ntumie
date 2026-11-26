@@ -3,8 +3,8 @@
 Settled engineering decisions and their rationale (often called Architecture
 Decision Records), covering architecture, security, workflow, UX and tooling
 choices. They are stronger than design notes: **do not reverse one without
-recording the new evidence, the tradeoff and the reason**, in a new record that
-supersedes it.
+recording the new evidence, the trade-off and the reason**; the replaced record
+is then removed (see Lifecycle).
 
 Records are for business-process and architecture decisions that much else
 depends on: the tenancy and access model, identity and authentication, how
@@ -19,12 +19,19 @@ links to; implementation belongs in an ExecPlan (the *work*).
 
 ```text
 question -> design shaping -> accepted decision -> implemented in an ExecPlan
-         -> superseded only by a new record with rationale and a migration path
+         -> changed only by a record with the new evidence, trade-off and reason
 ```
 
-Statuses: `accepted` (binding, with any recorded amendments), `superseded`
-(kept for history, linked to its replacement), `rejected` (considered and not
-chosen). Partial supersession names the replaced scope and what remains binding.
+A record says what holds now. When a decision changes direction, the new record
+states the current decision and keeps, briefly, only the earlier choice and why it
+changed; the replaced record is then removed, after its still-binding parts move
+into a current record, and every link to it is updated. When only part of a record
+is replaced, that record is rewritten to what still holds. Git keeps the history;
+there is no superseded or archive pile, and numbers are never reused. An expansion
+that keeps the direction amends the existing record, dated, with its rationale.
+
+Statuses: `accepted` (binding) or `rejected` (considered and not chosen, kept so it
+is not proposed again).
 
 ## Required contents
 
@@ -33,10 +40,8 @@ constraints that implementation must preserve; links to design docs and plans.
 Number records sequentially (`NNNN-short-slug.md`) and list them below.
 
 Accepted records can define work that has not shipped. Check `PRODUCT.md` §11
-and each linked design for implementation status. Apply recorded amendments
-alongside their original rationale. The index includes rejected and superseded
-records for traceability; their status and replacement links determine what remains binding.
-Current implementation guidance lives in the linked design documents.
+and each linked design for implementation status. Current implementation guidance
+lives in the linked design documents.
 
 ## Decision index
 
@@ -55,7 +60,6 @@ Current implementation guidance lives in the linked design documents.
 - [0013-permission-roles-and-display-labels.md](0013-permission-roles-and-display-labels.md) — Permission roles are stable; display labels are chosen per surface.
 - [0014-one-management-workspace.md](0014-one-management-workspace.md) — One Manage workspace with owner and service contexts (amended).
 - [0015-attribution-from-activity-records.md](0015-attribution-from-activity-records.md) — Attribution comes from activity records.
-- [0016-curator-accounts-are-the-paid-tier.md](0016-curator-accounts-are-the-paid-tier.md) — Partially superseded by ADR-0028: free public curation and paid convenience.
 - [0017-hubs-are-entities-with-members.md](0017-hubs-are-entities-with-members.md) — Hubs as entities with members (rejected; GitHub-style organizations later if ever needed).
 - [0018-people-and-hubs-are-separate.md](0018-people-and-hubs-are-separate.md) — People and hubs are separate identities (amends 0001).
 - [0019-copy-permission-and-source-credit.md](0019-copy-permission-and-source-credit.md) — Add to my collection requires owner permission and source credit.
@@ -74,7 +78,7 @@ Current implementation guidance lives in the linked design documents.
 
 - [0027-section-context-and-inline-details.md](0027-section-context-and-inline-details.md) — Bounded section descriptions, nonempty sections and native inline disclosures.
 
-- [0028-free-public-curation-paid-private-sharing.md](0028-free-public-curation-paid-private-sharing.md) — Free public collections and ordinary imports; paid private sharing, AI and DOCX; prospective public creation default.
+- [0028-free-public-curation-paid-private-sharing.md](0028-free-public-curation-paid-private-sharing.md) — Free public collections and ordinary imports; paid private sharing, AI and DOCX; a free allowance of three private collections; access, analytics, API and AI constraints.
 
 - [0029-link-health-and-approved-redirects.md](0029-link-health-and-approved-redirects.md) — Paid monitoring, unavailable/recovery updates and explicit owner-approved URL redirects.
 
@@ -83,29 +87,27 @@ Current implementation guidance lives in the linked design documents.
 - [0031-direct-disclosures-without-global-controls.md](0031-direct-disclosures-without-global-controls.md) — Remove global Expand/Collapse controls; direct disclosures and reload preserve the reading workflow.
 - [0032-relational-item-and-collection-tags.md](0032-relational-item-and-collection-tags.md) — Shared tag identities, item assignments and a transactionally maintained collection-tag relation.
 
-- [0033-permanent-hub-handles-and-self-service-accounts.md](0033-permanent-hub-handles-and-self-service-accounts.md) — Handle permanence superseded by ADR-0042/0043; self-service lifecycle remains accepted with ADR-0040 recovery.
+- [0033-self-service-account-lifecycle.md](0033-self-service-account-lifecycle.md) — Self-service deactivation, reactivation and deletion with a 14-day grace period; operator restrictions stay out of self-service.
 
 - [0034-public-gravatar-avatars.md](0034-public-gravatar-avatars.md) — Public active-account pictures, server-side proxying and generated fallback.
 
-- [0035-passwordless-account-security.md](0035-passwordless-account-security.md) — UV-required passkeys, optional TOTP and protected recovery; Google onboarding amended by ADR-0038/0039.
+- [0035-passwordless-account-security.md](0035-passwordless-account-security.md) — UV-required passkeys, optional TOTP and protected recovery; Google is ADR-0039.
 
 - [0036-direct-backend-browser-routing.md](0036-direct-backend-browser-routing.md) — Direct local API requests and backend OAuth callbacks; exact-origin CORS with separate web destinations.
 
-- [0037-inline-google-connection.md](0037-inline-google-connection.md) — Inline first-time proof and automatic Google connection; existing-accounts-only restriction superseded by ADR-0038/0039.
 
-- [0038-email-owned-google-onboarding.md](0038-email-owned-google-onboarding.md) — Email-first passkeys and isolated invitations; entry superseded by ADR-0044, extra registration code by ADR-0039.
 
-- [0039-confirmed-google-account-creation.md](0039-confirmed-google-account-creation.md) — Explicit creation consent accepts verified Google identity without a second inbox code; name initialization and backend Gravatar.
+- [0039-google-sign-in-and-account-creation.md](0039-google-sign-in-and-account-creation.md) — Google sign-in and account creation: explicit creation consent, first proof inside sign-in for existing accounts, same email on every sign-in.
 
 - [0040-contextual-account-recovery.md](0040-contextual-account-recovery.md) — State-specific recovery after verified email sign-in, without public recovery choices.
 
 - [0041-fixed-account-email.md](0041-fixed-account-email.md) — Fixed account email; identity changes require a future dedicated action, never profile PUT/PATCH.
 
-- [0042-editable-hub-handles.md](0042-editable-hub-handles.md) — Removes permanent claiming; reuse and cadence superseded by ADR-0043.
+- [0042-editable-hub-handles.md](0042-editable-hub-handles.md) — Editable hub handles with stable UUID routes and an explicit Save handle.
 
-- [0043-deliberate-hub-handle-changes.md](0043-deliberate-hub-handle-changes.md) — No retired-handle reuse, even by its owner; backend/database enforce 30 days between renames.
+- [0043-deliberate-hub-handle-changes.md](0043-deliberate-hub-handle-changes.md) — Retired handles are never reused, even by their owner; 30 days between renames; the reservation store.
 
-- [0044-explicit-auth-entry-and-optional-hub.md](0044-explicit-auth-entry-and-optional-hub.md) — Separate sign-in/signup, verified creation consent and optional named hub with matching initial username/handle.
+- [0044-separate-sign-in-and-sign-up.md](0044-separate-sign-in-and-sign-up.md) — Separate sign-in and sign-up entries; account existence disclosed only after proof; explicit creation consent; no hub at sign-up.
 
 - [0045-account-timezone-preference.md](0045-account-timezone-preference.md) — Private database-backed timezone preference, Automatic device default and consistent server/client date rendering.
 
@@ -129,30 +131,28 @@ Current implementation guidance lives in the linked design documents.
 
 - [0055-allocated-local-host-ports.md](0055-allocated-local-host-ports.md) — Consistent +4 local web/API allocation, env precedence and occupied-port refusal.
 
-- [0056-about-collection-and-footer-navigation.md](0056-about-collection-and-footer-navigation.md) — About holds site sharing and useful links; quieter footer variants and direct sign-up.
 
 - [0057-default-email-code-length.md](0057-default-email-code-length.md) — Use Better Auth’s six-digit email default with unchanged expiry, attempt and resend limits.
 
-- [0058-curated-guides-positioning.md](0058-curated-guides-positioning.md) — Maintained guides and context between resources define the product; its working-name decision is superseded by ADR-0059.
+- [0058-curated-guides-positioning.md](0058-curated-guides-positioning.md) — Maintained guides and context between resources define the product.
 
-- [0059-ntumie-product-name.md](0059-ntumie-product-name.md) — Select ntumie. and ntumie.link; its retained-codebase and deferred-branding decisions are superseded by ADR-0060.
+- [0059-ntumie-product-name.md](0059-ntumie-product-name.md) — The name ntumie., the domain ntumie.link and the slogan, applied across product and repository.
 
-- [0060-ntumie-repository-and-branding.md](0060-ntumie-repository-and-branding.md) — Apply ntumie. branding and ntumie repository/package names; migrate portfolio and handbook addresses while preserving data and legacy links.
 
 - [0061-shared-platform-deployment-baseline.md](0061-shared-platform-deployment-baseline.md) — Registered ntumie.link, shared product database/queue isolation, capacity and migration-before-serve deployment gates.
 
 - [0062-focused-release-browser-gate.md](0062-focused-release-browser-gate.md) — Code/integration verification and four critical browser journeys gate releases; full browser coverage runs deliberately through manual dispatch.
 
-- [0063-wordmark-footer-and-appearance.md](0063-wordmark-footer-and-appearance.md) — Strengthen the wordmark, simplify right-aligned footer navigation and move appearance to signed-in device settings.
+- [0063-wordmark-and-account-appearance.md](0063-wordmark-and-account-appearance.md) — The typographic wordmark and appearance in signed-in device settings.
 
 - [0064 — Client navigation and interactive forms](0064-client-navigation-and-interactive-forms.md): smooth navigation and saves; JavaScript-free parity is no longer required.
 
 - [0065 — Account state loaded with the session user](0065-account-state-in-session-user.md): one query fewer per signed-in request; session cookie cache stays off.
 
 - [0066 — Edge-cached public pages for signed-out visitors](0066-edge-cached-public-pages.md): origin-decided public caching with a Cloudflare cookie bypass.
-- [0067 — Cobalt visual system](0067-cobalt-visual-system.md): one cobalt hue per theme with separate fill and link roles, pill controls and orange only for annotation; partially supersedes 0063.
+- [0067 — Cobalt visual system](0067-cobalt-visual-system.md): one cobalt hue per theme with separate fill and link roles, pill controls and orange only for annotation.
 - [0068 — Partner hub credit](0068-partner-hub-credit.md): one owning hub credits partner hubs on a collection after they accept; display only, no access; narrows 0017.
-- [0069 — Hubs come with the first collection](0069-hubs-come-with-the-first-collection.md): no empty hubs; a hub is created only with a first collection; sign-up hub and Create hub removed; partially supersedes 0044 and 0018.
+- [0069 — Hubs come with the first collection](0069-hubs-come-with-the-first-collection.md): no empty hubs; a hub is created only with a first collection; sign-up hub and Create hub removed.
 - [0070 — Product analytics and fake doors](0070-product-analytics-and-fake-doors.md): unbuilt designed features record interest (`feature_interest`) and say they are coming; PostHog (US Cloud) in the web client when its token is set, cookieless, no replay.
 - [0071 — Bound unnoticed failure, not recovery](0071-bound-unnoticed-failure-not-recovery.md): jobs retry a bounded number of times and keep failures; durable rows report when stuck; a lost Redis connection is detected within `REDIS_OUTAGE_LIMIT_MS`, logged fatal and ends the worker, which production restarts every 30 s with no cap.
 - [0073 — A failed update rolls back](0073-failed-updates-roll-back.md): api, web and worker take `failure_action: rollback` with a 30s monitor; Swarm rolls back, the release action's own rollback stays off. Supersedes ADR-0061's pause-for-review rule.

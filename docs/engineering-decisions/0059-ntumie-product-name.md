@@ -1,34 +1,36 @@
 # ADR-0059: ntumie. product name and chosen domain
 
-Status: Accepted; retained-codebase and deferred-branding decisions superseded by [ADR-0060](0060-ntumie-repository-and-branding.md)
+Status: Accepted
 Date: 2026-10-12
 
 ## Context
 
 The GoodLinks discovery clarified the product's emphasis on maintained guides,
-but ADR-0058 left its final name open. Paul found a name in the everyday Swahili
+but [ADR-0058](0058-curated-guides-positioning.md) left its final name open. Paul found a name in the everyday Swahili
 request “nitumie link,” often written “ntumie link” in his conversations.
 The domain `ntumie.link` carries that phrase into the address of a collection.
 
 ## Decision
 
-The product name is **ntumie.** Use lowercase and retain the trailing dot,
-including in plain text. Keep **“Good links belong together.”** as the slogan.
-Choose `ntumie.link` as the product domain. Although Paul's registrar search
-showed both `.link` and `.com` available, he chose to pursue only `.link`.
-Domain registration and deployment are not established by this decision.
+The product name is **ntumie.**: lowercase, with the trailing dot, including in plain text. Keep
+**“Good links belong together.”** as the slogan, and `ntumie.link` as the domain (Paul chose only
+`.link`, though `.com` was also free).
 
-This supersedes only ADR-0058's open final-name decision. Its positioning remains
-accepted. The repository stays `linkhub`; this milestone updates product
-references and unpublished notebook drafts only. Applying the name to runtime
-copy, emails, metadata or assets is a separate task.
+The name applies everywhere: the app, emails, API display metadata, maintained documentation, and
+`ntumie` for repository, checkout and package identifiers, including `@ntumie/*`. README and the
+handbook introduce it as “formerly LinkHub”. The portfolio project lives in `ntumie.md` at
+`/w/ntumie/`, with `/w/nslinkhub/` redirected; handbook chapters use `ntumie/` with redirects from
+their former addresses.
+
+This record first kept the `linkhub` repository and deferred branding, and ADR-0060 then applied
+the name throughout; that record is folded in here.
 
 ## Consequences
 
-Preserve LinkHub in historical accounts where it was the working name. Keep
-existing repository paths, package identities, API contracts, routes and
-configuration unchanged. Product naming does not change the immutable IDs or
-durable collection addresses.
+Historical accounts keep LinkHub where it was the working name, and their chronology is not
+rewritten; explain any legacy reference that remains in a record, a redirect or recorded narration,
+and never manufacture a new recording by editing its transcript. Branding never changes origins,
+credentials, schema, API fields, immutable IDs or durable collection addresses.
 
-See [product positioning](../design-docs/product-positioning.md) for the naming
-story and the collection's defining value.
+See [product positioning](../design-docs/product-positioning.md) for the naming story and the
+collection's defining value.

@@ -21,7 +21,7 @@ Grafana/Loki/Alloy rollout is deferred; initial monitoring uses Kuma and Dokploy
 Browser Origin enforcement is
 implemented and tested locally; each new browser workflow needs its own
 acceptance. Self-service account lifecycle and editable hub handles are
-implemented ([ADR-0033](../engineering-decisions/0033-permanent-hub-handles-and-self-service-accounts.md),
+implemented ([ADR-0033](../engineering-decisions/0033-self-service-account-lifecycle.md),
 [ADR-0043](../engineering-decisions/0043-deliberate-hub-handle-changes.md));
 include email confirmation, recovery restrictions, 14-day deletion/cancellation
 and the 30-day handle cooldown with non-reusable retired reservations in release acceptance. Generic vendor deletion

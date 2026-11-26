@@ -2,10 +2,7 @@
 
 Status: implemented for profiles, hubs, collections and the site. Social destinations remain deferred.
 
-The site-wide “Share ntumie.” entry is the primary action on `/about`, alongside
-a useful-link collection containing Support and the maker’s portfolio. The footer
-links to About; site URLs still point to `/`. See
-[ADR-0056](../engineering-decisions/0056-about-collection-and-footer-navigation.md).
+The site-wide “Share ntumie.” entry is on `/about`; site URLs point to `/`.
 
 One `/share` page renders the resource name, share heading, labeled URL, Copy link
 and a contextual return link below. Copy link is visible but disabled before

@@ -53,7 +53,7 @@ spacing:
 
 The product name is **ntumie.**, lowercase with a mandatory trailing dot in
 both text and the wordmark. The chosen domain is `ntumie.link`; machine names
-use `ntumie`. See [ADR-0060](docs/engineering-decisions/0060-ntumie-repository-and-branding.md).
+use `ntumie`. See [ADR-0059](docs/engineering-decisions/0059-ntumie-product-name.md).
 
 > **Status (14 October 2026).** The tokens below are the locked Track W3
 > redesign ([ADR-0067](docs/engineering-decisions/0067-cobalt-visual-system.md)).
@@ -274,7 +274,7 @@ rolls back with inline feedback if persistence fails.
 | Page heading (`page`) | `2.25rem / 2.5rem`; weight 700, `-0.03em`; phone collection title |
 | Collection title (`collection`) | `2.75rem / 3rem`; weight 700, `-0.035em`; on the cobalt band from 900 px |
 | Brand lead / heading / display | Lead `1.3125rem`; h2 `2.5rem` (`2rem` below 900 px), `-0.035em`; display `clamp(3rem, …, 5.25rem)`, line height `0.95`, `-0.04em` |
-| Wordmark | The text `ntumie.` alone is the logo (no icon): 24 px on phones, 28 px from 640 px, weight 700, tight tracking ([ADR-0063](docs/engineering-decisions/0063-wordmark-footer-and-appearance.md)) |
+| Wordmark | The text `ntumie.` alone is the logo (no icon): 24 px on phones, 28 px from 640 px, weight 700, tight tracking ([ADR-0063](docs/engineering-decisions/0063-wordmark-and-account-appearance.md)) |
 | Spacing | `0.25rem` unit: 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64 px; 2 px only for optical nudges |
 | Page gutters | 16 px below 640 px; 32 px above; brand bands 40 px from 900 px |
 | Shell maximum | `80rem` (brand bands and the collection layout); reader column `48rem` |
@@ -316,7 +316,7 @@ link. There is no footer tagline, year, repeated wordmark or divider. Links reta
 44 px touch targets and shared hover/focus feedback. The footer follows long
 content and sits at the bottom of short pages, including the empty About variant.
 Site sharing, Support and the maker's portfolio live on `/about`; legal links
-join the collection when those pages exist. See [ADR-0063](docs/engineering-decisions/0063-wordmark-footer-and-appearance.md).
+join the collection when those pages exist. See [ADR-0063](docs/engineering-decisions/0063-wordmark-and-account-appearance.md).
 
 About's useful links use the same `CollectionPreview`, section disclosures,
 resource rows, tags, expanded context and item-link controls as the homepage
@@ -370,7 +370,7 @@ Email label/input precedes the full-width primary Continue with email; quiet or
 and full-width secondary Continue with Google follow. Footer links switch intent.
 No image or extra marketing copy is needed. Optional hub creation is progressively
 revealed after proof, with a visible hub-name label. See
-[ADR-0044](docs/engineering-decisions/0044-explicit-auth-entry-and-optional-hub.md).
+[ADR-0044](docs/engineering-decisions/0044-separate-sign-in-and-sign-up.md).
 
 ### Management workspace navigation
 

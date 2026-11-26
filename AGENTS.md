@@ -38,8 +38,9 @@ authoritative.
 2. **Implement the complete milestone**, not fragments.
 3. **Verify**: `bun run verify` green (plus any plan-specific checks).
 4. **Record settled decisions**: a durable choice gets an engineering
-   decision record; a change that contradicts an accepted record supersedes it
-   explicitly (new evidence, tradeoff, reason) — never silently.
+   decision record; a change that contradicts an accepted record says so
+   explicitly (new evidence, trade-off, reason), and the replaced record is
+   removed once its still-binding parts move into a current one — never silently.
 5. **Present for review**: summarize the result and the diff.
 6. **Commit once per completed, reviewed milestone.** No micro-commits.
    Substantial work goes on a local branch, then
@@ -55,7 +56,7 @@ authoritative.
   boundary rules.
 - `docs/RELIABILITY.md`: idempotency, concurrency, jobs, and data rules.
 - `docs/engineering-decisions/README.md`: settled decisions (ADRs) — binding
-  until explicitly superseded with recorded rationale.
+  until explicitly replaced with recorded rationale; records say what holds now.
 - `DESIGN.md`: the visual design system and canonical theme tokens.
 - `docs/design-docs/README.md`: focused designs — tenancy and access, identity
   and handles, collections and resources, discussion, email verification,

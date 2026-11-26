@@ -31,7 +31,7 @@ creates the account and optional hub atomically; switching email cancels proof a
 keeps the return destination. Existing accounts proceed with enrolled factors.
 Capture supplies explicit creation consent and invitations retain independent
 proof, so neither detours through this screen. See
-[ADR-0044](../engineering-decisions/0044-explicit-auth-entry-and-optional-hub.md).
+[ADR-0044](../engineering-decisions/0044-separate-sign-in-and-sign-up.md).
 
 ## Matching email purpose
 
@@ -55,4 +55,4 @@ The sealed web flow ID also prevents a second tab from changing what an older
 confirmation form authorizes. These codes neither resume ordinary mutations nor
 leave an authenticated session behind. Recovery ends with a fresh sign-in. See
 [auth delivery](auth-delivery-integration.md#self-service-account-actions) and
-[ADR-0033](../engineering-decisions/0033-permanent-hub-handles-and-self-service-accounts.md).
+[ADR-0033](../engineering-decisions/0033-self-service-account-lifecycle.md).

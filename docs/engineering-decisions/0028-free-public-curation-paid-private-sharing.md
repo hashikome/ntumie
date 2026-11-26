@@ -16,8 +16,8 @@ packaging captured earlier in the founder conversation.
 
 - Public collections are free, public by default on creation, and have no
   collection-count paywall. Public link sharing and contributor invitations are free.
-- People can explicitly choose private collections within a free allowance.
-  The number and larger paid allowances remain to be set.
+- People can explicitly choose private collections within a free allowance of
+  three (`FREE_PRIVATE_COLLECTIONS`); larger paid allowances remain to be set.
 - Free private collections are owner-only. Both private access links and direct
   invitations require the collection owner's paid entitlement, for viewers and
   contributors alike. A contributor invitation cannot bypass the private-sharing gate.
@@ -35,12 +35,24 @@ packaging captured earlier in the founder conversation.
   choice clearly shown before submission. Importing into an existing collection
   preserves that collection's visibility.
 
-This **supersedes ADR-0016's free-everyday-sharing guarantee and its exclusively
-professional paid-account framing**. It also supersedes the private-by-default
-creation direction in earlier capture/import designs, including ADR-0012's new
-import-destination default. These changes are prospective: no existing private
-collection is automatically published. The predeployment product has not promised
-production grandfathering.
+This replaced ADR-0016, which kept everyday private sharing free and framed paid
+features as a professional "Curator account"; the owner chose to charge for private
+sharing and conveniences instead, so public curation stays free for everyone. It also
+replaced the private-by-default creation direction in earlier capture and import
+designs, including ADR-0012's import-destination default. These changes are
+prospective: no existing private collection is automatically published.
+
+## Constraints kept from ADR-0016
+
+- Nothing free today moves behind payment without a new decision.
+- Payment never changes the access model: members-only or paid access goes through
+  the collection policy like every other grant.
+- Analytics count in aggregate and never track individual readers.
+- API access acts as the account through the same authorization; keys are scoped and
+  revocable, never a privileged path. Higher rate limits are a plan setting, never an
+  exemption from them.
+- AI curation proposes; people decide. Its results arrive as a reviewable draft
+  (ADR-0012) and never rewrite titles (ADR-0007).
 
 ## Backend consequences
 
@@ -65,7 +77,7 @@ people to build and share guides. Paid document processing and AI save additiona
 manual work; paid private sharing supports a distinct ongoing use. Charging the
 owner keeps invited participants from becoming a second purchase barrier.
 
-Prices, billing cadence, private allowance counts, processing budgets, provider,
+Prices, billing cadence, paid allowance counts, processing budgets, provider,
 downgrade/grace rules and final paid-plan naming remain open. Selling readers
 access to a curator's content is a separate uncommitted marketplace idea, not
 what “paid private sharing” means here.
@@ -73,6 +85,5 @@ what “paid private sharing” means here.
 ## References
 
 - [Monetization design](../design-docs/monetization.md)
-- [ADR-0016](0016-curator-accounts-are-the-paid-tier.md)
 - [Bulk import](../design-docs/bulk-import.md)
 - [Delivery plan](../exec-plans/active/evaluate-curation-and-paid-services.md)

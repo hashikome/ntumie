@@ -353,9 +353,9 @@ code rotation require completed authentication within ten minutes, then revoke
 other sessions and pending challenges. No trusted-device or email-only recovery
 bypass exists. Account lifecycle recovery preserves enrolled protection.
 
-Google disables provider-only implicit and requested signup. [ADR-0039](engineering-decisions/0039-confirmed-google-account-creation.md) allows explicitly confirmed creation from a staged verified Google identity. For a missing account, callback creates no account/session; consent creates and links atomically without another inbox code. Invitations always require their separate email proof. Automatic first linking to an existing account requires
+Google disables provider-only implicit and requested signup. [ADR-0039](engineering-decisions/0039-google-sign-in-and-account-creation.md) allows explicitly confirmed creation from a staged verified Google identity. For a missing account, callback creates no account/session; consent creates and links atomically without another inbox code. Invitations always require their separate email proof. Automatic first linking to an existing account requires
 an authoritative verified Gmail/Workspace email; other Google email addresses
-complete a first-time same-email proof within sign-in (ADR-0037). The backend
+complete a first-time same-email proof within sign-in (ADR-0039). The backend
 stages the state-validated provider subject in an encrypted, ten-minute,
 browser-bound record and connects it only with completed authentication,
 including any enrolled factor. Existing-account pending proof binds user UUID, email and account
@@ -368,7 +368,7 @@ expose stored credentials. Tests use synthetic provider credentials only.
 
 ## Explicit ordinary registration
 
-[ADR-0044](engineering-decisions/0044-explicit-auth-entry-and-optional-hub.md) separates
+[ADR-0044](engineering-decisions/0044-separate-sign-in-and-sign-up.md) separates
 entry intent while keeping backend-owned authentication. Ordinary email verification
 of an unknown identity stages encrypted browser-bound proof, not a user/session.
 Only explicit confirmation creates; optional hub creation is atomic. Better Auth

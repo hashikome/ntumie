@@ -12,7 +12,7 @@ walk the [onboarding guide](guides/developer-onboarding-walkthrough.md) first.
 | --- | --- |
 | [backlog/curation-and-paid-services.md](backlog/curation-and-paid-services.md) | Accepted curation and paid-service direction awaiting implementation |
 | [design-docs/](design-docs/README.md) | Focused current designs: domain, web, platform and delivery |
-| [engineering-decisions/](engineering-decisions/README.md) | Settled foundations and their rationale; binding until superseded |
+| [engineering-decisions/](engineering-decisions/README.md) | Settled foundations and their rationale; current decisions only |
 | [exec-plans/](exec-plans/README.md) | Active ExecPlans, completed plans and the tech-debt tracker |
 | [runbooks/](runbooks/) | Local development, verification, migrations, release, operations |
 | [guides/](guides/) | The onboarding walkthrough, pinned to a reviewed commit |
@@ -39,7 +39,7 @@ explain a decision, migration or acceptance limit. Completed plans are historica
 evidence, not current implementation instructions.
 
 Current branding is **ntumie.** in display text and `ntumie` in repository and
-package identifiers ([ADR-0060](engineering-decisions/0060-ntumie-repository-and-branding.md)).
+package identifiers ([ADR-0059](engineering-decisions/0059-ntumie-product-name.md)).
 Earlier names in historical ADRs, completed plans and changelog entries record
 their original context. Physical storage and seed identities retain legacy names
 as documented compatibility exceptions in the
