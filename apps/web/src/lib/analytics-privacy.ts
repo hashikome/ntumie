@@ -27,13 +27,33 @@ function elementsChain(chain: string): string {
   );
 }
 
-export function privateFreeProperties(properties: Record<string, unknown>) {
-  const clean: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(properties)) {
-    if (typeof value !== "string") clean[key] = value;
-    else if (key === "$elements_chain") clean[key] = elementsChain(value);
-    else if (/url|referrer|href|pathname/i.test(key)) clean[key] = analyticsAddress(value);
-    else clean[key] = value;
+// Addresses sit under many keys, some nested: `$initial_person_info` keeps the
+// first page as `u` and its referrer as `r`.
+const addressKey = /url|referrer|href|pathname|^u$|^r$/i;
+
+function scrub(value: unknown, key = ""): unknown {
+  if (typeof value === "string") {
+    if (key === "$elements_chain") return elementsChain(value);
+    return addressKey.test(key) ? analyticsAddress(value) : value;
   }
-  return clean;
+  if (Array.isArray(value)) return value.map((item) => scrub(item, key));
+  if (value && typeof value === "object")
+    return Object.fromEntries(Object.entries(value).map(([k, item]) => [k, scrub(item, k)]));
+  return value;
+}
+
+export function privateFreeProperties(properties: Record<string, unknown>) {
+  return scrub(properties) as Record<string, unknown>;
+}
+
+/** The parts of an event that can hold an address: its properties and person updates. */
+export function privateFreeEvent<
+  T extends { properties?: Record<string, unknown>; $set?: unknown; $set_once?: unknown },
+>(event: T): T {
+  return {
+    ...event,
+    properties: privateFreeProperties(event.properties ?? {}),
+    ...(event.$set === undefined ? {} : { $set: scrub(event.$set) }),
+    ...(event.$set_once === undefined ? {} : { $set_once: scrub(event.$set_once) }),
+  };
 }
