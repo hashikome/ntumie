@@ -8134,13 +8134,9 @@ it("sets up an authenticator and uses recovery without JavaScript", async () => 
     await browserExpect(
       page.getByRole("heading", { name: "Confirm it is you", exact: true }),
     ).toBeVisible();
-    // With an authenticator the boxes return, over a field password managers can see.
-    await browserExpect(page.locator(".code-boxes")).toBeVisible();
-    expect(
-      await page
-        .locator("#code")
-        .evaluate((field) => [getComputedStyle(field).opacity, getComputedStyle(field).color]),
-    ).toEqual(["1", "rgba(0, 0, 0, 0)"]);
+    // With an authenticator it asks for its code: without JavaScript, a plain field.
+    await browserExpect(page.locator("#code")).toBeVisible();
+    await browserExpect(page.locator(".code-boxes")).toHaveCount(0);
     await page.getByRole("link", { name: "Use a recovery code", exact: true }).click();
     await page.getByLabel("Recovery code", { exact: true }).fill(recovery);
     await page.getByRole("button", { name: verifyCode }).click();
