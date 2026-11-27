@@ -196,9 +196,10 @@ URL or authored text. Receipts have no scheduled expiry or cascading account for
 cleanup policy must define the retry/idempotency window; account deletion does
 not make a retained receipt authorize access or recreate removed content.
 
-The web retains at most three independent 30-minute AES-GCM draft cookies, each
-below browser cookie limits; a draft that would outgrow its cookie drops tags
-before any link. Ordinary email verification may submit the pending
+A browser keeps at most three independent 30-minute drafts. Each is sealed with
+AES-GCM and kept by the API's action-recovery store under the hash of a random
+256-bit token; the `capture_<id>` cookie holds only `ref.<token>`, so reading a
+draft needs both its address and that cookie, and nothing in it is dropped for size. Ordinary email verification may submit the pending
 capture with the newly issued session; invitation verification is separate.
 Auth and capture intentionally commit separately, preserving login on save failure.
 

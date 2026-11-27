@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { Body, Controller, Headers, Module, Post } from "@nestjs/common";
 import {
+  recoveryMaxTtl,
   recoveryPayloadLimit,
   recoveryTtl,
   validRecoveryProof,
 } from "@ntumie/config/action-recovery";
-import { IsIn, IsOptional, IsString, Matches, MaxLength } from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from "class-validator";
 import { appError } from "../../common/errors/app-exception";
 import { apiOk } from "../../common/utils/response.util";
 import { readSecret } from "../../config/secret";
@@ -23,10 +24,17 @@ class RecoveryDto {
   @Matches(/^[A-Za-z0-9_-]+$/)
   @MaxLength(recoveryPayloadLimit)
   payload?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(60)
+  @Max(recoveryMaxTtl)
+  ttl?: number;
 }
 
-// Service-authenticated opaque storage. The browser never receives the proof;
-// payload decryption and account-bound replay remain in the web adapter.
+// Service-authenticated opaque storage for interrupted actions and Save a link
+// drafts. The browser never receives the proof, and only holds a token whose
+// hash keys the row; encryption and validation remain in the web adapter.
 @Controller("api/v1/action-recovery")
 export class RecoveryController {
   constructor(private readonly prisma: PrismaService) {}
@@ -43,7 +51,7 @@ export class RecoveryController {
         create: {
           tokenHash,
           payload: dto.payload,
-          expiresAt: new Date(Date.now() + recoveryTtl * 1000),
+          expiresAt: new Date(Date.now() + (dto.ttl ?? recoveryTtl) * 1000),
         },
         update: {},
       });

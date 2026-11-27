@@ -355,17 +355,15 @@ async function startCollectionForm(request: Request, form: URLSearchParams): Pro
     issued: previous?.issued ?? Date.now(),
     operationId: same ? previous.operationId : previous ? randomUUID() : id,
   };
-  try {
-    draftCookie(draft);
-  } catch {
-    return back("link-invalid");
-  }
   const room = previous ? [] : await draftRoom();
-  if (!sessionCookie(request.headers.get("cookie") ?? ""))
+  if (!sessionCookie(request.headers.get("cookie") ?? "")) {
+    const kept = await draftCookie(draft).catch(() => null);
+    if (!kept) return back("unavailable");
     return redirectResponse(`/sign-in?returnTo=${encodeURIComponent(`/start/${id}`)}`, [
       ...room,
-      draftCookie(draft),
+      kept,
     ]);
+  }
   return saveDraft(request, draft, room);
 }
 
@@ -418,19 +416,17 @@ async function captureSaveForm(request: Request, form: URLSearchParams): Promise
     issued: previous?.issued ?? Date.now(),
     operationId: same ? previous.operationId : previous ? randomUUID() : id,
   };
-  try {
-    draftCookie(draft);
-  } catch {
-    return back("too-many-links");
-  }
   const room = previous ? [] : await draftRoom();
   // No session cookie: sign in first. An expired session is caught by the
   // save's 401, which keeps the draft the same way.
-  if (!sessionCookie(request.headers.get("cookie") ?? ""))
+  if (!sessionCookie(request.headers.get("cookie") ?? "")) {
+    const kept = await draftCookie(draft).catch(() => null);
+    if (!kept) return back("unavailable");
     return redirectResponse(`/sign-in?returnTo=${encodeURIComponent(`/capture/${id}`)}`, [
       ...room,
-      draftCookie(draft),
+      kept,
     ]);
+  }
   return saveDraft(request, draft, room);
 }
 

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { fitDraft, openDraft, sealDraft } from "../src/lib/capture-draft";
+import { openDraft, sealDraft } from "../src/lib/capture-draft";
 import { captureUrl, parseTags } from "../src/lib/validation";
 
 const secret = "synthetic-capture-cookie-secret-32-chars";
 describe("private capture drafts", () => {
-  it("keeps a maximum-length URL within the browser cookie budget and out of ciphertext", () => {
+  it("seals a maximum-length URL, keeps it out of the ciphertext and binds it to its draft", () => {
     const id = randomUUID(),
       issued = Date.now();
     const draft = {
@@ -16,7 +16,6 @@ describe("private capture drafts", () => {
       destination: "first",
     };
     const sealed = sealDraft(draft, secret);
-    expect(sealed.length + 150).toBeLessThan(4096);
     expect(sealed).not.toContain("fixture-links.dev");
     expect(openDraft(sealed, id, secret)).toEqual(draft);
     expect(openDraft(sealed, randomUUID(), secret)).toBeNull();
@@ -25,7 +24,7 @@ describe("private capture drafts", () => {
     expect(openDraft(sealed, id, secret, issued + 1800000)).toBeNull();
     expect(openDraft(sealed, id, secret, issued - 1)).toBeNull();
   });
-  it("drops tags before links when several links outgrow the cookie", () => {
+  it("keeps every tag of a large draft: the browser holds only a reference", () => {
     const id = randomUUID();
     const draft = {
       id,
@@ -38,9 +37,8 @@ describe("private capture drafts", () => {
       issued: Date.now(),
       destination: "new",
     };
-    expect(() => sealDraft(draft, secret)).toThrow();
-    const opened = openDraft(fitDraft(draft, secret), id, secret);
-    expect(opened?.links).toEqual(draft.links.map(({ url }) => ({ url })));
+    const opened = openDraft(sealDraft(draft, secret), id, secret);
+    expect(opened?.links).toEqual(draft.links);
     expect(opened?.collectionTitle).toBe("Reading list");
     expect(parseTags(" video, , Beginner ,")).toEqual(["video", "Beginner"]);
   });

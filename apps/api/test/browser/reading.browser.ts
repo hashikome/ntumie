@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it as test } from "bun:test";
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -9390,7 +9391,13 @@ it("resumes submitted import corrections after sign-in with and without JavaScri
       await verify();
       await browserExpect(page.locator("h1")).toHaveText("Saved correction");
       await browserExpect(page).toHaveURL((url) => url.searchParams.get("status") === "failed");
-      expect(await prisma.pendingActionPayload.count()).toBe(0);
+      // This action's stored payload is gone once replayed (drafts share the store).
+      const recoveryHash = createHash("sha256")
+        .update(recovery?.value.slice(4) ?? "")
+        .digest("hex");
+      expect(await prisma.pendingActionPayload.count({ where: { tokenHash: recoveryHash } })).toBe(
+        0,
+      );
       const saved = await prisma.importRow.findUniqueOrThrow({
         where: { id: row.id },
         include: { folder: { include: { parent: true } } },

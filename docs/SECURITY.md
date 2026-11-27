@@ -380,13 +380,15 @@ validated web context and cannot change account identity. Capture alone supplies
 explicit creation consent in its code request; invitations use their isolated flow.
 
 
-### Oversized interrupted actions
+### Oversized interrupted actions and Save a link drafts
 
-Actions too large for a 3,800-character cookie value use an opaque 256-bit reference
-cookie. The API stores only the encrypted payload under a SHA-256 hash of that
-reference, with a 15-minute expiry and a 64 KiB payload ceiling. The web service
+Actions too large for a 3,800-character cookie value, and every Save a link draft, use
+an opaque 256-bit reference cookie. The API stores only the encrypted payload under a
+SHA-256 hash of that reference, with a 64 KiB payload ceiling and an expiry the web
+chooses within 60 seconds to 30 minutes (15 minutes for actions, the rest of a draft's
+30 minutes for drafts); the lifetime is part of the signed command. The web service
 signs storage commands with `WEB_SOURCE_SECRET` in a separate cryptographic domain;
-proofs bind operation, token, payload, and a timestamp valid for 60 seconds.
+proofs bind operation, token, payload, lifetime and a timestamp valid for 60 seconds.
 Browsers cannot issue authorized storage commands. Reads never grant domain access;
 replay still requires the matching account fingerprint and current API policy.
 Storage outages surface as failures. Consumed payloads are deleted; API maintenance

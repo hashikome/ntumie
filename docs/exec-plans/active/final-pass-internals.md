@@ -33,7 +33,11 @@ the only blocker is a change to behaviour, business workflow or UX.)
   maps failed API results to notices (an action's own statuses, then `limited`
   for 429, else `unavailable`), and `withQuery` in `lib/http.ts` joins query
   strings. Code verification keeps its own mapping (4xx means a wrong code).
-- [ ] M5 Save a link drafts in Redis (cookie holds only the draft id).
+- [x] (2026-11-27) M5 Save a link drafts held by the API: the sealed draft lives in
+  the action-recovery store (Postgres, not Redis: the web has no data access and
+  ntumie's Redis login covers only its queue), the cookie holds only `ref.<token>`,
+  and the store takes a signed lifetime of up to 30 minutes. `fitDraft`, the size
+  limits and the cookie-size path to "too many links" are gone.
 - [ ] M6 Smaller consolidations (DNS once, canonical duplicate check, shared
   helpers, API-suggested collection name).
 - [ ] M7 Focus rings return when focus moves without a pointer press.

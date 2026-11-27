@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { recoveryPayloadLimit } from "@ntumie/config/action-recovery";
 import { type CaptureLink, maxCaptureLinks } from "@ntumie/types";
 import { captureUrl, isUuid } from "./validation";
 
@@ -19,18 +20,10 @@ export interface CaptureDraft {
 export const draftPath = (draft: Pick<CaptureDraft, "id" | "start">) =>
   `/${draft.start ? "start" : "capture"}/${draft.id}`;
 const key = (secret: string) => createHash("sha256").update(`web-capture:${secret}`).digest();
-// Drafts live in one cookie. When tags make it too large they are dropped;
-// links themselves are kept.
-export function fitDraft(draft: CaptureDraft, secret: string): string {
-  try {
-    return sealDraft(draft, secret);
-  } catch {
-    return sealDraft({ ...draft, links: draft.links.map(({ url }) => ({ url })) }, secret);
-  }
-}
+// A draft is sealed here and kept by the API's action-recovery store; the
+// browser holds only a reference to it (capture-server.ts).
 export function sealDraft(draft: CaptureDraft, secret: string): string {
   const text = JSON.stringify(draft);
-  if (Buffer.byteLength(text) > 2700) throw new Error("draft-size");
   const iv = randomBytes(12),
     cipher = createCipheriv("aes-256-gcm", key(secret), iv);
   const sealed = Buffer.concat([
@@ -39,7 +32,7 @@ export function sealDraft(draft: CaptureDraft, secret: string): string {
     cipher.final(),
     cipher.getAuthTag(),
   ]).toString("base64url");
-  if (sealed.length > 3800) throw new Error("draft-size");
+  if (sealed.length > recoveryPayloadLimit) throw new Error("draft-size");
   return sealed;
 }
 export function openDraft(
@@ -49,7 +42,7 @@ export function openDraft(
   now = Date.now(),
 ): CaptureDraft | null {
   try {
-    if (!isUuid(id) || raw.length > 3800) return null;
+    if (!isUuid(id) || raw.length > recoveryPayloadLimit) return null;
     const bytes = Buffer.from(raw, "base64url"),
       decipher = createDecipheriv("aes-256-gcm", key(secret), bytes.subarray(0, 12));
     decipher.setAuthTag(bytes.subarray(-16));

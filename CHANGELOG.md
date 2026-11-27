@@ -9,6 +9,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Save a link drafts are kept by the API, with only a reference in the browser's
+  cookie, so long links with many tags no longer lose their tags. The action-recovery
+  store takes a signed lifetime of up to 30 minutes.
 - No pull requests: verification no longer runs on them, and the same-host pull-request
   previews direction is dropped.
 - Releases are pulled by infra's deploy agent on hs: a push records a GitHub release

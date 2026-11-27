@@ -1,16 +1,20 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const recoveryTtl = 15 * 60;
+/** The longest a stored payload may live (a Save a link draft's 30 minutes). */
+export const recoveryMaxTtl = 30 * 60;
 export const recoveryPayloadLimit = 64 * 1024;
 export interface RecoveryCommand {
   operation: "put" | "get" | "delete";
   token: string;
   payload?: string;
+  /** Seconds a put lives (60 to recoveryMaxTtl); recoveryTtl when absent. */
+  ttl?: number;
 }
 export function recoveryProof(command: RecoveryCommand, secret: string, issued = Date.now()) {
   const signature = createHmac("sha256", secret)
     .update(
-      `web-action-recovery:${issued}:${JSON.stringify([command.operation, command.token, command.payload ?? null])}`,
+      `web-action-recovery:${issued}:${JSON.stringify([command.operation, command.token, command.payload ?? null, command.ttl ?? null])}`,
     )
     .digest("hex");
   return `${issued}.${signature}`;

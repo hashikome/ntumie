@@ -41,7 +41,7 @@ const messages: Record<string, string> = {
   "links-saved": "Links saved.",
   "link-not-public":
     "Use a public web address. Local, private and example addresses can't be opened by the people you share with.",
-  "too-many-links": "Save up to 2 links at a time, or shorten very long addresses.",
+  "too-many-links": "Save up to 2 links at a time.",
   "link-invalid":
     "Check the links: each must be a full http:// or https:// address without a username or password.",
   "choose-destination": "Choose where to save your link, or create a collection.",

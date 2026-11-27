@@ -84,3 +84,17 @@ it("isolates recovery storage budgets for visitors sharing the web server", asyn
     .set("x-web-read-source", proof("192.0.2.82", "read"))
     .expect(429);
 });
+
+it("keeps a payload for the lifetime the web asks for, signed and bounded", async () => {
+  const token = randomBytes(32).toString("hex");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const put: RecoveryCommand = { operation: "put", token, payload: "draft", ttl: 1800 };
+  // The lifetime is part of the proof: changing it invalidates the request.
+  await send({ ...put, ttl: 1200 }, recoveryProof(put, secret)).expect(403);
+  for (const ttl of [59, 1801]) await send({ ...put, ttl }).expect(400);
+  const before = Date.now();
+  await send(put).expect(201);
+  const row = await db.pendingActionPayload.findUniqueOrThrow({ where: { tokenHash } });
+  expect(row.expiresAt.getTime()).toBeGreaterThanOrEqual(before + 1_799_000);
+  expect(row.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + 1_800_000);
+});

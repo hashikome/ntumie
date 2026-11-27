@@ -21,8 +21,10 @@ first resolvable retry; there is no reliable backfill for aliases already lost.
 Keep small pending actions in the existing encrypted cookie. Values over 3,800
 characters use shared API persistence of the sealed ciphertext, with a random
 256-bit reference in the cookie. PostgreSQL stores its hash, the bounded payload
-(up to 64 KiB), and a 15-minute expiry. Web replicas share the store through a
-service-authenticated endpoint; the web never connects directly to the database.
+(up to 64 KiB), and an expiry: 15 minutes for actions. Save a link drafts use the
+same store for their 30 minutes, with only the reference in their cookie. Web
+replicas share the store through a service-authenticated endpoint; the web never
+connects directly to the database.
 
 A domain-separated HMAC with `WEB_SOURCE_SECRET` signs the complete command and a
 60-second timestamp. An expired end-user session is expected and supplies no
