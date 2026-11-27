@@ -15,16 +15,15 @@ import type {
 } from "@ntumie/types";
 import {
   accountActions,
-  collectionAddress,
   interestFeatures,
-  isPublicLinkHost,
+  maxDescriptionLength,
   maxNoteLength,
   operationActions,
   operationReasons,
   signInCodePurposes,
 } from "@ntumie/types";
 import { auditContinuation, auditQuery } from "../../../lib/audit-query";
-import { type CaptureDraft, maxDescriptionLength } from "../../../lib/capture-draft";
+import type { CaptureDraft } from "../../../lib/capture-draft";
 import { draftCookie, draftRoom, readDraft, saveDraft } from "../../../lib/capture-server";
 import { completeSignIn } from "../../../lib/complete-sign-in";
 import { serverCookie } from "../../../lib/cookies";
@@ -66,7 +65,7 @@ import { readOwnProfile, readSession } from "../../../lib/session";
 import { resendTiming } from "../../../lib/sign-in-flow";
 import { appearanceCookie } from "../../../lib/theme";
 import { dayBoundary } from "../../../lib/time";
-import { captureUrl, isDraftPath, isUuid, parseTags } from "../../../lib/validation";
+import { captureUrl, isDraftPath, isUuid, parseTags, publicHref } from "../../../lib/validation";
 import type { VerificationPurpose } from "../../../lib/verification";
 
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
@@ -331,11 +330,7 @@ async function startCollectionForm(request: Request, form: URLSearchParams): Pro
     redirectResponse(`${previous ? `/start/${id}` : "/start"}?notice=${notice}`);
   const url = captureUrl((form.get("url") ?? "").trim());
   if (!url) return back("link-invalid");
-  if (
-    !collectionAddress(url, webServerConfig().publicOrigin) &&
-    !isPublicLinkHost(new URL(url).hostname)
-  )
-    return back("link-not-public");
+  if (!publicHref(url, webServerConfig().publicOrigin)) return back("link-not-public");
   const note = (form.get("note") ?? "").trim().slice(0, maxNoteLength);
   const collectionTitle = form.get("collectionTitle")?.trim().slice(0, 255) || undefined;
   const published = form.get("published") !== "false";
@@ -370,28 +365,37 @@ async function captureSaveForm(request: Request, form: URLSearchParams): Promise
   const id = form.get("draftId") ?? "";
   if (!isUuid(id)) return redirectResponse("/capture?notice=invalid");
   const previous = await readDraft(id);
+  // Before a draft exists, a refused save keeps the collection the person
+  // is on and the address they typed.
+  const typed = (form.get("url") ?? "").trim();
+  const here = form.get("here") ?? "";
   const back = (notice: string) =>
-    redirectResponse(`${previous ? `/capture/${id}` : "/capture"}?notice=${notice}`);
+    redirectResponse(
+      previous
+        ? `/capture/${id}?notice=${notice}`
+        : `/capture?${new URLSearchParams({
+            notice,
+            ...(isUuid(here) ? { collection: here } : {}),
+            ...(typed && typed.length <= 2048 ? { url: typed } : {}),
+          })}`,
+    );
   // One link, its optional comma-separated tags and note (titles are
   // resolved from the page, never typed).
-  const url = captureUrl((form.get("url") ?? "").trim());
+  const url = captureUrl(typed);
   if (!url) return back("link-invalid");
-  if (
-    !collectionAddress(url, webServerConfig().publicOrigin) &&
-    !isPublicLinkHost(new URL(url).hostname)
-  )
-    return back("link-not-public");
-  const tags = parseTags(form.get("tags") ?? "");
+  if (!publicHref(url, webServerConfig().publicOrigin)) return back("link-not-public");
+  const destination = form.get("destination") ?? "";
+  if (!["first", "new"].includes(destination) && !isUuid(destination))
+    return back("choose-destination");
+  const fresh = !isUuid(destination);
+  // A new collection's form has no tags (r2-save, state 2).
+  const tags = fresh ? [] : parseTags(form.get("tags") ?? "");
   const note = (form.get("note") ?? "").trim().slice(0, maxNoteLength);
   const link: CaptureLink = {
     url,
     ...(tags.length ? { tags } : {}),
     ...(note ? { note } : {}),
   };
-  const destination = form.get("destination") ?? "";
-  if (!["first", "new"].includes(destination) && !isUuid(destination))
-    return back("choose-destination");
-  const fresh = !isUuid(destination);
   // Sections belong to the collection they were listed for; a collection
   // changed without JavaScript keeps the old list, so its choice is dropped.
   const sectionId = form.get("sectionId") ?? "";

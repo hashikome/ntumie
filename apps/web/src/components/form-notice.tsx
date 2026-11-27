@@ -43,6 +43,8 @@ const messages: Record<string, string> = {
   "link-invalid":
     "Check the link: it must be a full http:// or https:// address without a username or password.",
   "choose-destination": "Choose where to save your link, or create a collection.",
+  "section-missing":
+    "That section is no longer in the collection. Your link is still here: choose another section.",
   "save-failed": "We couldn't confirm the save. Your link is still here. Try saving it again.",
   "impact-changed":
     "The collection or its references changed. Review the updated details before confirming again.",

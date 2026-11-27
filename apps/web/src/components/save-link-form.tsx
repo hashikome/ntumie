@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { webServerConfig } from "@ntumie/config/web-server";
-import type { Collection, CollectionNameSuggestion, CollectionOutline } from "@ntumie/types";
+import type { CaptureDestination, CollectionNameSuggestion } from "@ntumie/types";
 import type { CaptureDraft } from "../lib/capture-draft";
 import { queryValue } from "../lib/http";
 import { serverRead } from "../lib/server-api";
@@ -16,7 +16,7 @@ import {
   privateLeft,
   readPrivateAllowance,
 } from "./private-allowance";
-import { type SaveChoice, SaveLinkFields } from "./save-link-fields";
+import { SaveLinkFields } from "./save-link-fields";
 import { SaveLinkFrame } from "./save-link-frame";
 
 // Save a link (r2-save): the link with its title, the collection (the one the
@@ -32,17 +32,24 @@ export async function SaveLinkForm({
   query: Record<string, string | string[] | undefined>;
   dialog?: boolean;
 }) {
-  const [profile, session, allowance, suggestion] = await Promise.all([
+  // The collection the person is on; a retry keeps the one it was saving into.
+  const target = queryValue(query.collection);
+  const here = isUuid(target) ? target : undefined;
+  const keep = isUuid(draft?.destination) ? draft.destination : here;
+  const [profile, session, allowance, suggestion, destinations] = await Promise.all([
     readOwnProfileResult(),
     readSession(),
     readPrivateAllowance(),
     serverRead<CollectionNameSuggestion>("/api/v1/capture/suggested-name"),
+    serverRead<CaptureDestination[]>(
+      `/api/v1/capture/destinations${keep ? `?${new URLSearchParams({ here: keep })}` : ""}`,
+    ),
   ]);
   const path = draft ? `/capture/${draft.id}` : "/capture";
   if (!profile.ok && profile.status !== 401) return <Feedback error={profile} resetPath={path} />;
-  const target = queryValue(query.collection);
-  const here = isUuid(target) ? target : undefined;
-  const choices = profile.ok ? await collectionChoices(profile.data.hubId, here) : [];
+  if (!destinations.ok && destinations.status !== 401)
+    return <Feedback error={destinations} resetPath={path} />;
+  const choices = destinations.ok ? destinations.data : [];
   const editable = here && choices.some((c) => c.id === here) ? here : undefined;
   const id = draft?.id ?? randomUUID();
   // Signed in with no collection yet, the first save starts one.
@@ -64,6 +71,7 @@ export async function SaveLinkForm({
       <FormNotice code={queryValue(query.notice)} />
       <NativeForm action="/forms/capture-save" className="save-link-form">
         <input type="hidden" name="draftId" value={id} />
+        {editable && <input type="hidden" name="here" value={editable} />}
         <SaveLinkFields
           collections={choices}
           here={editable}
@@ -85,7 +93,7 @@ export async function SaveLinkForm({
           <LinkField
             id="capture-url"
             label="Link"
-            initial={draft?.link.url}
+            initial={draft?.link.url ?? queryValue(query.url, 2048)}
             origin={webServerConfig().publicOrigin}
           />
         </SaveLinkFields>
@@ -93,43 +101,4 @@ export async function SaveLinkForm({
       {full && <PrivateLimitHelp returnTo={path} />}
     </SaveLinkFrame>
   );
-}
-
-// The collections a link can be saved into, each with its sections: the
-// person's own (the outline of any one lists them all), most recently updated
-// first, and the one they are on first of all, even when it is someone
-// else's they contribute to.
-async function collectionChoices(hubId: string | null, here?: string): Promise<SaveChoice[]> {
-  const own = hubId
-    ? await serverRead<Collection[]>(`/api/v1/hubs/${hubId}/collections?limit=50`)
-    : null;
-  const ownList = own?.ok ? own.data : [];
-  const outlineOf = async (id: string) => {
-    const outline = await serverRead<CollectionOutline>(`/api/v1/collections/${id}/outline`);
-    return outline.ok ? outline.data.collections : [];
-  };
-  const mapped = ownList.length ? await outlineOf(ownList[0].id) : [];
-  const sections = new Map(mapped.map((c) => [c.id, c.sections]));
-  const recent = new Map(ownList.map((c, index) => [c.id, index]));
-  const choices: SaveChoice[] = mapped
-    .map((c) => ({ id: c.id, title: c.title, sections: c.sections }))
-    .sort(
-      (a, b) =>
-        (recent.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
-        (recent.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-    );
-  if (here && !sections.has(here)) {
-    const shared = await serverRead<Collection>(`/api/v1/collections/${here}`);
-    if (shared.ok && shared.data.capabilities?.canEdit) {
-      const current = (await outlineOf(here)).find((c) => c.current);
-      choices.unshift({
-        id: here,
-        title: shared.data.title,
-        sections: current?.sections ?? [],
-      });
-    }
-  }
-  const at = choices.findIndex((c) => c.id === here);
-  if (at > 0) choices.unshift(...choices.splice(at, 1));
-  return choices;
 }

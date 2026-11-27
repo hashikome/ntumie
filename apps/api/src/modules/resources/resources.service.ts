@@ -92,18 +92,35 @@ export class ResourcesService {
     return saved;
   }
 
+  /** Saves a link whose reference target the caller has already resolved. */
   async insertLink(
     collection: Pick<Collection, "id" | "hubId">,
     user: AuthUser,
     url: string,
+    linkedCollectionId: string | null,
     tags: string[],
     position: number,
     note?: string,
   ) {
-    const target = await this.referenceTarget(collection, user, url);
-    return target
-      ? this.insertReference(collection, user, target, tags, position, note)
+    return linkedCollectionId
+      ? this.insertReference(collection, user, linkedCollectionId, tags, position, note)
       : this.insertExternal(collection, user, url, tags, position, note);
+  }
+
+  /**
+   * Frees `position` by moving every row at or after it one place down, and
+   * returns it. Relative order is unchanged, so no row's version moves. The
+   * rows pass through negative positions so the unique (collection, position)
+   * constraint holds after every statement.
+   */
+  async openSlot(collectionId: string, position: number) {
+    await this.prisma.$executeRaw`
+      UPDATE resources SET position = -position - 1
+      WHERE collection_id = ${collectionId}::uuid AND position >= ${position}`;
+    await this.prisma.$executeRaw`
+      UPDATE resources SET position = -position
+      WHERE collection_id = ${collectionId}::uuid AND position < 0`;
+    return position;
   }
 
   // Inserts a canonical, non-duplicate link into a collection the caller has

@@ -352,7 +352,7 @@ Current system:
   `collection-heading.tsx`, `collection-sidebar.tsx`, `resource-sections.tsx`,
   `item-details.tsx`, `item-disclosure.tsx`, `comments.tsx`,
   `collection-contributors.tsx`.
-- Saving: `/capture` (`capture-form.tsx`, `capture-links.tsx`) and the API
+- Saving: `/capture` and its dialog (`save-link-form.tsx`, `save-link-fields.tsx`, `save-link-frame.tsx`) and the API
   `apps/api/src/modules/collections/capture.service.ts`.
 - Sign-in and sign-up: `apps/web/src/app/sign-in/*`, `sign-up/*`,
   `auth-entry.tsx`, `verification.tsx`, `resend-code.tsx`, `passkey-button.tsx`,

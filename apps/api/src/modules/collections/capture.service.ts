@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
 import { Injectable } from "@nestjs/common";
-import type { CaptureResult } from "@ntumie/types";
+import type { CaptureDestination, CaptureResult } from "@ntumie/types";
 import { isUUID } from "class-validator";
-import { ResourceKind } from "src/common/enums/resource-kind.enum";
+import { ResourceKind } from "../../common/enums/resource-kind.enum";
 import { appError } from "../../common/errors/app-exception";
 import { AuthUser } from "../../common/interfaces/auth-user.interface";
 import { normalizeTags } from "../../common/utils/tags.util";
 import { canonicalizeUrl, savableLinkUrl } from "../../common/utils/url.util";
 import { PrismaService } from "../../database/prisma.service";
+import { availableCollections } from "../hubs/availability";
 import { CollectionPolicyService } from "../hubs/collection-policy.service";
 import { ensurePersonalHub } from "../hubs/hub-onboarding";
 import { ResourcesService } from "../resources/resources.service";
@@ -129,15 +130,13 @@ export class CaptureService {
     await this.policy.requireRead(collection, user);
     await this.policy.requireWriteContent(collection, user);
     // A section must be one of this collection's own headings.
-    const rows = await this.prisma.resource.findMany({
-      where: { collectionId: id },
+    const headings = await this.prisma.resource.findMany({
+      where: { collectionId: id, kind: ResourceKind.HEADING },
       orderBy: { position: "asc" },
-      select: { id: true, kind: true, version: true },
+      select: { id: true, position: true },
     });
-    const sectionAt = rows.findIndex(
-      (row) => row.id === dto.sectionId && row.kind === ResourceKind.HEADING,
-    );
-    if (dto.sectionId && sectionAt < 0) throw appError("bad_request");
+    const sectionAt = headings.findIndex((heading) => heading.id === dto.sectionId);
+    if (dto.sectionId && sectionAt < 0) throw appError("capture_section_missing");
     // A link already in the collection is kept as it is, not duplicated or moved.
     const linkedCollectionId = await this.resources.referenceTarget(collection, user, link.url);
     const existing = await this.prisma.resource.findFirst({
@@ -145,31 +144,31 @@ export class CaptureService {
         collectionId: id,
         OR: [{ url: link.url }, ...(linkedCollectionId ? [{ linkedCollectionId }] : [])],
       },
+      select: { id: true },
     });
     let resourceId = existing?.id;
     if (!resourceId) {
-      const last = await this.prisma.resource.aggregate({
-        where: { collectionId: id },
-        _max: { position: true },
-      });
+      // It lands at the end of its section, in the place of the heading that
+      // follows; without a section, among the links before the first one.
+      const next = headings[sectionAt + 1];
+      const position = next
+        ? await this.resources.openSlot(id, next.position)
+        : ((
+            await this.prisma.resource.aggregate({
+              where: { collectionId: id },
+              _max: { position: true },
+            })
+          )._max.position ?? -1) + 1;
       const saved = await this.resources.insertLink(
         collection,
         user,
         link.url,
+        linkedCollectionId,
         link.tags,
-        (last._max.position ?? -1) + 1,
+        position,
         link.note,
       );
       resourceId = saved.id;
-      // It lands at the end of its section, before the heading that follows;
-      // without one, among the links before the first section.
-      const next = rows.slice(sectionAt + 1).find((row) => row.kind === ResourceKind.HEADING);
-      if (next)
-        await this.resources.move(id, saved.id, user, {
-          version: Number(saved.version),
-          beforeId: next.id,
-          beforeVersion: Number(next.version),
-        });
     }
     await this.prisma.captureReceipt.create({
       data: {
@@ -181,6 +180,46 @@ export class CaptureService {
       },
     });
     return { collectionId: id, resourceId };
+  }
+
+  /**
+   * Where a link can be saved: the person's own collections, most recently
+   * updated first, each with its sections; and `here` first of all, even when
+   * it is someone else's collection they may add to.
+   */
+  async destinations(user: AuthUser, here?: string): Promise<CaptureDestination[]> {
+    const hub = await this.prisma.hub.findUnique({
+      where: { ownerUserId: user.userId },
+      select: { id: true },
+    });
+    const own = hub
+      ? await this.prisma.collection.findMany({
+          where: { hubId: hub.id, ...availableCollections(user.userId) },
+          select: { id: true, title: true },
+          orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        })
+      : [];
+    const choices = [...own];
+    const at = choices.findIndex((row) => row.id === here);
+    if (at > 0) choices.unshift(...choices.splice(at, 1));
+    else if (at < 0 && here) {
+      const shared = await this.prisma.collection.findUnique({ where: { id: here } });
+      if (shared && (await this.policy.resolve(shared, user)).canWriteContent)
+        choices.unshift({ id: shared.id, title: shared.title });
+    }
+    const headings = await this.prisma.resource.findMany({
+      where: { collectionId: { in: choices.map((row) => row.id) }, kind: ResourceKind.HEADING },
+      select: { id: true, collectionId: true, titleOverride: true },
+      orderBy: { position: "asc" },
+    });
+    return choices.map((row) => ({
+      id: row.id,
+      title: row.title,
+      here: row.id === here,
+      sections: headings
+        .filter((heading) => heading.collectionId === row.id)
+        .map((heading) => ({ id: heading.id, title: heading.titleOverride ?? "" })),
+    }));
   }
 
   /** The name a new collection would get now (the save form offers it). */

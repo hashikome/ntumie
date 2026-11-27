@@ -105,13 +105,15 @@ export async function saveDraft(
     `${path}?notice=${
       result.code === "capture_destination_required"
         ? "choose-destination"
-        : result.code === "private_allowance_reached"
-          ? "private-allowance"
-          : result.code === "link_not_public"
-            ? "link-not-public"
-            : result.status === 429
-              ? "limited"
-              : "save-failed"
+        : result.code === "capture_section_missing"
+          ? "section-missing"
+          : result.code === "private_allowance_reached"
+            ? "private-allowance"
+            : result.code === "link_not_public"
+              ? "link-not-public"
+              : result.status === 429
+                ? "limited"
+                : "save-failed"
     }`,
     [...extraCookies, kept],
   );

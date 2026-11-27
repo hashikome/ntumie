@@ -17,30 +17,20 @@ export function SaveLinkFrame({
   const router = useRouter();
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    if (dialog && !ref.current?.open) ref.current?.showModal();
+    if (!dialog || ref.current?.open) return;
+    // Opened from the /capture page itself (its header button, or a refused
+    // save), the page form is already there: load the page, not a second form.
+    if (document.querySelector("section.save-link-panel"))
+      window.location.replace(window.location.href);
+    else ref.current?.showModal();
   }, [dialog]);
-  const close = <CloseIcon />;
+  const Heading = dialog ? "h2" : "h1";
   const heading = (
     <header className="save-link-heading">
-      {dialog ? (
-        <h2 id="save-link-title">Save a link</h2>
-      ) : (
-        <h1 id="save-link-title">Save a link</h1>
-      )}
-      {dialog ? (
-        <button
-          type="button"
-          className="save-link-close"
-          aria-label="Close"
-          onClick={() => router.back()}
-        >
-          {close}
-        </button>
-      ) : (
-        <a className="save-link-close" aria-label="Close" href={cancel}>
-          {close}
-        </a>
-      )}
+      <Heading id="save-link-title">Save a link</Heading>
+      <SaveLinkDismiss dialog={dialog} cancel={cancel} className="save-link-close" label="Close">
+        <CloseIcon />
+      </SaveLinkDismiss>
     </header>
   );
   if (!dialog)
@@ -64,6 +54,33 @@ export function SaveLinkFrame({
       {heading}
       {children}
     </dialog>
+  );
+}
+
+// Close and Cancel: in the dialog they go back to the page underneath; on the
+// /capture page they lead to where the person came from.
+export function SaveLinkDismiss({
+  dialog,
+  cancel,
+  className,
+  label,
+  children,
+}: {
+  dialog: boolean;
+  cancel: string;
+  className: string;
+  label?: string;
+  children: ReactNode;
+}) {
+  const router = useRouter();
+  return dialog ? (
+    <button type="button" className={className} aria-label={label} onClick={() => router.back()}>
+      {children}
+    </button>
+  ) : (
+    <a className={className} aria-label={label} href={cancel}>
+      {children}
+    </a>
   );
 }
 

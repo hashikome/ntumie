@@ -4200,10 +4200,39 @@ it("saves a link from the header into a section, and starts a collection in plac
       }
       await page.emulateMedia({ colorScheme: "light" });
     }
-    // On a phone the collection is picked from a list; it carries the same choice.
+    // On a phone the collection is picked from a list over the sheet; it
+    // carries the same choice as the radios, and Escape closes only the list.
     await page.setViewportSize({ width: 390, height: 844 });
     await browserExpect(dialog.locator(".save-choices")).toBeHidden();
-    await browserExpect(dialog.getByLabel("Collection", { exact: true })).toHaveValue(id);
+    const picker = dialog.getByRole("button", { name: /Backend building blocks/ });
+    await browserExpect(picker).toContainText("You are here");
+    await picker.click();
+    const choices = dialog.getByRole("listbox", { name: "Save into" });
+    await browserExpect(choices).toBeVisible();
+    await browserExpect(choices.getByRole("option", { selected: true })).toContainText(
+      "Backend building blocks",
+    );
+    await browserExpect(choices.getByRole("option")).toHaveCount(5);
+    if (review)
+      for (const scheme of ["light", "dark"] as const) {
+        await page.emulateMedia({ colorScheme: scheme });
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: join(review, `save-picker-${scheme}-390.png`) });
+      }
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.keyboard.press("Escape");
+    await browserExpect(choices).toBeHidden();
+    await browserExpect(dialog).toBeVisible();
+    await picker.click();
+    await choices.getByRole("option", { name: "New collection…" }).click();
+    await browserExpect(dialog.getByLabel("Name", { exact: true })).toBeVisible();
+    await dialog.getByRole("button", { name: /New collection/ }).click();
+    await choices.getByRole("option", { name: /Backend building blocks/ }).click();
+    await browserExpect(dialog.locator('input[name="destination"]:checked')).toHaveValue(id);
+    await browserExpect(dialog.getByLabel("Tags (optional)", { exact: true })).toHaveValue(
+      "sql, Video",
+    );
+    await dialog.getByLabel("Section", { exact: true }).selectOption({ label: "Storing data" });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );

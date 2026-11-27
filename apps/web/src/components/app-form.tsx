@@ -63,7 +63,11 @@ export function AppForm({ onSubmit, children, ...props }: ComponentProps<"form">
               ? data
               : encoded;
           const { redirect, refresh } = await submitNavigationForm(url.pathname, body);
-          if (mounted.current) navigateInApp(redirect, false, refresh);
+          // A refused form comes back to its own page: that replaces the entry
+          // rather than adding one, so Back still leaves the form.
+          const same =
+            new URL(redirect, window.location.href).pathname === window.location.pathname;
+          if (mounted.current) navigateInApp(redirect, same, refresh);
         } catch {
           setFailed(true);
         } finally {

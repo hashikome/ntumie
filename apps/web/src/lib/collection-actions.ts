@@ -1,6 +1,6 @@
 "use server";
 import { webServerConfig } from "@ntumie/config/web-server";
-import type { Collection, UpdateCollectionRequest } from "@ntumie/types";
+import { type Collection, maxDescriptionLength, type UpdateCollectionRequest } from "@ntumie/types";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { CollectionEditState } from "../components/collection-editor";
@@ -20,7 +20,7 @@ export async function saveCollection(
   if (!isUuid(id)) throw new Error("Invalid collection");
   const draft = {
     title: String(data.get("title") ?? "").slice(0, 255),
-    description: String(data.get("description") ?? "").slice(0, 5000),
+    description: String(data.get("description") ?? "").slice(0, maxDescriptionLength),
     comments: data.get("comments") === "on",
   };
   const patch = {

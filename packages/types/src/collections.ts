@@ -193,6 +193,9 @@ export interface CollectionOutline {
   next: { id: string; title: string } | null;
 }
 
+/** The longest collection description, in characters. */
+export const maxDescriptionLength = 5000;
+
 /** Owner-only private collections a free account may keep (`used` counts them). */
 export interface PrivateAllowance {
   limit: number;

@@ -174,7 +174,22 @@ describe("atomic link capture", () => {
           select: { id: true },
         })
       ).map((row) => row.id);
+    const versions = async () =>
+      (
+        await prisma.resource.findMany({
+          where: { collectionId: id },
+          select: { id: true, version: true },
+        })
+      )
+        .map((row) => `${row.id}:${row.version}`)
+        .sort();
+    const before = await versions();
     const inOne = (await send({ ...input(id), sectionId: one }).expect(201)).body.data.resourceId;
+    // Saving into a section moves no other item: no version changes, no reorder.
+    expect((await versions()).filter((row) => !row.startsWith(inOne))).toEqual(before);
+    expect(
+      await prisma.auditLog.count({ where: { collectionId: id, action: "items.reordered" } }),
+    ).toBe(0);
     const inTwo = (await send({ ...input(id), sectionId: two }).expect(201)).body.data.resourceId;
     // Without a section it joins the links before the first section.
     const loose = (await send(input(id)).expect(201)).body.data.resourceId;
@@ -188,10 +203,34 @@ describe("atomic link capture", () => {
       inTwo,
     ]);
     // A section is one of this collection's headings, never a link or another collection's.
-    await send({ ...input(id), sectionId: first.resourceId }).expect(400);
+    const missing = await send({ ...input(id), sectionId: first.resourceId }).expect(409);
+    expect(missing.body.error.code).toBe("capture_section_missing");
     const elsewhere = (await send(input("new")).expect(201)).body.data;
-    await send({ ...input(elsewhere.collectionId), sectionId: one }).expect(400);
+    await send({ ...input(elsewhere.collectionId), sectionId: one }).expect(409);
     await send({ ...input(id), sectionId: "not-an-id" }).expect(400);
+  });
+  it("lists where a link can be saved: own collections with their sections, and a shared one only when here", async () => {
+    const destinations = (here?: string) =>
+      request(app.getHttpServer())
+        .get(`/api/v1/capture/destinations${here ? `?here=${here}` : ""}`)
+        .auth(owner.token, { type: "bearer" });
+    await request(app.getHttpServer()).get("/api/v1/capture/destinations").expect(401);
+    const older = (await send(input("new")).expect(201)).body.data.collectionId;
+    const newer = (await send(input("new")).expect(201)).body.data.collectionId;
+    const listed = (await destinations().expect(200)).body.data as Array<{
+      id: string;
+      here: boolean;
+    }>;
+    expect(listed.findIndex((row) => row.id === newer)).toBeLessThan(
+      listed.findIndex((row) => row.id === older),
+    );
+    const pinned = (await destinations(older).expect(200)).body.data;
+    expect(pinned[0]).toMatchObject({ id: older, here: true, sections: [] });
+    // Someone else's collection, not shared: never offered, even when named.
+    const theirs = (await send(input("new"), other.token).expect(201)).body.data.collectionId;
+    const refused = (await destinations(theirs).expect(200)).body.data as Array<{ id: string }>;
+    expect(refused.some((row) => row.id === theirs)).toBe(false);
+    await destinations("not-an-id").expect(200);
   });
   it("validates usable public links before sign-in and still requires a session to save", async () => {
     const preview = (url: string) =>

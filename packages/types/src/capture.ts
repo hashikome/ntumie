@@ -23,6 +23,14 @@ export interface CaptureResult {
   collectionId: string;
   resourceId: string;
 }
+/** A collection a link can be saved into, with its sections in order. */
+export interface CaptureDestination {
+  id: string;
+  title: string;
+  /** The collection the person is on (`here` in the request). */
+  here: boolean;
+  sections: Array<{ id: string; title: string }>;
+}
 /** The name a new collection gets when none is typed. */
 export interface CollectionNameSuggestion {
   title: string;

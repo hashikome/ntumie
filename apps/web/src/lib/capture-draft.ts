@@ -1,10 +1,9 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { recoveryPayloadLimit } from "@ntumie/config/action-recovery";
-import { type CaptureLink, maxNoteLength } from "@ntumie/types";
+import { type CaptureLink, maxDescriptionLength, maxNoteLength } from "@ntumie/types";
 import { captureUrl, isUuid } from "./validation";
 
 export const draftTtl = 1800;
-export const maxDescriptionLength = 5000;
 export interface CaptureDraft {
   id: string;
   operationId: string;

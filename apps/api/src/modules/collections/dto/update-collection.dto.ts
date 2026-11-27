@@ -1,4 +1,4 @@
-import type { UpdateCollectionRequest } from "@ntumie/types";
+import { maxDescriptionLength, type UpdateCollectionRequest } from "@ntumie/types";
 import { IsBoolean, IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from "class-validator";
 
 export class UpdateCollectionDto implements UpdateCollectionRequest {
@@ -10,7 +10,7 @@ export class UpdateCollectionDto implements UpdateCollectionRequest {
 
   @IsOptional()
   @IsString()
-  @MaxLength(5000)
+  @MaxLength(maxDescriptionLength)
   description?: string;
 
   @IsOptional()

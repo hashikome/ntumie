@@ -1,6 +1,6 @@
 "use client";
 
-import type { Collection } from "@ntumie/types";
+import { type Collection, maxDescriptionLength } from "@ntumie/types";
 import { useActionState } from "react";
 import { AppForm } from "./app-form";
 
@@ -61,7 +61,7 @@ export function CollectionEditForm({
         id="collection-description"
         name="description"
         defaultValue={state.description}
-        maxLength={5000}
+        maxLength={maxDescriptionLength}
         rows={4}
         aria-describedby="collection-description-help"
       />

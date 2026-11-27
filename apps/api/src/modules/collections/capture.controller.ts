@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
-import type { CollectionNameSuggestion } from "@ntumie/types";
+import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
+import type { CaptureDestination, CollectionNameSuggestion } from "@ntumie/types";
+import { isUUID } from "class-validator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { AuthGuard } from "../../common/guards/auth.guard";
 import type { AuthUser } from "../../common/interfaces/auth-user.interface";
@@ -13,6 +14,14 @@ export class CaptureController {
   @Get("suggested-name")
   async suggestedName(@CurrentUser() user: AuthUser) {
     return apiOk<CollectionNameSuggestion>({ title: await this.capture.suggestedTitle(user) });
+  }
+
+  // `here`, when it names a collection, is the one the person is on.
+  @Get("destinations")
+  async destinations(@CurrentUser() user: AuthUser, @Query("here") here?: string) {
+    return apiOk<CaptureDestination[]>(
+      await this.capture.destinations(user, isUUID(here) ? here : undefined),
+    );
   }
 
   @Post()

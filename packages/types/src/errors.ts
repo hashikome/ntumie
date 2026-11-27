@@ -4,6 +4,10 @@ import type { DependencyStatus } from "./status.js";
 // own presentation/localization; never parse server exception messages.
 export const apiErrors = {
   capture_destination_required: { status: 409, message: "Choose a collection for this link" },
+  capture_section_missing: {
+    status: 409,
+    message: "That section is no longer in the collection; choose another",
+  },
   private_allowance_reached: {
     status: 409,
     message: "No free private collections left; publish this one or make another public",
