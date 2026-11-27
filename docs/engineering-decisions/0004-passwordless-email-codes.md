@@ -3,19 +3,9 @@
 **Status:** accepted  
 **Date:** 2026-10-07
 
-The email method and auth boundary remain accepted.
-[ADR-0035](0035-passwordless-account-security.md) adds passkeys, Google and
-optional TOTP/recovery; [ADR-0039](0039-google-sign-in-and-account-creation.md)
-permits confirmed account creation from verified Google identity.
-
-[ADR-0044](0044-separate-sign-in-and-sign-up.md) supersedes the unified
-entry and implicit ordinary email creation policy, adds a shared verified creation
-screen and permits an optional named hub during signup. Other decisions remain
-accepted unless already marked superseded.
-
-[ADR-0057](0057-default-email-code-length.md) supersedes only the eight-digit
-length below: email codes now use Better Auth’s six-digit default. All other
-authentication and proof-boundary decisions remain accepted.
+Passkeys, Google and optional TOTP and recovery are [ADR-0035](0035-passwordless-account-security.md)'s;
+Google account creation is [ADR-0039](0039-google-sign-in-and-account-creation.md)'s; the sign-in and sign-up
+entries are [ADR-0044](0044-separate-sign-in-and-sign-up.md)'s.
 
 ## Context
 
@@ -26,11 +16,11 @@ already relies on email.
 
 - Passwords + email verification
 - Magic links
-- Eight-digit email codes
+- Email codes
 
 ## Decision
 
-Sign-in is an eight-digit email code. better-auth owns credentials, sessions and
+Sign-in is a six-digit email code, Better Auth's default. better-auth owns credentials, sessions and
 verification primitives; the product owns identity, onboarding and
 authorization. Session resolution goes through `resolveSessionUser`; services
 see `AuthUser`, never better-auth types. Sign-up onboarding lives in an
@@ -40,11 +30,22 @@ app-owned service callable from any auth path.
 
 - No passwords to store or reset.
 - Codes work across devices (a magic link opens wherever the mail is read).
+- Six digits are shorter to type. That cuts the guessing space from 100 million to
+  one million, so it relies on the attempt limits below, which tests guard. This
+  record first chose eight digits without a reason for eight over six; product
+  review chose the shorter entry (ADR-0057, folded in here, 12 October 2026).
 - The future ns-series SSO can call the same onboarding service.
 
 ## Constraints to preserve
 
-- Codes are plain digits, single-use, short-lived, attempt-limited and resend-throttled.
+- Codes are six plain digits, single-use and valid for five minutes, with three
+  wrong attempts per proof, resend rotation and cooldown, and at most five issues
+  and fifteen verification attempts per identity per ten minutes, plus shared
+  source budgets. Replacing a code never resets the identity's budget.
+- Better Auth generates, hashes, compares and consumes codes; there is no
+  `otpLength` override. Tests assert six-digit generation and budgets that persist
+  across resends, so a dependency upgrade cannot silently change the contract.
+- Authenticator-app and recovery codes keep their own contracts.
 - The better-auth handler is mounted before body parsers.
 
 ## Links

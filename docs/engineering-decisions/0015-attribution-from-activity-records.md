@@ -52,6 +52,4 @@ are the hub's audit trail. The creator remains a record, never a role
 - [attribution-and-activity.md](../design-docs/attribution-and-activity.md)
 - [ADR-0002](0002-immutable-identities.md), [ADR-0013](0013-permission-roles-and-display-labels.md)
 
-## Audit consolidation — 2026-10-09
-
-[ADR-0024](0024-one-audit-log.md) supersedes separate audit storage and the Audit context switch. All event categories use one AuditLog; permissions and attribution rules remain unchanged.
+All audit events, this record's included, go to the one log of [ADR-0024](0024-one-audit-log.md).

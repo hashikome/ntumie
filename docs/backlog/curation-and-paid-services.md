@@ -56,7 +56,7 @@ owns the accepted packaging; [PRODUCT.md](../../PRODUCT.md) owns delivery order.
 
 ## Invitation-based community access
 
-Accepted follow-up direction: [ADR-0049](../engineering-decisions/0049-invitation-based-communities.md).
+Accepted follow-up direction: [ADR-0050](../engineering-decisions/0050-community-entities-and-intake-integration.md).
 Join community means owner-invited membership (including approved join requests),
 not self-service subscription. Members can view all collections the owner publishes
 for community members. It grants no contribution rights. Design invitation lifecycle,
@@ -80,8 +80,8 @@ within the owning hub. A public collection remains publicly readable; community
 publication must never accidentally enable public access.
 
 [ADR-0050](../engineering-decisions/0050-community-entities-and-intake-integration.md)
-explicitly supersedes ADR-0049's initial hub-wide membership assumption. Paid Curator
-owners would create/manage communities; invited members would not need a paid plan.
+scopes membership to one community within a hub. Paying owners would create and
+manage communities; invited members would not need a paid plan.
 Community checkout and real-time chat are not committed features. Runtime schema,
 policy, and entitlements remain to be designed and implemented.
 

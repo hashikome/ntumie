@@ -43,10 +43,8 @@ plus the existing bounded form adapters satisfy both requirements.
 
 ## Consequences and migration
 
-This supersedes the no-CORS/development-rewrite policy in the former Origins
-sections of SECURITY.md and infra-deployment.md, and amends the same-origin
-browser-adapter description in web-interface-system.md. ADR-0003's native form
-origin rule remains valid; its backend-authority rule is unchanged.
+This replaced an earlier no-CORS policy with a development rewrite. ADR-0003's
+form-origin and backend-authority rules are unchanged.
 
 Restart development after the launcher environment changes. Register Google's
 new local callback `http://localhost:4000/api/v1/auth/callback/google` (or the
@@ -58,5 +56,5 @@ passkeys, protected Google redirects, cookies, avatars and foreign-origin denial
 
 - [Security boundary](../SECURITY.md#origins-cors-and-csrf)
 - [Local development](../runbooks/local-development.md)
-- [Backend authority and native forms](0003-backend-owns-rules-native-forms.md)
+- [Backend authority and native forms](0003-backend-owns-the-rules.md)
 - [Passwordless security](0035-passwordless-account-security.md)

@@ -2,7 +2,7 @@
 
 Status: Accepted
 Date: 2026-11-13
-Supersedes: ADR-0061's "Failed application updates pause for review: do not automatically select an
+Replaces: ADR-0061's "Failed application updates pause for review: do not automatically select an
 old binary after an unreviewed schema change."
 
 ## Context

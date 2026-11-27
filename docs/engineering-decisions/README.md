@@ -47,8 +47,8 @@ lives in the linked design documents.
 
 - [0001-drive-tenancy-model.md](0001-drive-tenancy-model.md) — Google-Drive tenancy: one hub per user, per-collection sharing.
 - [0002-immutable-identities.md](0002-immutable-identities.md) — Immutable UUIDv7 identities; mutable names never in contracts.
-- [0003-backend-owns-rules-native-forms.md](0003-backend-owns-rules-native-forms.md) — The backend owns the rules; native forms work without JavaScript.
-- [0004-passwordless-email-codes.md](0004-passwordless-email-codes.md) — Passwordless sign-in with email codes; better-auth owns credentials.
+- [0003-backend-owns-the-rules.md](0003-backend-owns-the-rules.md) — The backend owns validation, authorization and derived state; clients are delivery surfaces.
+- [0004-passwordless-email-codes.md](0004-passwordless-email-codes.md) — Passwordless sign-in with six-digit email codes and their limits; better-auth owns credentials.
 - [0005-serialized-writes.md](0005-serialized-writes.md) — One global write lock serializes authenticated mutations.
 - [0006-pre-deployment-no-compat.md](0006-pre-deployment-no-compat.md) — Pre-deployment: no compatibility code; squash and reset freely.
 - [0007-resolved-titles-read-only-items.md](0007-resolved-titles-read-only-items.md) — Link titles are resolved, never typed; what belongs to an item is read-only.
@@ -56,12 +56,12 @@ lives in the linked design documents.
 - [0009-operator-authority.md](0009-operator-authority.md) — Separate operator authority; step-up for sensitive actions.
 - [0010-one-verification-flow.md](0010-one-verification-flow.md) — One email-verification flow with purposes; actions resume for their owner.
 - [0011-toolchain.md](0011-toolchain.md) — Toolchain: Bun, Biome, reviewed Prisma migrations.
-- [0012-bulk-import-through-reviewed-drafts.md](0012-bulk-import-through-reviewed-drafts.md) — Bulk import through reviewed drafts.
+- [0012-bulk-import-through-reviewed-drafts.md](0012-bulk-import-through-reviewed-drafts.md) — Bulk import through reviewed drafts: owner-only, bookmark HTML, CSV and plain text, folder-derived collections, background collection drafts.
 - [0013-permission-roles-and-display-labels.md](0013-permission-roles-and-display-labels.md) — Permission roles are stable; display labels are chosen per surface.
-- [0014-one-management-workspace.md](0014-one-management-workspace.md) — One Manage workspace with owner and service contexts (amended).
+- [0014-one-management-workspace.md](0014-one-management-workspace.md) — One Manage workspace, sections by capability, with one Collections table and one audit log.
 - [0015-attribution-from-activity-records.md](0015-attribution-from-activity-records.md) — Attribution comes from activity records.
 - [0017-hubs-are-entities-with-members.md](0017-hubs-are-entities-with-members.md) — Hubs as entities with members (rejected; GitHub-style organizations later if ever needed).
-- [0018-people-and-hubs-are-separate.md](0018-people-and-hubs-are-separate.md) — People and hubs are separate identities (amends 0001).
+- [0018-people-and-hubs-are-separate.md](0018-people-and-hubs-are-separate.md) — People and hubs are separate identities; a hub comes with the first collection (amends 0001).
 - [0019-copy-permission-and-source-credit.md](0019-copy-permission-and-source-credit.md) — Add to my collection requires owner permission and source credit.
 - [0020-logging-after-core-operations.md](0020-logging-after-core-operations.md) — Audit strategy and wide event logging get separate milestones after core operations; existing recording remains.
 - [0021-bounded-audit-effects.md](0021-bounded-audit-effects.md) — Interim core audit captures bounded state changes and no-op results; full strategy remains deferred.
@@ -115,11 +115,9 @@ lives in the linked design documents.
 
 - [0047-owner-scoped-collection-references.md](0047-owner-scoped-collection-references.md) — Same-owner references via Add a link; confirmed, atomic deletion and transfer cleanup.
 
-- [0048-nonblocking-navigation-progress.md](0048-nonblocking-navigation-progress.md) — Preserve the current view during ordinary GET navigation; retain mutation, session and history concealment.
 
-- [0049-invitation-based-communities.md](0049-invitation-based-communities.md) — Future owner-approved membership grants viewer access across community-published collections; no implicit migration of subscriptions.
 
-- [0050-community-entities-and-intake-integration.md](0050-community-entities-and-intake-integration.md) — Distinct communities within a hub; reusable intake with team and client views, NSLinkHub first and portfolio next; implementation deferred.
+- [0050-community-entities-and-intake-integration.md](0050-community-entities-and-intake-integration.md) — Join community: owner-invited membership of one community within a hub, viewer access only; reusable intake with team and client views.
 
 - [0051-durable-interrupted-actions.md](0051-durable-interrupted-actions.md) — Immutable capture result IDs and encrypted backend overflow storage for account-bound sign-in recovery.
 
@@ -132,7 +130,6 @@ lives in the linked design documents.
 - [0055-allocated-local-host-ports.md](0055-allocated-local-host-ports.md) — Consistent +4 local web/API allocation, env precedence and occupied-port refusal.
 
 
-- [0057-default-email-code-length.md](0057-default-email-code-length.md) — Use Better Auth’s six-digit email default with unchanged expiry, attempt and resend limits.
 
 - [0058-curated-guides-positioning.md](0058-curated-guides-positioning.md) — Maintained guides and context between resources define the product.
 

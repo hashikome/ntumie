@@ -29,10 +29,10 @@ failure diagnostics, and never deploys. Local full and focused commands remain
 available. Broad UI/auth changes warrant deliberate full-suite acceptance; routine
 pushes do not automatically invoke it.
 
-This partially supersedes ADR-0011's full-browser gate for every milestone.
-Its Bun/Biome and reviewed-migration rules remain unchanged. Image rehearsals,
+This replaced ADR-0011's first rule, the full browser suite on every milestone,
+for faster iteration. Image rehearsals,
 immutable GHCR publication, migration-before-serve and live readiness gates remain
-required by the release coordinator.
+required by the release.
 
 ## Consequences and constraints
 

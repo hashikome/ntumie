@@ -1,6 +1,6 @@
 # ADR-0047: Same-owner collection references through ordinary link capture
 
-**Status:** accepted; pretty-address recognition superseded by [ADR-0053](0053-id-only-collection-addresses.md)
+**Status:** accepted
 
 **Date:** 2026-10-10
 
@@ -13,7 +13,8 @@ Adding another creation control would make people choose storage mechanics.
 ## Decision
 
 Use **Add a link** for every address. The backend recognizes exact configured
-web-origin collection routes (`/c/:id` and `/@handle/:slug`), resolves a current
+web-origin collection route (`/c/:id`, the only collection address under
+[ADR-0053](0053-id-only-collection-addresses.md)), resolves a current
 collection and stores its immutable ID when source and target share a hub, the
 actor can write the source (owner or contributor), and can independently read
 the target. The target must differ from the source. Share tokens in the pasted
@@ -40,17 +41,16 @@ and a fresh preview. Web confirmations always include it; API calls may omit it
 only when there are no affected references. Cleanup, audit and lifecycle changes
 commit atomically. Interrupted confirmations remain bound to the original account.
 
-## Supersession and rationale
+## Rationale
 
-This supersedes the earlier cross-owner creation, pasted-URL-always-external and
-deleted-target-placeholder behavior in the collections design and product
-contract. ADR-0008's no-inherited-access and no-private-metadata rules remain
+Cross-owner references, treating every pasted URL as external, and placeholders
+for deleted targets came first; this record replaced them. ADR-0008's no-inherited-access and no-private-metadata rules remain
 binding. ADR-0007's immutable target and server-resolved title rules remain binding.
 ADR-0027's nonempty sections are preserved by previewed heading cleanup.
 
-The 2026-10-11 ADR-0012 amendment supersedes the previous top-level-only
-bookmark mapping: automatic imports also create same-owner references between
-branch collections. These use the same independent access and lifecycle rules.
+Automatic bookmark imports also create same-owner references between branch
+collections ([ADR-0012](0012-bulk-import-through-reviewed-drafts.md)), under the same
+independent access and lifecycle rules.
 
 ## Validation
 

@@ -49,7 +49,7 @@ measurements into flaky pass/fail speed thresholds.
 Slow JavaScript no longer prevents native capture. Traces retain action order and
 duration but intentionally omit selectors/arguments and DOM replay; the separate
 masked screenshot and sanitized waterfall supply visual/network context.
-The established [navigation policy](0048-nonblocking-navigation-progress.md) and
+The established [navigation policy](0064-client-navigation-and-interactive-forms.md) and
 fresh backend authorization remain in force. Broader navigation/cache changes
 require separate evidence and an explicit decision.
 
@@ -62,7 +62,7 @@ available to each caller; never cache it across requests or users. Exempt only
 `/_next/static/` from the broad no-store override, allowing Next's immutable build
 asset headers. Keep security headers on every path and no-store on documents,
 forms and other paths. This narrows the static-asset scope of the no-store policy;
-it does not relax ADR-0048's fresh content/authorization rule. Browser acceptance
+it does not relax ADR-0064's fresh content and authorization rule. Browser acceptance
 asserts immutable asset headers, one profile read, cross-user isolation and fresh
 signed-out/invalid-session redirects.
 

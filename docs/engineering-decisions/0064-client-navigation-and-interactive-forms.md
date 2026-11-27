@@ -43,12 +43,16 @@ History restoration, long-away returns and detected session changes conceal stal
 protected content until a server refresh completes. Refreshed lists reconcile
 server snapshots and discard obsolete reads. No persistent browser data cache.
 
-## Supersession And Constraints
+A slow response alone is not a failure and produces no app notice; real page failures keep their
+error and retry views. Destinations always render through fresh backend authorization, with no
+shared content cache and no sensitive prefetching.
 
-This supersedes ADR-0003's native-first/JavaScript-free requirement, ADR-0048's
-full-document navigation/cancel recovery mechanics, and ADR-0063's theme reload.
-Backend authority, same-origin validation, secure cookies, share-token scope,
-accessible semantics, focus and keyboard behavior remain binding.
+## Constraints
+
+Backend authority, same-origin validation, secure cookies, share-token scope, accessible semantics,
+focus and keyboard behavior stay binding. This record replaced the native-first, JavaScript-free
+requirement first set in ADR-0003 and ADR-0048's full-document navigation, because full reloads made
+routine interaction disruptive; the owner prioritized the interactive experience.
 
 ## Amendment — 13 October 2026
 

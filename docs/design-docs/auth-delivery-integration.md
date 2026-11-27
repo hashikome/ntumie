@@ -56,7 +56,7 @@ no public route can start or consume them. See
 
 All paths below are under `/api/v1/auth`, use JSON POST and return no-store
 responses. Codes use Better Auth’s six-digit default (no `otpLength` override;
-[ADR-0057](../engineering-decisions/0057-default-email-code-length.md)). Codes expire after five minutes and allow three wrong
+[ADR-0004](../engineering-decisions/0004-passwordless-email-codes.md)). Codes expire after five minutes and allow three wrong
 attempts. Resend rotates proof. Shared PostgreSQL budgets allow five issues and
 15 verification attempts per identity per ten minutes; the existing source
 budget also applies (30 auth requests/minute). Budget keys are purpose-bound

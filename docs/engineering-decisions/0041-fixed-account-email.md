@@ -1,8 +1,7 @@
 # ADR-0041: Fixed account email and explicit identity actions
 
-Status: accepted (2026-10-10). Supersedes the email-change workflow in the
-identity, transactional-email and auth-delivery designs, and the address-update
-assumption in ADR-0017. Its rejection of hub transfer remains unchanged.
+Status: accepted (2026-10-10). This replaced an email-change workflow first designed
+in the identity, transactional-email and auth-delivery designs.
 
 ## Context
 

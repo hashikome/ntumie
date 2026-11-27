@@ -23,7 +23,7 @@ Admin deletion disables access immediately and schedules permanent removal after
 14 days. Bounded maintenance rechecks the deadline under the same authority lock
 as cancellation, removes owned data through existing cascades, anonymizes retained
 contributions through SetNull relations, and records completion atomically.
-Self-service deletion is still a separate future workflow.
+Self-service lifecycle is [ADR-0033](0033-self-service-account-lifecycle.md)'s.
 
 One paginated Collections projection combines owned and shared collections with
 publicly readable collections and active holds for service operators. Search by
@@ -32,15 +32,19 @@ contain moderation metadata only, never private titles or content. Owner actions
 use existing collection policy; holding distribution remains a service capability.
 A service grant never implies permission to edit, delete, publish or share access.
 
-Collection rows use a secondary Action button that opens a native modal dialog. The dialog presents direct action links: View and Edit navigate immediately;
-mutations continue to their appropriate operation form. JavaScript-free clients
-use the same Action trigger with an expandable list. Owner publish, unpublish, sharing, transfer and
-delete controls use existing APIs with explicit consequences before mutation.
-Collection readers get Share in the toolbar; copying a URL does not grant access.
+Clicking a collection row or its name opens a native modal action dialog; there is no
+Action column. Each choice carries its final destination: View, Edit, History, Add a link,
+Share and moderation detail navigate directly, and only publish, unpublish, transfer and
+delete go through the collection action route's consequence forms. `/manage/collections`
+replaced the former held-only list and link resolver. Owner controls use existing APIs with
+explicit consequences before mutation. Collection readers get Share in the toolbar; copying a
+URL does not grant access.
 
-Account rows open detail directly through an enhanced row click or native name
-link. Copy-ID controls do not navigate. Detail exposes permitted action buttons
-at the bottom; there is no list selection or account action dialog.
+Clicking an account row opens its detail; the name is a plain-text native form button for
+keyboard access, with no anchor, Select or Action column, toolbar or chooser dialog. Copy-ID
+controls do not navigate. Detail shows the permitted action buttons at the bottom, and their
+consequence and reason forms remain authoritative for mutations. (Row selection and an account
+action dialog came first; the owner chose direct navigation.)
 
 ## Consequences
 
@@ -48,40 +52,3 @@ The tables become smaller without moving authorization into the client. Permanen
 account cleanup is irreversible after the grace period and is covered by tests.
 Collections retain their independent access model; no global private-content list
 or operator ownership bypass is introduced. Bulk operations remain outside scope.
-
-### Final account navigation refinement (2026-10-09)
-
-The user replaced single-row selection with direct account navigation: no Select
-or Action column/toolbar on the Accounts list. Clicking a row opens account detail;
-its name remains a native link for keyboard/no-JavaScript access. ID copying does
-not navigate. Account detail presents permitted action buttons at the bottom,
-without a chooser dialog. Consequence/reason forms remain authoritative for mutations.
-This supersedes the earlier selection and account-dialog presentation decisions.
-
-The subsequent presentation correction removes account-name anchors from the
-list. Row clicks open detail, while the name is rendered as a plain-text native
-form button for keyboard and JavaScript-free access. This replaces the native
-name-link presentation above without changing navigation or authority.
-
-## Cleanup amendment (2026-10-09)
-
-Collection row/name clicks open the action dialog with no Action column. Choices
-carry their final destination: View, Edit, History, Add a link, Share and moderation
-detail no longer redirect through the collection action route. Only publish,
-unpublish, transfer and delete use that route's consequence forms. The former
-held-only list and link resolver are retired in favor of `/manage/collections`.
-This supersedes the earlier Action-column and dispatcher descriptions; native
-no-JavaScript navigation and backend authority remain unchanged.
-
-
-## Amendment (2026-10-10)
-
-[ADR-0033](0033-self-service-account-lifecycle.md) introduced
-self-service account lifecycle and retained handle reservations. Its permanent
-handle rule was superseded by [ADR-0042](0042-editable-hub-handles.md), then
-[ADR-0043](0043-deliberate-hub-handle-changes.md) settled the current policy:
-30 days between handle changes, with retired spellings never reusable by anyone.
-Person username rules are separate. [ADR-0041](0041-fixed-account-email.md) fixes
-account email pending a dedicated identity-change workflow; immutable UUIDs
-continue to own references and authorization. Self-service lifecycle remains
-accepted, with contextual recovery under [ADR-0040](0040-contextual-account-recovery.md).

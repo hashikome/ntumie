@@ -22,33 +22,27 @@ Unique replay keys, actor constraints and bounded content effects remain enforce
 timeline. Owners see their hub's content events and their own authentication
 records. Operators/admins additionally see operation and authentication evidence;
 their service role grants no access to foreign private hub history. Authorization
-and filters run before pagination; cursor timestamps preserve PostgreSQL microsecond precision. Scoped legacy API routes remain compatibility
-views of this same model, not separate stores. The UI has no context switch.
+and filters run before pagination, so a foreign hub filter returns nothing
+unauthorized; cursor timestamps preserve PostgreSQL microsecond precision. There is
+no other audit route and no UI context switch: every client uses `/manage/audit` and
+the one AuditLogEntry projection. Collection activity is a separate authorized
+projection for attribution, not a second audit store. Which events a request sees
+by default is [ADR-0072](0072-audit-log-leaves-reads-out.md)'s.
 
 Retention stays 90 days for authentication, 365 days for operations, and durable
 for content attribution. Collection history reads only content-category records.
 Targets remain immutable IDs without cascading foreign keys, so evidence survives
 deletion. Request/replay fields are not returned by the timeline API.
 
-## Superseded decisions
+## What it replaced
 
-This supersedes ADR-0014's remaining Audit context split and the separate audit
-storage described by ADR-0009. Their permission boundaries remain in force.
-ADR-0015's attribution source is now content events in AuditLog; its attribution
-rules are unchanged. ADR-0021's bounded evidence remains unchanged.
+Separate audit storage (ADR-0009) and the Audit context split (ADR-0014), and briefly the
+`/me/audit` and `/operations/audit` compatibility routes, which risked divergent filtering
+and cursor precision. Their permission boundaries stand. ADR-0015's attribution source is
+the content events here; ADR-0021's bounded evidence is unchanged.
 
 ## Consequences
 
 One model and one screen serve all current writers. New audited domains extend
 the event contract rather than adding an audit table. Search, ordering and ID
 copying work consistently across event categories.
-
-## Cleanup amendment (2026-10-09)
-
-Retire the preproduction `/me/audit` and `/operations/audit` compatibility views.
-All clients use `/manage/audit` and the single AuditLogEntry projection. This
-explicitly supersedes the compatibility-route decision above: there are no
-production clients to migrate, and duplicate query implementations risk divergent
-filtering and cursor precision. Authorization still precedes filtering/pagination;
-a foreign hub filter returns no unauthorized content. Collection activity remains
-a separate authorized projection for attribution, not a second audit store.

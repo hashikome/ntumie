@@ -11,7 +11,7 @@ operators into readers of private content.
 ## Options considered
 
 - Admin role inside the product policy
-- Separate service-operator authority with its own audit
+- Separate service-operator authority
 
 ## Decision
 
@@ -35,6 +35,4 @@ audited; sensitive actions require recent verification. Scope and screens:
 - [service-operations.md](../design-docs/service-operations.md)
 - [SECURITY.md](../SECURITY.md)
 
-## Audit consolidation — 2026-10-09
-
-[ADR-0024](0024-one-audit-log.md) supersedes separate audit storage and the Audit context switch. All event categories use one AuditLog; permissions and attribution rules remain unchanged.
+All audit events, this record's included, go to the one log of [ADR-0024](0024-one-audit-log.md).

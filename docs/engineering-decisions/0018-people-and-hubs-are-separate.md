@@ -2,16 +2,12 @@
 
 **Status:** accepted  
 **Date:** 2026-10-08  
-**Amends:** ADR-0001 (a hub is optional, created on first use; still one per
-person, owned by them, never transferred).
+**Amends:** ADR-0001 (a hub is optional; still one per person, owned by them, never transferred).
 
-[ADR-0044](0044-separate-sign-in-and-sign-up.md) supersedes the unified
-entry and implicit ordinary email creation policy, adds a shared verified creation
-screen and permits an optional named hub during signup. Other decisions remain
-accepted unless already marked superseded.
-
-[ADR-0069](0069-hubs-come-with-the-first-collection.md) removes explicit hub creation:
-a hub is created only with the person's first collection.
+A hub comes only with the person's first collection ([ADR-0069](0069-hubs-come-with-the-first-collection.md));
+the sign-in and sign-up entries are [ADR-0044](0044-separate-sign-in-and-sign-up.md)'s. This record first let a
+person create a hub explicitly, from their profile or before an import; ADR-0069 replaced that so no hub
+exists empty.
 
 ## Context
 
@@ -32,7 +28,7 @@ contribute, are invited by email.
 
 A **person** (the account) has an **@username** and a name; a **hub** is their
 optional publishing space, with its own **name** and **@handle**. A person has
-at most one hub, created explicitly or when they first save a link or create a collection, owned by them and
+at most one hub, created only together with their first collection, owned by them and
 never transferred; the hub owns their collections and its subscribers.
 People act as themselves: they comment, contribute and are invited by email to
 view or contribute, with or without a hub. Others **subscribe to hubs**; people
@@ -65,19 +61,12 @@ data: [people-and-hubs.md](../design-docs/people-and-hubs.md).
 - [ADR-0001](0001-drive-tenancy-model.md), [ADR-0002](0002-immutable-identities.md),
   [ADR-0017](0017-hubs-are-entities-with-members.md)
 
-## Explicit creation amendment — 2026-10-08
-
-The product owner requested a quick Create hub button on a hubless person's
-own profile. A hub can therefore also be created explicitly before saving a
-collection. This amends the first-ownership-only creation timing; optionality,
-at-most-one ownership and no creation on profile/settings reads stay intact.
-
 ## Public relationship amendment — 2026-10-08
 
 The visibility preference controls the public relationship, not profile-name
 visibility: `Hub.showOwner` defaults true. The hub owns this setting; no
-visibility preference is stored on User. This supersedes the user-level name
-visibility preference because disclosure describes the hub’s public relationship. Opt-out suppresses the profile's
+visibility preference is stored on User, because disclosure describes the hub’s
+public relationship (a user-level name preference came first). Opt-out suppresses the profile's
 hub and the hub's owner reference/name in public responses. Self-service access
 and authorization remain unchanged. Profiles always show the person's name
 when set and username. Contributors remain ordinary contributors; deciding
@@ -98,28 +87,16 @@ The product owner clarified that saving (bookmarking) a collection belongs to
 the person, not their hub. Reading, bookmarks, viewer/contributor invitations,
 comments and contributions never create or require a personal hub.
 
-Imports are owner management. A new-collection import requires an existing
-personal hub and fails with `hub_unavailable` otherwise; it never creates one.
-Existing targets require collection ownership, not merely contribution access,
-even when the contributor owns another hub. This supersedes imports being
-classified as contributor content writes. Explicit Create hub and existing
-first-link, collection-creation and incoming-transfer workflows remain valid.
+Imports are owner management. A new-collection import creates the missing hub with its
+collection, atomically, like any first collection (ADR-0069). An existing target requires
+collection ownership, not merely contribution access, even when the contributor owns another
+hub. A hubless person's `/hub` invites them to start a collection, and no read ever creates a
+hub. Client guidance never replaces backend target and ownership checks.
 
-Hub is always present in the account menu. For hubless people `/hub` offers an
-explicit Create hub action; GET never creates one. The future import page must
-prompt for explicit hub creation before accepting an import. Client guidance
-never replaces backend target and ownership checks. Settings adopts a newly
-created hub from returned profile data while preserving newer profile edits.
+## Related identity records
 
-
-## Amendment (2026-10-10)
-
-[ADR-0033](0033-self-service-account-lifecycle.md) introduced
-self-service account lifecycle and retained handle reservations. Its permanent
-handle rule was superseded by [ADR-0042](0042-editable-hub-handles.md), then
-[ADR-0043](0043-deliberate-hub-handle-changes.md) settled the current policy:
-30 days between handle changes, with retired spellings never reusable by anyone.
-Person username rules are separate. [ADR-0041](0041-fixed-account-email.md) fixes
-account email pending a dedicated identity-change workflow; immutable UUIDs
-continue to own references and authorization. Self-service lifecycle remains
-accepted, with contextual recovery under [ADR-0040](0040-contextual-account-recovery.md).
+Hub handles stay editable ([ADR-0042](0042-editable-hub-handles.md)), with 30 days between changes and
+retired spellings never reused ([ADR-0043](0043-deliberate-hub-handle-changes.md)); person username rules
+are separate. Account email is fixed ([ADR-0041](0041-fixed-account-email.md)). Self-service lifecycle is
+[ADR-0033](0033-self-service-account-lifecycle.md)'s, with contextual recovery under
+[ADR-0040](0040-contextual-account-recovery.md).

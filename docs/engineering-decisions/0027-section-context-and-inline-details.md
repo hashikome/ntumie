@@ -29,12 +29,10 @@ Link descriptions continue to come from fetched metadata.
 
 Section descriptions stay visible below their heading when items collapse. Native
 HTML disclosures expand sections and link/reference details inline, without a
-dialog or navigation. JavaScript originally added Expand and Collapse for both levels, including
-subsequently loaded items. This multi-item expansion behavior is superseded by
-[ADR-0030](0030-one-selected-item-in-the-url.md): one selected item stays aligned
-with the URL. [ADR-0031](0031-direct-disclosures-without-global-controls.md)
-subsequently removes global expansion controls. Item permalinks retain `?item=<id>` on both
-collection addresses and open authorized context inline even beyond page one.
+dialog or navigation. One selected item at a time stays aligned with the URL
+([ADR-0030](0030-one-selected-item-in-the-url.md)), with no global expand controls
+([ADR-0031](0031-direct-disclosures-without-global-controls.md)). Item permalinks use
+`?item=<id>` on the collection address and open authorized context inline even beyond page one.
 Pagination returns the preceding section as context when a page starts inside it.
 
 The Reorder surface uses compact relative moves, resolved against the current

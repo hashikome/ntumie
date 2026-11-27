@@ -2,7 +2,7 @@
 
 Status: Accepted
 Date: 2026-11-13
-Supersedes: ADR-0021's API default ("existing API callers without a view
+Replaces: ADR-0021's API default ("existing API callers without a view
 continue to receive all events") and its Include read events checkbox.
 
 ## Context

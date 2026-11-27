@@ -32,10 +32,10 @@ person/hub separation. Correct the uncommitted people migration's backfill: rese
 and colliding hub-derived names receive fresh fallback usernames, without
 predeployment grandfathering. Do not reset development data as part of this patch.
 
-## Amendment: Length and shortening suggestions (2026-10-09)
+## Length and shortening suggestions (2026-10-09)
 
-The accepted maximum is 20 characters, superseding the initial 60-character
-limit. Hub handles retain their separate 60-character limit. Backend validation,
+The maximum is 20 characters (first 60, shortened so usernames stay readable in
+bylines). Hub handles keep their separate 60-character limit. Backend validation,
 the SQL column and CHECK constraint enforce the username limit.
 
 For an otherwise valid username draft longer than 20 characters (up to 255), the

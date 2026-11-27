@@ -31,12 +31,11 @@ page rather than rendering a second screen.
 
 ## Amendment: API-owned sharing and scoped analytics (2026-10-09)
 
-The web resolver moves into `GET /api/v1/share/resolve`, exposing a shared
-ShareDescriptor. This supersedes the intermediate read-only GET/POST `/share`
-proposal: POST now creates a ShareEntry and returns its complete representation
+The resolver is `GET /api/v1/share/resolve`, exposing a shared ShareDescriptor.
+POST `/share` creates a ShareEntry and returns its complete representation
 immediately with 201; GET lists creator-owned entries. Messages remain plain-text
-JSON, separate from generated URLs. The optional destination is a label, not a
-recipient or delivery instruction. Optional operation UUIDs make creation retries
+JSON, separate from generated URLs. An optional destination, kept at
+`context.destination`, is a label, not a recipient or delivery instruction. Optional operation UUIDs make creation retries
 idempotent.
 
 The user expanded the service into a foundation for authenticated API clients
@@ -46,7 +45,8 @@ and audited admin service metadata/counts (no private content). Existing API
 bearer authentication serves personal/resource analytics; service authority keeps
 its existing cookie restriction. This does not introduce API keys or billing.
 
-Generated URLs carry `share_id`. Matching resource opens are recorded by an
+Generated URLs carry `via`, the sole tracking parameter; database relationships
+keep the name `share_id`. Matching resource opens are recorded by an
 idempotent event endpoint after current access checks. These are reported opens,
 not unique humans or delivery evidence. ShareEntry and ShareOpen never grant
 access, store private bearer tokens, or retain recipient IDs/IP/user-agent data.
@@ -67,8 +67,7 @@ measurement remain separate milestones.
 ## Amendment: Manage service analytics for operators (2026-10-09)
 
 The user clarified that the Analytics section belongs to operators as well as
-admins, like Audit Log. This supersedes the admin-only restriction for aggregate
-service analytics above and completes the initial service dashboard milestone.
+admins, like Audit Log, so aggregate service analytics are open to both.
 `GET /api/v1/share/analytics?scope=service` now accepts either live service grant
 through existing audited cookie authority. Individual service entry list/detail
 remain admin-only; operators receive counts and destination/kind groups without
@@ -101,8 +100,8 @@ intended design. This clarification changes no schema, behavior or collected dat
 
 ## Amendment: sharing intent and forgiving event metadata (2026-10-09)
 
-Supersede the standalone destination field with optional ShareEntry.context JSON.
-It records creation intent; destination lives at context.destination and campaigns
+Optional ShareEntry.context JSON records creation intent (it replaced a standalone
+destination field); destination lives at context.destination and campaigns
 are optional custom context. Destination search and grouping read that key rather
 than grouping entire objects. Keep arbitrary context private in service metadata.
 
@@ -112,7 +111,7 @@ custom data belongs in context. Save valid optional evidence, ignore invalid fie
 with successful-response warnings, and never lose an otherwise authorized valid
 open because optional metadata was malformed. Transport parsing/size limits and
 required target/event identity remain strict. New events return 201, retries 200;
-warnings do not change those statuses. This explicitly supersedes always-200 opens.
+warnings do not change those statuses (opens first always returned 200).
 
 Maintain open_count. Deduplicate solely by share ID and client UUID event ID, not
 payload hashes or timestamps. Hash normalized content without timestamps or event
@@ -121,17 +120,10 @@ Record server received time separately from optional, untrusted client occurrenc
 time. Provide a shared event factory and UTM selector; no server round trip to mint
 an event ID. The web submits recognized attribution and timezone context only.
 
-Emit `via` in resource URLs instead of `share_id`; internal database relationships
-remain explicitly named share_id. Accept older web links while emitting only via.
 Attribution labels are received claims and forwarding can preserve old labels.
 Referral-specific rewards, social buttons and new attribution analytics UI remain
 deferred. This is preproduction: schema changes still receive reviewed migrations
 and parity checks, but no experimental payload/digest compatibility layer is needed.
 
-## Cleanup amendment (2026-10-09)
-
-Retire experimental `share_id` web query support; `via` is the sole tracking
-parameter. This supersedes the earlier compatibility exception. Database foreign
-keys remain `share_id`. Share actions link directly to `/share`; the collection
-dispatcher no longer redirects there. Remove unused social-message templates until
-social actions are implemented. Copy retains the API default and URL-only clipboard.
+Share actions link directly to `/share`. Social-message templates return only with
+social actions; Copy uses the API default and puts only the URL on the clipboard.

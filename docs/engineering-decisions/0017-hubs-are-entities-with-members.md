@@ -18,17 +18,13 @@ collaborations between hubs and paid "Pro hubs" was explored as the fix.
 
 Rejected. The ns series is for individuals; organizations are a different
 product's scope. A hub stays one person's space with one owner (ADR-0001). The
-real problem is fixed without memberships: an email change is only an email
-change, a hub is never transferable (it is its owner's fingerprint; only
+real problem is fixed without memberships: account email stays fixed
+([ADR-0041](0041-fixed-account-email.md)), a hub is never transferable (it is its owner's fingerprint; only
 collections transfer), and collaboration happens per collection with
 **contributors** and **viewers** invited by name.
 
 If organizations are ever needed, follow GitHub: people keep their personal
 accounts, can own organizations, and transfer collections into them.
-
-The address-update assumption above is superseded by [ADR-0041](0041-fixed-account-email.md):
-email changes are unavailable pending a controlled identity action. The rejection
-of memberships and hub transfers remains unchanged.
 
 ## Links
 

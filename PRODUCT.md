@@ -992,7 +992,7 @@ under [ADR-0053](docs/engineering-decisions/0053-id-only-collection-addresses.md
 - Settled foundations: `docs/engineering-decisions/README.md`.
 - Security and reliability rules: `docs/SECURITY.md`, `docs/RELIABILITY.md`.
 
-Community direction: [ADR-0049](docs/engineering-decisions/0049-invitation-based-communities.md)
-records future owner-invited membership granting viewer access across collections
-published for community members. Implementation and subscription migration are
+Community direction: [ADR-0050](docs/engineering-decisions/0050-community-entities-and-intake-integration.md)
+records future owner-invited membership of one community within a hub, granting
+viewer access to the collections shared with it. Implementation and subscription migration are
 deferred; current imports use existing publishing and access controls.

@@ -2,7 +2,7 @@
 
 **Status:** accepted  
 **Date:** 2026-10-10  
-**Amends:** [ADR-0027](0027-section-context-and-inline-details.md), item expansion and global controls only.
+**Amends:** [ADR-0027](0027-section-context-and-inline-details.md), item expansion only.
 
 ## Context
 
@@ -25,8 +25,8 @@ including when it is beyond the loaded page. The client scrolls the opened item
 into view. Without JavaScript, the server still opens the item and generated item
 permalinks include an anchor for scrolling.
 
-The original Expand/Collapse toolbar is superseded by
-[ADR-0031](0031-direct-disclosures-without-global-controls.md). Collapsing a section
+There are no global expand controls
+([ADR-0031](0031-direct-disclosures-without-global-controls.md)). Collapsing a section
 with JavaScript also closes its selected item. Descriptions remain visible beneath
 collapsed section headings. Links keep
 normal navigation; non-interactive item content toggles details, and text selection
@@ -34,8 +34,8 @@ must not collapse the item.
 
 ## Tradeoffs
 
-This supersedes ADR-0027's multiple open item details and global expansion of all
-item details. Readers lose simultaneous inline comparison in exchange for a clear,
+ADR-0027 first let several items open at once, with controls to expand them all.
+One selected item replaced that: readers lose simultaneous inline comparison in exchange for a clear,
 shareable current selection. Section visibility remains independent. URL updates
 and query-only automatic scrolling are progressive enhancements; native summaries
 and explicit permalink anchors remain usable without scripting.

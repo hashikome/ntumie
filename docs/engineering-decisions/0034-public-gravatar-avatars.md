@@ -15,8 +15,7 @@ people independently of hub ownership or publication.
 Make `/api/v1/users/:id/avatar` viewer-neutral. An active account with verified
 email and no pending deletion may show its Gravatar publicly. All other cases,
 including missing accounts, use the existing UUID-seeded SVG. Service authority
-never bypasses this boundary. This supersedes the own-account/chosen-image-first
-contract in the web interface design; stored vendor image fields are not erased.
+never bypasses this boundary. Stored vendor image fields are not erased.
 
 Re-read eligibility and the same verified email after provider resolution so an
 in-flight email change or deactivation cannot return the old photo. Responses
@@ -54,8 +53,7 @@ user-ID request checks current eligibility before any photo can be served.
 
 The original 1.5-second image deadline rejected a valid live Gravatar that took
 about 1.9 seconds over a cold connection, then cached the generated fallback for
-a minute. Increase the total transfer deadline to five seconds, superseding the
-initial timeout in the identity design. Keep the existing concurrency, body-size,
+a minute. The total transfer deadline is five seconds. Keep the existing concurrency, body-size,
 cache and fixed-origin bounds. A cold request can wait longer, but normal network
 latency no longer unnecessarily hides an available picture. The regression test
 delivers a valid image after two seconds; live acceptance must also check the

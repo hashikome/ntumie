@@ -56,9 +56,10 @@ read or mutate a draft (404); service roles confer no draft access.
    in this draft or enter a new name. There is no arrangement selector.
 4. **Fix**: edit a failed row's address in place (re-checked at once), add or
    remove tags, or select rows to revalidate or remove.
-5. **Import N links**: select up to 50 ready rows and import that selection to its destinations. Rows
-   that still need attention stay in the draft ("12 links need attention"),
-   reachable from the import page until fixed or dropped.
+5. **Import**: each collection draft's Import queues all of its ready links, and the
+   worker saves them in batches. Rows that still need attention stay in the draft
+   ("12 links need attention"), reachable from the import page until fixed or
+   dropped. A queued or running draft cannot be edited.
 
 Plain-text files use UTF-8, one URL per line, with no header. Blank lines are
 ignored. There is no inline paste entry point. Files containing NUL characters

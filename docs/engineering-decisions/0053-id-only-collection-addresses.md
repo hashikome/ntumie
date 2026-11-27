@@ -26,10 +26,9 @@ address. Collection addresses contain neither a handle nor a hub ID. Item links
 retain `/c/<collectionId>?item=<resourceId>`.
 
 Remove collection slugs, their unique constraint, generation, lookup contracts
-and transfer conflicts. This partially supersedes ADR-0002's allowance for
-`/@handle/<slug>` browse URLs; all immutable-identity and authorization rules
-remain binding. It also supersedes ADR-0047’s pretty-address recognition;
-reference authorization and same-owner rules remain binding. Hub-handle rename and reservation rules are unchanged.
+and transfer conflicts. This replaced the `/@handle/<slug>` browse URLs that
+ADR-0002 first allowed and ADR-0047 recognized; identity, authorization, reference
+and handle rules are unchanged.
 
 ## Rationale
 

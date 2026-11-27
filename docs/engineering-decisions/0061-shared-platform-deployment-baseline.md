@@ -27,7 +27,7 @@ Queue Redis uses AOF/noeviction; cache Redis remains a different, unneeded purpo
 Initial monitoring is Uptime Kuma plus Dokploy resource views and an explicit
 worker/queue procedure. Grafana/Loki/Alloy remains deferred; optional Sentry does
 not require a secret mount for the first deployment. This adopts the already
-accepted shared-platform policy and supersedes conflicting requirements in the
+accepted shared-platform policy and replaces conflicting requirements in the
 older product infrastructure/release prose; it changes no implemented telemetry.
 
 Application replicas default to zero. A separate one-shot migration uses only its
