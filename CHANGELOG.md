@@ -9,6 +9,11 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Releases are pulled by infra's deploy agent on hs: a push records a GitHub release
+  (`ntumie-<commit>`), and the agent migrates, then applies it; rolling back is
+  marking an earlier release latest. The release runbook, the infrastructure design,
+  `deploy/release.json` and the docs that described Dokploy say so now. The stack is
+  `ntumie` (`ntumie_ntumie-api`, `-web`, `-worker`); Dokploy's stacks are gone.
 - The web's forms route is a table of named handlers with one notice mapping and
   one query helper, in place of 27 `if` branches. No behaviour changes.
 - The write lock has one opt-out, `@Authority(mode)`, replacing two metadata keys,

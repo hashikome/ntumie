@@ -22,9 +22,11 @@ reviewed version bump.
 - [x] (2026-10-31) ntumie moved: released through the action (run 41206935638),
   then `tooling/release.ts`, its tests and `deploy/production.json` removed;
   `tooling/release-config.test.ts` keeps ntumie's own stack checks.
-- [ ] Move HashiNet, then Soko; Pigfarm when it gains a release workflow.
-- [ ] Delete each product's copy of the coordinator, and promote this plan's
-  decisions into an ADR and `docs/runbooks/release.md`.
+- [x] (2026-11-27) Closed: infra's pull-based deploys replaced the push
+  through Dokploy. ntumie's release job now records a GitHub release with
+  `hashikome/actions/github-release`, and infra's deploy agent applies it; the
+  other products move under infra's retire-Dokploy plan, not this one.
+  `docs/runbooks/release.md` describes the current path.
 
 ## Surprises & Discoveries
 
@@ -74,7 +76,12 @@ reviewed version bump.
 
 ## Outcomes & Retrospective
 
-Not started.
+The shared action worked: one coordinator in `hashikome/actions`, pinned by exact
+version, released ntumie from 31 October to 27 November. Its push-based design
+then gave way to infra's pull-based deploy agent, which a server can be rebuilt
+around; ntumie keeps only `deploy/release.json`, its stack files and the
+`github-release` step. The lasting results are the shared-actions repository, exact
+version pins with immutable releases, and per-repository settings.
 
 ## Context And Orientation
 

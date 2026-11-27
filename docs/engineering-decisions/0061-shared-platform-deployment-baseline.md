@@ -17,18 +17,15 @@ to Nest with higher priority than the web route. Host-only cookies forbid an API
 subdomain without a separate reviewed auth change. The custom Bun/Next server,
 including source-attribution signing, remains the production web entrypoint.
 
-Use shared product PostgreSQL 18 and shared queue Redis, each separate from
-Dokploy's internal services. Allocate a product database, distinct migration/runtime
+Use shared product PostgreSQL 18 and shared queue Redis (infra's `infra-postgres` and
+`infra-redis-queue`). Allocate a product database, distinct migration/runtime
 roles, connection budget and scoped Redis username/key/channel namespace. Product
 Stack releases contain only application services. No product may share the broker
 without real-client ACL tests and combined memory/queue/recovery acceptance.
 Queue Redis uses AOF/noeviction; cache Redis remains a different, unneeded purpose.
 
-Initial monitoring is Uptime Kuma plus Dokploy resource views and an explicit
-worker/queue procedure. Grafana/Loki/Alloy remains deferred; optional Sentry does
-not require a secret mount for the first deployment. This adopts the already
-accepted shared-platform policy and replaces conflicting requirements in the
-older product infrastructure/release prose; it changes no implemented telemetry.
+Monitoring is Uptime Kuma, with the deploy agent's release verdicts, plus Sentry and an
+explicit worker/queue procedure. Grafana/Loki/Alloy remains deferred.
 
 Application replicas default to zero. A separate one-shot migration uses only its
 scoped migration database credential. GitHub verifies and publishes both immutable
@@ -36,18 +33,14 @@ images; live promotion needs successful migration completion plus platform/provi
 acceptance. A failed application update rolls back
 ([ADR-0073](0073-failed-updates-roll-back.md)).
 
-## Delivery trigger and neutral identities (12 October 2026)
+## Delivery
 
-Main pushes run verification, image rehearsal, GHCR publication and promotion;
-manual dispatch remains available. Dokploy webhooks never bypass the coordinator.
-Use the product name as the application Stack base and role-only service names
-(`api`, `web`, `worker`). The separately gated `ntumie-release` Stack contains
-`migration`. Hyphens separate words we choose; Docker inserts `_` between stack
-and service. Dokploy 0.30.8 adds a generated suffix and cannot rename appName via
-its update API. Replacement targets therefore require an observed stop of legacy
-writers/routers before activation, while shared volume and secret identities stay
-stable. This extends the accepted release contract; it does not combine lifecycle
-or privileged migration credentials with application services.
+A push to `main` runs verification, image rehearsal and GHCR publication, then records a GitHub
+release; infra's deploy agent applies the latest release, migration first
+([release runbook](../runbooks/release.md)). Service keys carry the product name, and Docker joins
+stack and service with `_` (`ntumie_ntumie-api`). This record first had a Dokploy coordinator push
+each release; infra replaced Dokploy with a pull-based agent so a server can be rebuilt from its
+repositories.
 
 ## Consequences
 

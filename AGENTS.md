@@ -66,7 +66,7 @@ authoritative.
   IAM direction for company products (scope and final name pending); its first slice ships AuthN+SSO;
   domain authorization stays product-owned; constraints current work respects.
 - `docs/design-docs/infra-deployment.md`: shared Hashikome deployment (company infrastructure,
-  Dokploy Stack mode, GHCR images, topology-file conventions).
+  GHCR images and GitHub releases applied by infra's deploy agent, stack-file conventions).
 - `docs/runbooks/local-development.md`: setup and everyday commands.
 - `docs/runbooks/verification.md`: the canonical verification gate.
 - `docs/runbooks/migrations.md`: Prisma migration discipline.
@@ -92,7 +92,7 @@ authoritative.
   exist only in migration SQL and must never be dropped by an auto-generated
   diff. A generated primary key defaults to PostgreSQL 18's `uuidv7()`.
 - `compose.yml` is local development only, for infrastructure services. Production topology is
-  `docker-stack.yml` in the swarm dialect, deployed through Dokploy; a suffix names a different
+  `docker-stack.yml` in the swarm dialect, applied by infra's deploy agent; a suffix names a different
   shape, never an environment (workspace `stack-files.md`; the infra direction doc).
 - Use Conventional Commit style: `feat: ...`, `fix: ...`, `docs: ...`,
   `chore: ...`, `test: ...`, with `!` and a `BREAKING CHANGE:` footer for

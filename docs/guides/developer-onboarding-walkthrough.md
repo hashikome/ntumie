@@ -334,9 +334,8 @@ Read:
 3. [web-product-experience.md](../design-docs/web-product-experience.md),
    [web-interface-system.md](../design-docs/web-interface-system.md) and
    [DESIGN.md](../../DESIGN.md) for journeys, interaction and theme values.
-4. [release.md](../runbooks/release.md) for API/web image rehearsal, push-to-deploy
-   through GitHub/Dokploy, optional manual rehearsal, accepted first rollout and remaining
-   launch checks. [edge-cache.md](../runbooks/edge-cache.md) owns the Cloudflare rule
+4. [release.md](../runbooks/release.md) for what a push does (verify, image rehearsal, GHCR,
+   the GitHub release the deploy agent applies), rolling back and the checks after a release. [edge-cache.md](../runbooks/edge-cache.md) owns the Cloudflare rule
    behind edge-cached signed-out public pages.
    Production uses shared product PostgreSQL/queue Redis with scoped roles/ACLs;
    migration and grant verification precede application promotion. Ordinary
@@ -392,7 +391,7 @@ already delivered features.
 - Engineering principles → [CORE_BELIEFS.md](../CORE_BELIEFS.md)
 - Shared Hashikome sign-on direction (not implemented) →
   [identity-sso.md](../design-docs/identity-sso.md)
-- Monitoring baseline (Kuma/Dokploy; app telemetry retained, Alloy deferred) →
+- Monitoring baseline (Kuma with release verdicts, Sentry; Alloy deferred) →
   [observability.md](../design-docs/observability.md)
 - Prisma migration discipline → [migrations.md](../runbooks/migrations.md)
 - Local commands and DB reset →

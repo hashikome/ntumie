@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: Promote to the prepared production Dokploy Stacks
+        description: Record a release for the deploy agent to apply
         type: boolean
         default: false
 permissions:
@@ -105,7 +105,7 @@ jobs:
   prune-images:
     # GHCR keeps the newest 3 tagged images of each package, with their attestations, once the
     # release is live (workspace service-naming.md, "Images"). Its own job, so package deletion never
-    # shares a runner with production secrets. Retires with Dokploy for a desired-state-aware cleanup.
+    # shares a runner with production secrets. Gives way to a desired-state-aware cleanup by the agent.
     needs: release
     runs-on: ubuntu-latest
     timeout-minutes: 10

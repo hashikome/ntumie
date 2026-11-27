@@ -1,6 +1,6 @@
 version: '3.8'
-# A separate Dokploy Stack for one-shot migrations. Require its task to complete
-# with exit code zero before deploying APP_REPLICAS=1 in the application Stack.
+# A separate stack for one-shot migrations. The deploy agent requires its task to
+# complete with exit code zero before deploying APP_REPLICAS=1 in the application stack.
 services:
   ntumie-migration:
     image: ${API_IMAGE:?API_IMAGE_required}

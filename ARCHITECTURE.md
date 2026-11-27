@@ -194,9 +194,10 @@ The API remains authoritative; JavaScript-free parity is not required (ADR-0064)
 
 ## Deployment Shape
 
-Nothing is deployed yet. The target is shared Hashikome infrastructure via Dokploy
-Stack mode with prebuilt, SHA-pinned GHCR images; nothing builds on the VPS and
-secrets arrive as `_FILE` inputs. See `docs/design-docs/infra-deployment.md`
+Production runs on shared Hashikome infrastructure under Docker Swarm. Each push to
+`main` records a GitHub release of prebuilt, SHA-pinned GHCR images, which infra's
+deploy agent pulls and applies; nothing builds on the server and secrets arrive as
+`_FILE` inputs. See `docs/design-docs/infra-deployment.md`
 and `docs/runbooks/release.md`.
 
 ## Cross-Cutting Concerns

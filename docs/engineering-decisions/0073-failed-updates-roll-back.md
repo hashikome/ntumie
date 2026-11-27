@@ -13,8 +13,7 @@ does not happen: the old task keeps serving until the new one is healthy, so aft
 the previous release is already serving on the migrated schema, paused or not. Pause only leaves the
 service half-updated until someone resumes or rolls it back by hand.
 
-The shared release action (`hashikome/actions/dokploy-release`) now ends every deploy with Swarm's
-verdict, and the platform's rule, set by the owner and already followed by Soko, is a health check
+Each deploy ends with Swarm's verdict, and the platform's rule, set by the owner and already followed by Soko, is a health check
 and `failure_action: rollback` on every service.
 
 ## Decision
@@ -24,8 +23,8 @@ and `failure_action: rollback` on every service.
   the same way); the worker stops first, as one consumer is enough.
 - The api and the web are judged by their images' health checks. The worker has none (it serves no
   traffic); Swarm judges it by whether its task keeps running for the monitor window.
-- Rollback is Swarm's. The release action's own `rollback` input, which would redeploy the previous
-  Stack file in Dokploy, stays off, and so does its `accept` input.
+- Rollback is Swarm's, within a release. Returning to an earlier release is marking it latest
+  (`gh release edit <tag> --latest`), which the deploy agent applies.
 - Migrations still run before the application, and a release's migration must leave the previous
   release working on the new schema (`docs/runbooks/migrations.md`): the condition rollback relies
   on, and the one the old tasks already relied on during a start-first update.

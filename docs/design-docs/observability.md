@@ -1,6 +1,6 @@
 # Observability
 
-Current rollout: Kuma and Dokploy resource views are the accepted first-deployment
+Current rollout: Kuma (including the deploy agent's release verdicts) and Sentry are the
 baseline. Grafana/Loki/Alloy below is deferred direction, not a launch gate; see
 [ADR-0061](../engineering-decisions/0061-shared-platform-deployment-baseline.md).
 
