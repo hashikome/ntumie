@@ -156,13 +156,20 @@ the pages. Opened from the header it is a dialog over the current page (an
 intercepting route; a phone gets a full-height sheet), and `/capture` renders the
 same server form as a page without JavaScript. The destination is an existing
 collection with a section, or a new collection with name, description and
-visibility; the section list posts with `sectionsFor`, so a collection changed
-without JavaScript drops a stale section rather than failing. Before and after sign-in, each usable address receives a title/status
+visibility; the choices come from the API's destinations list. On phones the
+collection is a single field that opens a list over the sheet ("New
+collection…" first, the choice ticked, "You are here" marked); the radios still
+carry the value. The section list posts with `sectionsFor`, so a collection changed
+without JavaScript drops a stale section rather than failing. A save refused
+before a draft exists returns to the form with the collection the person is on
+(never the address, which stays out of navigation strings),
+replacing its history entry; opened over the `/capture` page itself, the dialog
+loads the page instead of stacking a second form. Before and after sign-in, each usable address receives a title/status
 check. The form shows its title and validation feedback; richer previews belong
 on saved collection items. Failed title checks leave valid addresses saveable. `/capture/<draftId>` resumes a 30-minute encrypted HttpOnly draft.
 Up to three drafts coexist. URLs never enter navigation strings or client
-storage. Existing collections require a destination choice; a new collection is
-private. Backend transactions and retry receipts prevent duplicate saves.
+storage. Existing collections require a destination choice; a new collection's
+visibility is the person's choice, remembered for the next one. Backend transactions and retry receipts prevent duplicate saves.
 
 When verification is needed, the form says “Verify your email to save this
 link.” Ordinary verification submits the saved intent; invitation verification

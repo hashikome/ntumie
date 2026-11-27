@@ -17,6 +17,10 @@ summary of what changed after completed work has been promoted out of `ref/`.
   JavaScript. The API takes `link`, `sectionId` and `collectionDescription` and
   returns one `resourceId`; a link saved without a section lands before the first
   section. The two-link form, "Add another link" and the chip tag field are gone.
+  On phones the collection is chosen from a list that opens over the sheet. The
+  choices come from `GET /api/v1/capture/destinations`; saving into a section no
+  longer reorders the collection or changes other items' versions, and a section
+  that has gone is reported as `capture_section_missing`.
 - Focus rings come back whenever focus moves without a mouse or touch press, so
   screen readers and dialogs that move focus show where it went.
 - Save a link: the suggested name for a new collection comes from the API and never

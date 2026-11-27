@@ -93,7 +93,7 @@ export async function SaveLinkForm({
           <LinkField
             id="capture-url"
             label="Link"
-            initial={draft?.link.url ?? queryValue(query.url, 2048)}
+            initial={draft?.link.url}
             origin={webServerConfig().publicOrigin}
           />
         </SaveLinkFields>

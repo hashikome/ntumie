@@ -365,9 +365,9 @@ async function captureSaveForm(request: Request, form: URLSearchParams): Promise
   const id = form.get("draftId") ?? "";
   if (!isUuid(id)) return redirectResponse("/capture?notice=invalid");
   const previous = await readDraft(id);
-  // Before a draft exists, a refused save keeps the collection the person
-  // is on and the address they typed.
-  const typed = (form.get("url") ?? "").trim();
+  // Before a draft exists, a refused save keeps the collection the person is
+  // on. Addresses never enter navigation strings, so the field checks the
+  // address before it is sent.
   const here = form.get("here") ?? "";
   const back = (notice: string) =>
     redirectResponse(
@@ -376,12 +376,11 @@ async function captureSaveForm(request: Request, form: URLSearchParams): Promise
         : `/capture?${new URLSearchParams({
             notice,
             ...(isUuid(here) ? { collection: here } : {}),
-            ...(typed && typed.length <= 2048 ? { url: typed } : {}),
           })}`,
     );
   // One link, its optional comma-separated tags and note (titles are
   // resolved from the page, never typed).
-  const url = captureUrl(typed);
+  const url = captureUrl((form.get("url") ?? "").trim());
   if (!url) return back("link-invalid");
   if (!publicHref(url, webServerConfig().publicOrigin)) return back("link-not-public");
   const destination = form.get("destination") ?? "";

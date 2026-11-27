@@ -113,7 +113,7 @@ collapse the item. Native summaries retain keyboard/no-JavaScript toggling.
 
 Reviewed [bulk imports](bulk-import.md) organize folders as nonempty sections
 or separate owned collections. Partial commits preserve section and link order.
-Targeting a section from Save a link remains planned.
+Save a link targets a section of the chosen collection (see the capture command below).
 
 ## Preview cards and notes (planned)
 
@@ -176,11 +176,18 @@ tags and item tags ([ADR-0074](../engineering-decisions/0074-search-in-postgres.
 saves one link (`link`: the address with optional tags and note, never a
 title; canonicalised; a link already in the collection is kept as it is) plus a
 user-scoped operation receipt, returning `collectionId` and `resourceId`. An
-optional `sectionId` must be one of the destination's headings: the link lands
-at the end of that section; without one it lands before the first section. A
+optional `sectionId` must be one of the destination's headings (otherwise
+`capture_section_missing`): the link takes the place of the next heading, which
+moves down with the rows after it, so it lands at the end of that section
+without reordering the collection or changing any other item's version;
+without one it lands before the first section. A
 collection it creates takes `collectionTitle` (or a default "Saved links,
 <date>" suffixed so it never repeats a hub title) and an optional
-`collectionDescription`. `GET /api/v1/link-preview?url=` (public, no account required,
+`collectionDescription`. `GET /api/v1/capture/destinations?here=<id>` lists where
+a link can be saved, each with its sections in order: the person's own
+collections, most recently updated first, and `here` first of all, including
+someone else's collection only when the person may add to it.
+`GET /api/v1/link-preview?url=` (public, no account required,
 own source-based "lookup" budget of 30/min) returns a canonical URL and looked-up title
 and validation status for the save form, before and after sign-in. The form shows
 only the title and address feedback; richer previews belong on saved collection

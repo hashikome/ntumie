@@ -182,9 +182,11 @@ communities (opt-in), and private-collection allowances (monetization).
     opens it as an intercepting-route dialog with the current collection
     preselected; a save without a section lands before the first section, so
     "No section" means what it says (the form preselects the last section,
-    keeping "add at the end" the default). Open for the owner: the phone
-    board's new-collection state shows no Description field and no preview
-    card; both are kept so the phone, desktop and no-JS forms match.
+    keeping "add at the end" the default). The owner kept Description and the
+    preview on phones, and chose the board's custom collection picker there
+    over the phone's own list (prototype `prototypes/save-link-picker/`).
+    finish-work moved the destination list into the API
+    (`GET /capture/destinations`) and made a section save a single insert.
   - [ ] M6b Edit workspace (`r2-edit.png`).
 - [ ] M7 Audit, browser acceptance, docs and release (push only here).
 
