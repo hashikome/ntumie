@@ -9,6 +9,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Focus rings come back whenever focus moves without a mouse or touch press, so
+  screen readers and dialogs that move focus show where it went.
 - Save a link: the suggested name for a new collection comes from the API and never
   repeats one in the hub (the web had checked only the loaded page), the same link
   with tracking added counts as a repeat, and a typo'd domain is found with one DNS

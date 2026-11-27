@@ -33,4 +33,4 @@ the lock. Details: [RELIABILITY.md](../RELIABILITY.md).
 ## Links
 
 - [RELIABILITY.md](../RELIABILITY.md)
-- [final-pass-internals.md](../exec-plans/active/final-pass-internals.md)
+- [final-pass-internals.md](../exec-plans/completed/final-pass-internals.md)

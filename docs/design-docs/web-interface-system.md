@@ -165,7 +165,7 @@ Cover 409 reload/retry at the adapter and as a real browser journey when its
 editing form lands. Exports require real downloaded file bytes when that
 journey lands, not just a mocked success notification.
 
-Focus rings are keyboard-only: a pointer press hides them page-wide (`FocusMode`) until Tab, arrows or F6 are used; text fields always keep their focused border. Check keyboard-only navigation and focus, 320/390/768/1280 px widths, 200% zoom,
+Focus rings follow how focus moved: a pointer press hides them page-wide (`FocusMode`), and any other move brings them back (Tab, arrows, F6, assistive technology or a script, such as a dialog focusing its field). Returning to the window re-focuses the same element and keeps them hidden; text fields always keep their focused border. Check keyboard-only navigation and focus, 320/390/768/1280 px widths, 200% zoom,
 long unbroken titles/URLs, loading, empty, failure and reduced-motion states.
 Verify text contrast at least 4.5:1, large text 3:1 and meaningful control/focus
 boundaries 3:1. Claim browser acceptance only for journeys exercised by the

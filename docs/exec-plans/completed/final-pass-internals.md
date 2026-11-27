@@ -45,8 +45,12 @@ the only blocker is a change to behaviour, business workflow or UX.)
   `GET /api/v1/capture/suggested-name` gives the name a save would use (the web
   had checked only the loaded page of collections). The referenced-collection
   rule was already shared in M2.
-- [ ] M7 Focus rings return when focus moves without a pointer press.
-- [ ] Docs, changelog, gates (`bun run verify`, `bun run test:browser`).
+- [x] (2026-11-27) M7 Focus rings return when focus moves without a pointer press:
+  `FocusMode` leaves pointer mode on any focus move that doesn't follow a press in
+  the same task, except the window returning to the element it left. Browser test
+  "hides focus rings after a press…" (it fails against the old code).
+- [x] (2026-11-27) Docs, changelog, gates: `bun run verify` passes, and the full
+  browser suite passes 116 of 116.
 
 ## Surprises & Discoveries
 
@@ -81,18 +85,23 @@ latency or complete request counts; auth middleware is outside this fixture.
 
 ## Outcomes & Retrospective
 
-M2 implementation reduces repeated queries without changing wire contracts,
-schema or authorization rules. Seven new real-database regressions pass (98
-assertions); existing focused comment, export, structure and lifecycle suites
-pass. The full isolated standard gate passes, including both app builds and
-typechecks. Full production browser acceptance passes: 98 tests, zero failures,
-one optional performance benchmark skipped, 1,934 assertions (820.71 seconds).
-Review found no actionable regressions; API typechecking and 32 focused runtime
-tests (651 assertions) passed again during review. The user approved local
-commits; pushing is a separate next step. M3–M7 remain separate milestones.
-No schema changes, development data resets or production
-changes were needed. Query counts are acceptance evidence, not a claim about
-deployed page latency.
+All seven milestones shipped without a change to what people see or do, apart from
+fixes the work exposed. M1 (link metadata) and M2 (batched queries) landed in
+October; M3 to M7 on 27 November, each released through the deploy agent:
+
+- M3: one `@Authority(mode)` for the write lock, one session recheck.
+- M4: the forms route as a table of named handlers, `noticeFor`, `withQuery`.
+- M5: Save a link drafts held by the API's action-recovery store, so tags are never
+  dropped. Postgres, not Redis, because the web has no data access.
+- M6: one DNS lookup for a typo, canonical duplicate checks, an API-suggested name
+  (the web had checked only the loaded page, so it could suggest a taken name), and
+  shared invitation-state and cursor helpers.
+- M7: focus rings return on any focus move that isn't a press.
+
+Found along the way: a browser test added on 1 November expected JavaScript-only
+markup in a no-JavaScript run (fixed in M4's push), and one test assumed it owned
+the action-recovery table (narrowed in M5). The release's focused browser gate
+doesn't run the full suite, so the full suite should run before each milestone push.
 
 ## Context And Orientation
 

@@ -661,6 +661,33 @@ describe("explore to resource: production browser journey", () => {
     }
   }, 60000);
 
+  it("hides focus rings after a press, and brings them back when focus moves any other way", async () => {
+    const { page, close } = await freshPage();
+    try {
+      await ready(page, "/about");
+      const mode = () => page.evaluate(() => document.documentElement.dataset.focusInput ?? null);
+      const links = page.locator("header a");
+      await links.first().click();
+      expect(await mode()).toBe("pointer");
+      // Focus moved by a script (or assistive technology) shows its ring.
+      await links.nth(1).evaluate((link: HTMLElement) => link.focus());
+      expect(await mode()).toBeNull();
+      // Returning to the window re-focuses the element it left: not a move.
+      await links.first().click();
+      expect(await mode()).toBe("pointer");
+      await page.evaluate(() => {
+        window.dispatchEvent(new Event("blur"));
+        document.activeElement?.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+      });
+      expect(await mode()).toBe("pointer");
+      // A navigation key always brings rings back.
+      await page.keyboard.press("Tab");
+      expect(await mode()).toBeNull();
+    } finally {
+      await close();
+    }
+  });
+
   it("lays out home and About as cobalt brand pages with the labelled sample and no footer", async () => {
     for (const js of [true, false]) {
       const { page, close } = await freshPage(js);

@@ -99,8 +99,9 @@ The [production baseline](completed/preserve-early-input-and-measure-production.
 now records matched cold/warm browser journeys, API counts and resource timings.
 Immutable static-asset caching removes repeated downloads; request-scoped profile
 reuse removes duplicate capture/Settings reads. Cold-load work remains in the
-row above. The [internals plan](active/final-pass-internals.md) may extend query
-batching with fresh evidence while preserving authorization and visible behavior.
+row above. Further query batching, as in the completed
+[internals plan](completed/final-pass-internals.md), needs fresh evidence and must
+preserve authorization and visible behavior.
 No production-versus-development timing comparison or deployed-user baseline has
 been established.
 
