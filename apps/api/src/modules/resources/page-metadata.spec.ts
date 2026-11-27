@@ -1,9 +1,32 @@
 import { describe, expect, it, spyOn } from "bun:test";
 import http from "node:http";
 import https from "node:https";
-import { extractMetadata, fetchPageMetadata, isPublicAddress } from "./page-metadata";
+import { extractMetadata, fetchPage, fetchPageMetadata, isPublicAddress } from "./page-metadata";
 
 describe("page metadata for saved links", () => {
+  it("reports a missing host only for the address itself and only when DNS says so", async () => {
+    const dnsError = (code: string) => async () => {
+      throw Object.assign(new Error(code), { code });
+    };
+    expect(await fetchPage("http://typo.example/", { lookup: dnsError("ENOTFOUND") })).toEqual({
+      metadata: null,
+      missingHost: true,
+    });
+    expect(
+      (await fetchPage("http://typo.example/", { lookup: dnsError("ENODATA") })).missingHost,
+    ).toBe(true);
+    // A failure that is not a definite "no such host" leaves the link saveable.
+    for (const code of ["ETIMEOUT", "ESERVFAIL", "ECONNREFUSED"])
+      expect(
+        (await fetchPage("http://slow.example/", { lookup: dnsError(code) })).missingHost,
+      ).toBe(false);
+    // A blocked (private) answer is unreachable, not missing.
+    const privateAnswer = async () => [{ address: "10.0.0.1", family: 4 }];
+    expect(
+      (await fetchPage("http://internal.example/", { lookup: privateAnswer })).missingHost,
+    ).toBe(false);
+  });
+
   it("prefers og:title, then twitter:title, then <title>, decoded and collapsed", () => {
     expect(
       extractMetadata(

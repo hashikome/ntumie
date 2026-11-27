@@ -188,17 +188,28 @@ export class CaptureService {
     return { collectionId: id, resourceIds };
   }
 
+  /** The name a new collection would get now (the save form offers it). */
+  async suggestedTitle(user: AuthUser) {
+    const hub = await this.prisma.hub.findUnique({
+      where: { ownerUserId: user.userId },
+      select: { id: true },
+    });
+    return this.defaultTitle(hub?.id ?? null);
+  }
+
   // "Saved links, Oct 7", then "Saved links, Oct 7 (2)" … so a default name
   // never repeats one already in the hub. Names people type may repeat.
-  private async defaultTitle(hubId: string) {
+  private async defaultTitle(hubId: string | null) {
     const base = `Saved links, ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date())}`;
     const taken = new Set(
-      (
-        await this.prisma.collection.findMany({
-          where: { hubId, title: { startsWith: base } },
-          select: { title: true },
-        })
-      ).map((row) => row.title),
+      hubId
+        ? (
+            await this.prisma.collection.findMany({
+              where: { hubId, title: { startsWith: base } },
+              select: { title: true },
+            })
+          ).map((row) => row.title)
+        : [],
     );
     if (!taken.has(base)) return base;
     for (let n = 2; ; n++) if (!taken.has(`${base} (${n})`)) return `${base} (${n})`;

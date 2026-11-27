@@ -4167,6 +4167,15 @@ it("saves several links with tags into a newly named collection, typing no title
         .getByLabel("Link URL", { exact: true })
         .evaluate((el: HTMLInputElement) => el.validity.valid),
     ).toBe(false);
+    // The same page with tracking added is the same link once the preview's
+    // canonical address is back (the API drops utm_ parameters).
+    await rows
+      .nth(1)
+      .getByLabel("Link URL", { exact: true })
+      .fill("https://fixture-links.dev/one?utm_source=newsletter");
+    await browserExpect(rows.nth(1).locator(".capture-note.invalid")).toContainText(
+      "already in the list",
+    );
     await page.getByRole("button", { name: "Remove link 2", exact: true }).click();
     await browserExpect(rows).toHaveCount(1);
     await page.getByRole("button", { name: "Add another link", exact: true }).click();

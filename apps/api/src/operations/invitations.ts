@@ -9,6 +9,13 @@ import { emailKey, enqueueRenderedEmail } from "../email/outbox";
 import type { Prisma, ServiceInvitation } from "../generated/prisma/client";
 
 export const invitationLifetime = 7 * 86400_000;
+
+/** An invitation still open past its expiry reads as expired; others keep their state. */
+export function invitationState(row: Pick<ServiceInvitation, "state" | "expiresAt">) {
+  return ["pending", "verifying"].includes(row.state) && row.expiresAt <= new Date()
+    ? "expired"
+    : row.state;
+}
 export function normalizedEmail(value: string) {
   const email = value.trim().toLowerCase();
   if (email.length > 254 || !isEmail(email)) throw appError("bad_request");

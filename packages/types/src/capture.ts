@@ -19,6 +19,10 @@ export interface CaptureResult {
   collectionId: string;
   resourceIds: string[];
 }
+/** The name a new collection gets when none is typed. */
+export interface CollectionNameSuggestion {
+  title: string;
+}
 export interface LinkPreview {
   url: string;
   /** Recognized application collection URL; no ownership or availability implied. */

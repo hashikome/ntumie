@@ -9,6 +9,7 @@ import {
   cancelInvitations,
   clearInvitationCode,
   invitationLifetime,
+  invitationState,
   normalizedEmail,
   prepareAdminInvitation,
   queueInvitation,
@@ -37,10 +38,7 @@ export class AdministrationService implements OnModuleInit {
       id: row.id,
       role: row.role as "admin" | "operator",
       email: row.email,
-      state:
-        ["pending", "verifying"].includes(row.state) && row.expiresAt <= new Date()
-          ? "expired"
-          : (row.state as ServiceInvitationView["state"]),
+      state: invitationState(row) as ServiceInvitationView["state"],
       version: row.version,
       createdAt: row.createdAt.toISOString(),
       expiresAt: row.expiresAt.toISOString(),

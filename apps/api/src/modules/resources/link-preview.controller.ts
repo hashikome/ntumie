@@ -1,4 +1,3 @@
-import { lookup } from "node:dns/promises";
 import { Controller, Get, Query } from "@nestjs/common";
 import type { LinkPreview } from "@ntumie/types";
 import { appError } from "../../common/errors/app-exception";
@@ -9,7 +8,7 @@ import {
   publicLinkUrl,
 } from "../../common/utils/url.util";
 import { PrismaService } from "../../database/prisma.service";
-import { fetchPageMetadata, linkTitlesEnabled } from "./page-metadata";
+import { fetchPage, linkTitlesEnabled } from "./page-metadata";
 
 // Looks up a link's title before it is saved, so the save form can show it.
 // Available before sign-in, never under the write lock, with its own small request
@@ -36,41 +35,28 @@ export class LinkPreviewController {
     if (localCollectionAddress(url))
       return apiOk<LinkPreview>({ url, title: null, status: "found", collectionHint: true });
     url = publicLinkUrl(url);
-    const title = linkTitlesEnabled() ? await this.title(url) : null;
+    const { title, missingHost } = linkTitlesEnabled()
+      ? await this.title(url)
+      : { title: null, missingHost: false };
     const preview: LinkPreview = {
       url,
       title,
-      status: title ? "found" : (await hostMissing(url)) ? "no_domain" : "untitled",
+      status: title ? "found" : missingHost ? "no_domain" : "untitled",
     };
     return apiOk(preview);
   }
 
+  // Only a definite "no such host" for the address marks a typo; timeouts,
+  // blocked sites and other failures stay saveable.
   private async title(url: string) {
     const known = await this.prisma.linkMetadata.findUnique({ where: { url } });
-    if (known?.state === "ready" && known.title) return known.title;
-    const metadata = await fetchPageMetadata(url);
-    if (!metadata) return null;
+    if (known?.state === "ready" && known.title) return { title: known.title, missingHost: false };
+    const { metadata, missingHost } = await fetchPage(url);
+    if (!metadata) return { title: null, missingHost };
     const ready = { ...metadata, state: "ready", attempts: 0, fetchedAt: new Date() };
     await this.prisma.linkMetadata
       .upsert({ where: { url }, create: { url, ...ready }, update: ready })
       .catch(() => undefined); // A concurrent insert of the same address is fine.
-    return metadata.title;
-  }
-}
-
-// Only a definite "no such host" answer marks a typo; timeouts, blocked sites
-// and other failures stay saveable. Hosts here already passed the public-link
-// rule, so they are names, never IP literals or reserved test domains.
-async function hostMissing(url: string) {
-  const host = new URL(url).hostname;
-  if (!linkTitlesEnabled()) return false;
-  try {
-    await Promise.race([
-      lookup(host),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("slow")), 2000)),
-    ]);
-    return false;
-  } catch (error) {
-    return ["ENOTFOUND", "ENODATA"].includes((error as NodeJS.ErrnoException).code ?? "");
+    return { title: metadata.title, missingHost: false };
   }
 }

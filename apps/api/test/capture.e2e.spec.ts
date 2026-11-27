@@ -136,11 +136,19 @@ describe("atomic link capture", () => {
     // A default name never repeats one already in the hub; a typed name is kept.
     const first = await prisma.collection.findUniqueOrThrow({ where: { id: collectionId } });
     expect(first.title).toMatch(/^Saved links, [A-Z][a-z]{2} \d{1,2}(?: \(\d+\))?$/);
+    // The form offers the name a save would use, from the API.
+    const suggested = await request(app.getHttpServer())
+      .get("/api/v1/capture/suggested-name")
+      .auth(owner.token, { type: "bearer" })
+      .expect(200);
+    expect(suggested.body.data.title).not.toBe(first.title);
     const second = await send(input("new")).expect(201);
     const next = await prisma.collection.findUniqueOrThrow({
       where: { id: second.body.data.collectionId },
     });
     expect(next.title).not.toBe(first.title);
+    expect(next.title).toBe(suggested.body.data.title);
+    await request(app.getHttpServer()).get("/api/v1/capture/suggested-name").expect(401);
     const named = await send({ ...input("new"), collectionTitle: " Reading list " }).expect(201);
     expect(
       (await prisma.collection.findUniqueOrThrow({ where: { id: named.body.data.collectionId } }))

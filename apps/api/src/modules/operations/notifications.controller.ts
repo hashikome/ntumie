@@ -1,5 +1,6 @@
 import { Controller, Get, HttpCode, Post, Req, UseGuards } from "@nestjs/common";
 import type { NotificationView } from "@ntumie/types";
+import { invitationState } from "src/operations/invitations";
 import { AuthGuard } from "../../common/guards/auth.guard";
 import { apiOk } from "../../common/utils/response.util";
 import { PrismaService } from "../../database/prisma.service";
@@ -48,9 +49,7 @@ export class NotificationsController {
         id: row.id,
         kind: "service_invitation",
         role: row.role as NotificationView["role"],
-        state: (row.expiresAt <= new Date() && ["pending", "verifying"].includes(row.state)
-          ? "expired"
-          : row.state) as NotificationView["state"],
+        state: invitationState(row) as NotificationView["state"],
         createdAt: row.createdAt.toISOString(),
         unread: !user.notificationsSeenAt || row.createdAt > user.notificationsSeenAt,
       }),

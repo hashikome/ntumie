@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { webServerConfig } from "@ntumie/config/web-server";
-import type { Collection } from "@ntumie/types";
+import type { Collection, CollectionNameSuggestion } from "@ntumie/types";
 import type { CaptureDraft } from "../lib/capture-draft";
 import { queryValue, withCursor } from "../lib/http";
 import { serverRead } from "../lib/server-api";
@@ -12,20 +12,6 @@ import { Feedback } from "./feedback";
 import { FormNotice } from "./form-notice";
 import { NativeForm } from "./native-form";
 import { privateAllowanceText, privateLeft, readPrivateAllowance } from "./private-allowance";
-
-const shortDate = new Intl.DateTimeFormat("en", {
-  month: "short",
-  day: "numeric",
-  timeZone: "UTC",
-});
-// Matches the API's default: "Saved links, Oct 7", then "(2)", "(3)" … so a
-// suggested name never repeats one in the list. Typed names may repeat.
-function suggestedName(collections: Collection[]) {
-  const base = `Saved links, ${shortDate.format(new Date())}`;
-  const taken = new Set(collections.map((c) => c.title));
-  if (!taken.has(base)) return base;
-  for (let n = 2; ; n++) if (!taken.has(`${base} (${n})`)) return `${base} (${n})`;
-}
 
 export async function CaptureForm({
   draft,
@@ -46,6 +32,10 @@ export async function CaptureForm({
   if (choices && !choices.ok)
     return <Feedback error={choices} resetPath={draft ? `/capture/${draft.id}` : "/capture"} />;
   const collections = choices?.ok ? choices.data : [];
+  // The API names a new collection when none is typed; offer the same name.
+  const suggestion = profile.ok
+    ? await serverRead<CollectionNameSuggestion>("/api/v1/capture/suggested-name")
+    : null;
   const target = queryValue(query.collection);
   const selected = draft?.destination ?? (isUuid(target) ? target : "");
   if (profile.ok && isUuid(selected) && !collections.some((c) => c.id === selected)) {
@@ -112,7 +102,9 @@ export async function CaptureForm({
                   id="collectionTitle"
                   name="collectionTitle"
                   maxLength={255}
-                  defaultValue={draft?.collectionTitle ?? suggestedName(collections)}
+                  defaultValue={
+                    draft?.collectionTitle ?? (suggestion?.ok ? suggestion.data.title : "")
+                  }
                 />
                 <label>
                   Publish new collection

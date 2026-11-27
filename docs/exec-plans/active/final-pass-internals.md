@@ -38,8 +38,13 @@ the only blocker is a change to behaviour, business workflow or UX.)
   ntumie's Redis login covers only its queue), the cookie holds only `ref.<token>`,
   and the store takes a signed lifetime of up to 30 minutes. `fitDraft`, the size
   limits and the cookie-size path to "too many links" are gone.
-- [ ] M6 Smaller consolidations (DNS once, canonical duplicate check, shared
-  helpers, API-suggested collection name).
+- [x] (2026-11-27) M6 Smaller consolidations: `fetchPage` reports a missing
+  host from its own lookup, so the preview no longer resolves twice; the save
+  form compares rows by the preview's canonical address (a guess only until it
+  returns); `invitationState` and `timeIdCursor`/`readTimeIdCursor` are shared;
+  `GET /api/v1/capture/suggested-name` gives the name a save would use (the web
+  had checked only the loaded page of collections). The referenced-collection
+  rule was already shared in M2.
 - [ ] M7 Focus rings return when focus moves without a pointer press.
 - [ ] Docs, changelog, gates (`bun run verify`, `bun run test:browser`).
 

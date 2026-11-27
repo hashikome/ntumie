@@ -9,6 +9,10 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Save a link: the suggested name for a new collection comes from the API and never
+  repeats one in the hub (the web had checked only the loaded page), the same link
+  with tracking added counts as a repeat, and a typo'd domain is found with one DNS
+  lookup instead of two.
 - Save a link drafts are kept by the API, with only a reference in the browser's
   cookie, so long links with many tags no longer lose their tags. The action-recovery
   store takes a signed lifetime of up to 30 minutes.

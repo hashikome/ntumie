@@ -163,7 +163,16 @@ const none: PageMetadata = { title: null, description: null, siteName: null };
 
 // Null when the page couldn't be reached at all (so a lookup can retry); a
 // reachable page without metadata gives all-null fields.
-export async function fetchPageMetadata(
+export async function fetchPageMetadata(url: string, options: PageFetchOptions = {}) {
+  return (await fetchPage(url, options)).metadata;
+}
+
+// A definite "no such host" for the address itself (not a redirect target),
+// told apart from timeouts and blocked sites, so a typo can be flagged without
+// a second DNS lookup.
+class MissingHost extends Error {}
+
+export async function fetchPage(
   url: string,
   {
     timeoutMs = 3000,
@@ -171,7 +180,7 @@ export async function fetchPageMetadata(
     maxRedirects = 3,
     lookup = defaultLookup,
   }: PageFetchOptions = {},
-): Promise<PageMetadata | null> {
+): Promise<{ metadata: PageMetadata | null; missingHost: boolean }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const oembed = oembedEndpoint(url);
@@ -193,7 +202,11 @@ export async function fetchPageMetadata(
         if (body !== null) {
           const data = JSON.parse(body);
           const title = tidy(data?.title, 255);
-          if (title) return { ...none, title, siteName: tidy(data.provider_name, 120) };
+          if (title)
+            return {
+              metadata: { ...none, title, siteName: tidy(data.provider_name, 120) },
+              missingHost: false,
+            };
         }
       } catch {
         // An unsupported representation or malformed response says nothing
@@ -209,8 +222,12 @@ export async function fetchPageMetadata(
       maxRedirects,
       lookup,
       "html",
+      true,
     );
-    return html === null ? null : extractMetadata(html);
+    return { metadata: html === null ? null : extractMetadata(html), missingHost: false };
+  } catch (error) {
+    if (error instanceof MissingHost) return { metadata: null, missingHost: true };
+    throw error;
   } finally {
     clearTimeout(timer);
   }
@@ -237,6 +254,7 @@ async function fetchWithinDeadline(
   maxRedirects: number,
   lookup: Lookup,
   kind: BodyKind,
+  reportMissingHost = false,
 ): Promise<string | null> {
   let target: URL;
   try {
@@ -255,7 +273,10 @@ async function fetchWithinDeadline(
       addresses = isIP(host)
         ? [{ address: host, family: isIP(host) }]
         : await untilAborted(lookup(host), signal);
-    } catch {
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code ?? "";
+      if (reportMissingHost && hop === 0 && ["ENOTFOUND", "ENODATA"].includes(code))
+        throw new MissingHost();
       return null;
     }
     // Every answer must be public; the connection is pinned to the first one.

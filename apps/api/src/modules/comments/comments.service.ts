@@ -10,7 +10,7 @@ import { recordAudit } from "src/common/audit";
 import { ResourceKind } from "src/common/enums/resource-kind.enum";
 import { appError } from "src/common/errors/app-exception";
 import type { AuthUser } from "src/common/interfaces/auth-user.interface";
-import { decodeCursor, encodeCursor } from "src/common/utils/cursor.util";
+import { readTimeIdCursor, timeIdCursor } from "src/common/utils/cursor.util";
 import { PrismaService } from "src/database/prisma.service";
 import { type Collection, type CollectionComment, Prisma } from "src/generated/prisma/client";
 import { CollectionPolicyService } from "../hubs/collection-policy.service";
@@ -78,15 +78,8 @@ export class CommentsService {
     const collection = await this.collection(collectionId);
     const { moderator, canComment } = await this.viewerAccess(collection, viewer, token);
     const limit = query.limit ?? 20;
-    const cursor = query.cursor ? decodeCursor<{ t: string; i: string }>(query.cursor) : null;
-    if (
-      query.cursor &&
-      (!cursor ||
-        typeof cursor.t !== "string" ||
-        typeof cursor.i !== "string" ||
-        Number.isNaN(Date.parse(cursor.t)))
-    )
-      throw appError("invalid_cursor");
+    const cursor = query.cursor ? readTimeIdCursor(query.cursor) : null;
+    if (query.cursor && !cursor) throw appError("invalid_cursor");
     const states = moderator ? ["visible", "hidden"] : ["visible"];
     // A question counts as answered when a reply the viewer can see is marked.
     const hasAnswer = { replies: { some: { accepted: true, state: { in: states } } } };
@@ -112,8 +105,8 @@ export class CommentsService {
         ...(cursor
           ? {
               OR: [
-                { createdAt: { lt: new Date(cursor.t) } },
-                { createdAt: new Date(cursor.t), id: { lt: cursor.i } },
+                { createdAt: { lt: cursor.createdAt } },
+                { createdAt: cursor.createdAt, id: { lt: cursor.id } },
               ],
             }
           : {}),
@@ -123,10 +116,7 @@ export class CommentsService {
     });
     const page = top.slice(0, limit);
     const last = page.at(-1);
-    const nextCursor =
-      top.length > limit && last
-        ? encodeCursor({ t: last.createdAt.toISOString(), i: last.id })
-        : null;
+    const nextCursor = top.length > limit && last ? timeIdCursor(last) : null;
     if (
       Boolean(query.replyTo) !== Boolean(query.replyCursor) ||
       (query.replyTo && !page.some((row) => row.id === query.replyTo))
@@ -173,17 +163,8 @@ export class CommentsService {
     continuedParent?: string,
     encoded?: string,
   ) {
-    const cursor = encoded ? decodeCursor<{ p: string; t: string; i: string }>(encoded) : null;
-    if (
-      encoded &&
-      (!cursor ||
-        cursor.p !== continuedParent ||
-        typeof cursor.t !== "string" ||
-        typeof cursor.i !== "string" ||
-        !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(cursor.i) ||
-        Number.isNaN(Date.parse(cursor.t)))
-    )
-      throw appError("invalid_cursor");
+    const cursor = encoded ? readTimeIdCursor<{ p: string }>(encoded) : null;
+    if (encoded && (!cursor || cursor.p !== continuedParent)) throw appError("invalid_cursor");
     const pages = new Map<string, { rows: CollectionComment[]; nextCursor: string | null }>();
     if (!parentIds.length) return pages;
     const states = moderator ? ["visible", "hidden"] : ["visible"];
@@ -208,7 +189,7 @@ export class CommentsService {
           ${
             cursor
               ? Prisma.sql`AND (parent_id <> ${continuedParent}::uuid OR
-            created_at > ${new Date(cursor.t)} OR (created_at = ${new Date(cursor.t)} AND id > ${cursor.i}::uuid))`
+            created_at > ${cursor.createdAt} OR (created_at = ${cursor.createdAt} AND id > ${cursor.id}::uuid))`
               : Prisma.empty
           }
       ) AS ranked
@@ -230,10 +211,7 @@ export class CommentsService {
         last = rows.at(-1);
       pages.set(parentId, {
         rows: answer ? [answer, ...rows] : rows,
-        nextCursor:
-          all.length > limit && last
-            ? encodeCursor({ p: parentId, t: last.createdAt.toISOString(), i: last.id })
-            : null,
+        nextCursor: all.length > limit && last ? timeIdCursor(last, { p: parentId }) : null,
       });
     }
     return pages;

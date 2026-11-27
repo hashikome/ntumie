@@ -19,6 +19,8 @@ type Row = {
   title: string;
   titleFor: string;
   status?: LinkPreview["status"];
+  /** The API's canonical form of `titleFor`, from the preview. */
+  canonical?: string;
   left?: boolean;
   collectionHint?: boolean;
 };
@@ -33,7 +35,11 @@ export function publicHref(value: string, origin: string) {
     ? href
     : null;
 }
-// Close enough to the API's canonical form to catch the same link pasted twice.
+// A row's identity: the API's canonical address once its preview is back,
+// before that a close guess, so the same link pasted twice is caught at once.
+function rowKey(row: Row) {
+  return row.canonical && row.titleFor === row.url.trim() ? row.canonical : sameKey(row.url);
+}
 function sameKey(value: string) {
   try {
     const url = new URL(value.trim());
@@ -101,8 +107,7 @@ export function CaptureLinks({
     rows
       .filter(
         (row, index) =>
-          row.url.trim() &&
-          rows.slice(0, index).some((earlier) => sameKey(earlier.url) === sameKey(row.url)),
+          row.url.trim() && rows.slice(0, index).some((earlier) => rowKey(earlier) === rowKey(row)),
       )
       .map((row) => row.key),
   );
@@ -167,13 +172,23 @@ export function CaptureLinks({
           .catch(() => null)
           .then((result) => {
             if (signal.aborted) return;
-            const { title, status, collectionHint } = result?.ok
+            const {
+              title,
+              status,
+              collectionHint,
+              url: canonical,
+            } = result?.ok
               ? result.data
-              : { title: null, status: "untitled" as const, collectionHint: false };
+              : {
+                  title: null,
+                  status: "untitled" as const,
+                  collectionHint: false,
+                  url: undefined,
+                };
             setRows((current) =>
               current.map((r) =>
                 r.key === row.key && r.url.trim() === url
-                  ? { ...r, title: title ?? "", titleFor: url, status, collectionHint }
+                  ? { ...r, title: title ?? "", titleFor: url, status, collectionHint, canonical }
                   : r,
               ),
             );
