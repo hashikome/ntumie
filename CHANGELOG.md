@@ -9,6 +9,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- The write lock has one opt-out, `@Authority(mode)`, replacing two metadata keys,
+  an upload subclass and a path regex; the session recheck is shared with
+  operations. No behaviour changes.
 - Analytics never receives private parts of an address: page and link addresses
   keep their path and only `tab` and `tag`, so share tokens, invitation tokens and
   search text stay out of PostHog. Analytics is off in production, so nothing was sent.

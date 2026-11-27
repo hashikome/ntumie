@@ -13,6 +13,7 @@ import type {
   OperatorCollection,
 } from "@ntumie/types";
 import { isUUID } from "class-validator";
+import { recheckSession } from "src/common/authority.interceptor";
 import { revokeAccountAccess } from "../../auth/revoke-account";
 import {
   auditPage,
@@ -73,20 +74,11 @@ export class OperationsService {
     work: () => Promise<T>,
     capability: "operator" | "admin" = "operator",
   ) {
-    // Operations owns its transaction, including audited denials. Nest's ordinary
-    // mutation interceptor deliberately excludes this module.
+    // Operations owns its transaction, including audited denials; its controllers
+    // are marked @Authority("owns-transaction").
     return this.prisma.withAuthority(async () => {
       const actor = req.user;
-      const session =
-        actor.sessionId &&
-        (await this.prisma.session.findFirst({
-          where: {
-            id: actor.sessionId,
-            userId: actor.userId,
-            expiresAt: { gt: new Date() },
-            user: { accountState: "active" },
-          },
-        }));
+      const session = await recheckSession(this.prisma, actor);
       if (!session) return { error: appError("unauthorized") };
       const grant = await this.prisma.operatorGrant.findUnique({ where: { userId: actor.userId } });
       const admin = await this.prisma.adminGrant.findUnique({ where: { userId: actor.userId } });

@@ -99,10 +99,13 @@ acquire the same PostgreSQL transaction advisory lock before domain row locks.
 The product request transaction rechecks the live session after acquiring it;
 existing nested service transactions join that transaction. This deliberately
 serializes writes at the current scale. Read-only product traffic remains
-concurrent, including read-only commands sent as POST (`@ReadOnlyCommand()`,
-currently exports): they must not write, and run outside the lock so slow
-rendering never queues other writes or meets the transaction timeout; operator reads also serialize so access decisions and audit commit
-together. Revisit contention with measured traffic before increasing scale.
+concurrent. A controller or route opts out of the lock only through
+`@Authority(mode)` (`apps/api/src/common/authority.interceptor.ts`): `read-only`
+for a POST that only reads (exports), so slow rendering never queues other writes
+or meets the transaction timeout; `after-parse` for uploads, which take the lock
+once parsing is done; `owns-transaction` for operations, whose service opens its
+own audited transaction, so operator reads also serialize and access decisions
+and audit commit together. Revisit contention with measured traffic before increasing scale.
 
 ## Observability and release verification
 

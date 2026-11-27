@@ -8,17 +8,12 @@ import {
   Patch,
   Post,
   Query,
-  SetMetadata,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiTags } from "@nestjs/swagger";
-import {
-  AUTHORITY_AFTER_UPLOAD,
-  ParsedUploadAuthorityInterceptor,
-} from "../../common/authority.interceptor";
+import { Authority } from "../../common/authority.interceptor";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { AuthGuard } from "../../common/guards/auth.guard";
 import type { AuthUser } from "../../common/interfaces/auth-user.interface";
@@ -44,12 +39,11 @@ export class ImportsController {
   constructor(private readonly service: ImportsService) {}
   @Post()
   @ApiConsumes("multipart/form-data")
-  @SetMetadata(AUTHORITY_AFTER_UPLOAD, true)
-  @UseInterceptors(
+  @Authority(
+    "after-parse",
     FileInterceptor("file", {
       limits: { fileSize: IMPORT_BYTES, files: 1, fields: 1, parts: 3, fieldSize: 32 },
     }),
-    ParsedUploadAuthorityInterceptor,
   )
   async create(
     @CurrentUser() user: AuthUser,

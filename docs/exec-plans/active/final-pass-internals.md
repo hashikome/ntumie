@@ -24,7 +24,10 @@ the only blocker is a change to behaviour, business workflow or UX.)
   replies, comment writes reuse loaded rows. Baseline, regressions, full isolated
   standard gate and production browser acceptance pass. Review found no
   actionable regressions; user approved local commits. Push remains pending.
-- [ ] M3 One write-lock opt-out per controller.
+- [x] (2026-11-27) M3 One write-lock opt-out per controller: `@Authority(mode)`
+  (`lock` by default, `read-only`, `after-parse`, `owns-transaction`) replaces the
+  method exceptions, the two metadata keys, the upload subclass and the
+  `/operations` path regex; `recheckSession` is shared with `OperationsService`.
 - [ ] M4 Forms route as an action table with one status-to-notice mapping.
 - [ ] M5 Save a link drafts in Redis (cookie holds only the draft id).
 - [ ] M6 Smaller consolidations (DNS once, canonical duplicate check, shared

@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
+import { Authority } from "src/common/authority.interceptor";
 import { CursorQueryDto } from "../../common/dto/cursor-query.dto";
 import { AuthGuard } from "../../common/guards/auth.guard";
 import { apiOk } from "../../common/utils/response.util";
@@ -16,6 +17,8 @@ import { InviteCommandDto, InviteDto, VersionDto } from "./administration.dto";
 import { AdministrationService } from "./administration.service";
 import type { OperatorRequest } from "./operations.service";
 @UseGuards(AuthGuard)
+// Operations open their own audited authority transaction (OperationsService).
+@Authority("owns-transaction")
 @Controller("api/v1/operations")
 export class AdministrationController {
   constructor(private readonly administration: AdministrationService) {}

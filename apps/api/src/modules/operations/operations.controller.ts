@@ -9,12 +9,15 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
+import { Authority } from "src/common/authority.interceptor";
 import { AuthGuard } from "../../common/guards/auth.guard";
 import { apiOk } from "../../common/utils/response.util";
 import { AccountListQueryDto, OperationDto } from "./operations.dto";
 import { OperationsService, type OperatorRequest } from "./operations.service";
 
 @UseGuards(AuthGuard)
+// Operations open their own audited authority transaction (OperationsService).
+@Authority("owns-transaction")
 @Controller("api/v1/operations")
 export class OperationsController {
   constructor(private readonly operations: OperationsService) {}
