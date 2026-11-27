@@ -18,14 +18,13 @@ import {
   collectionAddress,
   interestFeatures,
   isPublicLinkHost,
-  maxCaptureLinks,
   maxNoteLength,
   operationActions,
   operationReasons,
   signInCodePurposes,
 } from "@ntumie/types";
 import { auditContinuation, auditQuery } from "../../../lib/audit-query";
-import type { CaptureDraft } from "../../../lib/capture-draft";
+import { type CaptureDraft, maxDescriptionLength } from "../../../lib/capture-draft";
 import { draftCookie, draftRoom, readDraft, saveDraft } from "../../../lib/capture-server";
 import { completeSignIn } from "../../../lib/complete-sign-in";
 import { serverCookie } from "../../../lib/cookies";
@@ -340,14 +339,14 @@ async function startCollectionForm(request: Request, form: URLSearchParams): Pro
   const note = (form.get("note") ?? "").trim().slice(0, maxNoteLength);
   const collectionTitle = form.get("collectionTitle")?.trim().slice(0, 255) || undefined;
   const published = form.get("published") !== "false";
-  const links: CaptureLink[] = [{ url, ...(note ? { note } : {}) }];
+  const link: CaptureLink = { url, ...(note ? { note } : {}) };
   const same =
     previous &&
-    JSON.stringify([previous.links, previous.collectionTitle, previous.published ?? true]) ===
-      JSON.stringify([links, collectionTitle, published]);
+    JSON.stringify([previous.link, previous.collectionTitle, previous.published ?? true]) ===
+      JSON.stringify([link, collectionTitle, published]);
   const draft: CaptureDraft = {
     id,
-    links,
+    link,
     destination: "new",
     ...(collectionTitle ? { collectionTitle } : {}),
     published,
@@ -373,45 +372,63 @@ async function captureSaveForm(request: Request, form: URLSearchParams): Promise
   const previous = await readDraft(id);
   const back = (notice: string) =>
     redirectResponse(`${previous ? `/capture/${id}` : "/capture"}?notice=${notice}`);
-  // One row per link: URL and optional comma-separated tags (titles are
-  // resolved from the page, never typed). Rows left empty are ignored; any
-  // other unusable address rejects the save.
-  const tags = form.getAll("tags");
-  const links: CaptureLink[] = [];
-  for (const [index, raw] of form.getAll("url").entries()) {
-    if (!raw.trim()) continue;
-    const url = captureUrl(raw.trim());
-    if (!url) return back("link-invalid");
-    if (
-      !collectionAddress(url, webServerConfig().publicOrigin) &&
-      !isPublicLinkHost(new URL(url).hostname)
-    )
-      return back("link-not-public");
-    const tagList = parseTags(tags[index]);
-    links.push({ url, ...(tagList.length ? { tags: tagList } : {}) });
-  }
+  // One link, its optional comma-separated tags and note (titles are
+  // resolved from the page, never typed).
+  const url = captureUrl((form.get("url") ?? "").trim());
+  if (!url) return back("link-invalid");
+  if (
+    !collectionAddress(url, webServerConfig().publicOrigin) &&
+    !isPublicLinkHost(new URL(url).hostname)
+  )
+    return back("link-not-public");
+  const tags = parseTags(form.get("tags") ?? "");
+  const note = (form.get("note") ?? "").trim().slice(0, maxNoteLength);
+  const link: CaptureLink = {
+    url,
+    ...(tags.length ? { tags } : {}),
+    ...(note ? { note } : {}),
+  };
   const destination = form.get("destination") ?? "";
-  if (!links.length || (!["first", "new"].includes(destination) && !isUuid(destination)))
-    return back("link-invalid");
-  if (links.length > maxCaptureLinks) return back("too-many-links");
+  if (!["first", "new"].includes(destination) && !isUuid(destination))
+    return back("choose-destination");
+  const fresh = !isUuid(destination);
+  // Sections belong to the collection they were listed for; a collection
+  // changed without JavaScript keeps the old list, so its choice is dropped.
+  const sectionId = form.get("sectionId") ?? "";
+  const section =
+    !fresh && isUuid(sectionId) && form.get("sectionsFor") === destination ? sectionId : undefined;
   const published = form.get("published") !== "false";
-  const collectionTitle =
-    destination === "new"
-      ? form.get("collectionTitle")?.trim().slice(0, 255) || undefined
-      : undefined;
+  const collectionTitle = fresh
+    ? form.get("collectionTitle")?.trim().slice(0, 255) || undefined
+    : undefined;
+  const collectionDescription = fresh
+    ? form.get("collectionDescription")?.trim().slice(0, maxDescriptionLength) || undefined
+    : undefined;
   const same =
     previous &&
     JSON.stringify([
-      previous.links,
+      previous.link,
       previous.destination,
+      previous.sectionId,
       previous.collectionTitle,
+      previous.collectionDescription,
       previous.published ?? true,
-    ]) === JSON.stringify([links, destination, collectionTitle, published]);
+    ]) ===
+      JSON.stringify([
+        link,
+        destination,
+        section,
+        collectionTitle,
+        collectionDescription,
+        published,
+      ]);
   const draft: CaptureDraft = {
     id,
-    links,
+    link,
     destination,
+    ...(section ? { sectionId: section } : {}),
     ...(collectionTitle ? { collectionTitle } : {}),
+    ...(collectionDescription ? { collectionDescription } : {}),
     published,
     issued: previous?.issued ?? Date.now(),
     operationId: same ? previous.operationId : previous ? randomUUID() : id,

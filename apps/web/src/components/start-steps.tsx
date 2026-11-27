@@ -25,7 +25,6 @@ export function StartSteps({ current }: { current: 1 | 2 | 3 }) {
 
 // The collection that is waiting while the person confirms their email.
 export function DraftSummary({ draft }: { draft: CaptureDraft }) {
-  const links = draft.links.length;
   return (
     <div className="draft-summary">
       <svg
@@ -43,10 +42,7 @@ export function DraftSummary({ draft }: { draft: CaptureDraft }) {
       </svg>
       <span>
         <b>{draft.collectionTitle ?? "Your new collection"}</b>
-        <span>
-          {links} {links === 1 ? "link" : "links"} ·{" "}
-          {draft.published === false ? "Private" : "Published"}
-        </span>
+        <span>1 link · {draft.published === false ? "Private" : "Published"}</span>
       </span>
       <a href={`/start/${draft.id}`}>
         Edit<span className="sr-only"> your collection</span>

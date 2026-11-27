@@ -54,7 +54,7 @@ method and a perspective on cultivating and sharing knowledge.
 | Hub | `/@handle` or `/h/<hubId>`; hub lookup and authorized collection list | Open a collection |
 | Collection | `/c/<id>`; collection, resources and discussion APIs | Open a resource or referenced collection |
 | Item details | `/c/<collectionId>?item=<id>`; authorized single-resource API | Expand metadata and attribution inline; open the destination |
-| Capture | `/capture`, `/capture/<draftId>` | Save one or two links |
+| Capture | `/capture`, `/capture/<draftId>` | Save a link (also a dialog over the page) |
 | Section authoring | `/c/<id>/sections`, optional `?section=<id>` | Owner/contributor adds a nonempty section or edits its description |
 | Collection editing | `/c/<id>/edit` | Owner edits collection details; owners/contributors manage sections and reorder items |
 | History | `/c/<id>/history` | Owner/contributor reads authorized activity |
@@ -151,8 +151,13 @@ closing disclosures. Contributor badges describe capability, never access grants
 
 ## Save a link
 
-Capture accepts one or two public addresses with optional tags; titles come from
-the pages. Before and after sign-in, each usable address receives a title/status
+Capture saves one public address with optional tags and note; titles come from
+the pages. Opened from the header it is a dialog over the current page (an
+intercepting route; a phone gets a full-height sheet), and `/capture` renders the
+same server form as a page without JavaScript. The destination is an existing
+collection with a section, or a new collection with name, description and
+visibility; the section list posts with `sectionsFor`, so a collection changed
+without JavaScript drops a stale section rather than failing. Before and after sign-in, each usable address receives a title/status
 check. The form shows its title and validation feedback; richer previews belong
 on saved collection items. Failed title checks leave valid addresses saveable. `/capture/<draftId>` resumes a 30-minute encrypted HttpOnly draft.
 Up to three drafts coexist. URLs never enter navigation strings or client

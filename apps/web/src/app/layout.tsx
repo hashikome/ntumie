@@ -32,7 +32,13 @@ export const metadata: Metadata = {
   referrer: "strict-origin",
   robots: { index: false, follow: false },
 };
-export default async function Layout({ children }: { children: ReactNode }) {
+export default async function Layout({
+  children,
+  modal,
+}: {
+  children: ReactNode;
+  modal: ReactNode;
+}) {
   const [session, profile, savedTheme, resourceNewTab] = await Promise.all([
     readSession(),
     readOwnProfile(),
@@ -82,6 +88,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
                 <AppNavigation theme={theme} />
                 <RouteCodePreload manifest={routeChunksUrl()} />
                 {children}
+                {modal}
               </main>
             </TimeZoneProvider>
           </ResourceNavigationProvider>

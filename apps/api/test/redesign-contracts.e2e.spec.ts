@@ -60,7 +60,7 @@ describe("cobalt redesign contracts", () => {
   it("starts a named collection with a noted first link, for new and returning owners alike", async () => {
     const first = await capture(owner, {
       collectionTitle: "  Starting a kitchen garden  ",
-      links: [{ url: link(), note: "  Read this before choosing a spot.  " }],
+      link: { url: link(), note: "  Read this before choosing a spot.  " },
     }).expect(201);
     const id = first.body.data.collectionId as string;
     const collection = await prisma.collection.findUniqueOrThrow({ where: { id } });
@@ -72,7 +72,7 @@ describe("cobalt redesign contracts", () => {
     // Starting again always makes another collection; a blank name gets the dated default.
     const second = await capture(owner, {
       collectionTitle: "   ",
-      links: [{ url: link() }],
+      link: { url: link() },
     }).expect(201);
     expect(second.body.data.collectionId).not.toBe(id);
     const named = await prisma.collection.findUniqueOrThrow({
@@ -84,9 +84,9 @@ describe("cobalt redesign contracts", () => {
   it("remembers an explicit private choice for the next new collection", async () => {
     const who = await person("private-first");
     expect((await session(who)).newCollectionPublished).toBe(true);
-    await capture(who, { published: false, links: [{ url: link() }] }).expect(201);
+    await capture(who, { published: false, link: { url: link() } }).expect(201);
     expect((await session(who)).newCollectionPublished).toBe(false);
-    const next = await capture(who, { links: [{ url: link() }] }).expect(201);
+    const next = await capture(who, { link: { url: link() } }).expect(201);
     const collection = await prisma.collection.findUniqueOrThrow({
       where: { id: next.body.data.collectionId },
     });
@@ -94,8 +94,9 @@ describe("cobalt redesign contracts", () => {
   });
 
   it("edits and clears a link note, and refuses notes on sections or past 280 characters", async () => {
-    const id = (await capture(owner, { links: [{ url: link() }, { url: link() }] }).expect(201))
-      .body.data.collectionId as string;
+    const id = (await capture(owner, { link: { url: link() } }).expect(201)).body.data
+      .collectionId as string;
+    await capture(owner, { destination: id, link: { url: link() } }).expect(201);
     const [a, b] = await items(id, owner);
     const patch = (resourceId: string, body: object) =>
       auth(
@@ -119,8 +120,9 @@ describe("cobalt redesign contracts", () => {
   });
 
   it("ties questions to a section and an item, keeps replies unscoped, and caps bodies at 2,000", async () => {
-    const id = (await capture(owner, { links: [{ url: link() }, { url: link() }] }).expect(201))
-      .body.data.collectionId as string;
+    const id = (await capture(owner, { link: { url: link() } }).expect(201)).body.data
+      .collectionId as string;
+    await capture(owner, { destination: id, link: { url: link() } }).expect(201);
     const [first, second] = await items(id, owner);
     const section = (
       await auth(request(server()).post(`/api/v1/collections/${id}/resources/heading`), owner)
@@ -156,7 +158,7 @@ describe("cobalt redesign contracts", () => {
 
   it("keeps a hub public only while it has a published collection, and hides its byline otherwise", async () => {
     const who = await person("quiet");
-    const id = (await capture(who, { published: false, links: [{ url: link() }] }).expect(201)).body
+    const id = (await capture(who, { published: false, link: { url: link() } }).expect(201)).body
       .data.collectionId as string;
     const hub = await prisma.hub.findUniqueOrThrow({ where: { ownerUserId: who.id } });
     expect(hub).toMatchObject({ collectionCount: 1, publishedCollectionCount: 0 });
@@ -183,7 +185,7 @@ describe("cobalt redesign contracts", () => {
       publishedCollectionCount: 0,
     });
     await request(server()).get(`/api/v1/hubs/${hub.id}`).expect(404);
-    const again = await capture(who, { links: [{ url: link() }] }).expect(201);
+    const again = await capture(who, { link: { url: link() } }).expect(201);
     const reused = await prisma.collection.findUniqueOrThrow({
       where: { id: again.body.data.collectionId },
     });
@@ -211,7 +213,7 @@ describe("cobalt redesign contracts", () => {
       description?: string,
       fetched = false,
     ) => {
-      const created = await capture(curator, { collectionTitle: title, links: [{ url: link() }] });
+      const created = await capture(curator, { collectionTitle: title, link: { url: link() } });
       const id = created.body.data.collectionId as string;
       await prisma.resource.deleteMany({ where: { collectionId: id } });
       await prisma.collection.update({ where: { id }, data: { description: description ?? null } });
@@ -273,14 +275,14 @@ describe("cobalt redesign contracts", () => {
     const helper = await person("profile-helper");
     const created = await capture(curator, {
       collectionTitle: "Feeding your soil",
-      links: [{ url: link() }],
+      link: { url: link() },
     }).expect(201);
     const id = created.body.data.collectionId as string;
     await auth(request(server()).post(`/api/v1/collections/${id}/shares`), curator)
       .send({ email: helper.email, role: "contributor" })
       .expect(201);
     for (let added = 0; added < 3; added++)
-      await capture(helper, { destination: id, links: [{ url: link() }] }).expect(201);
+      await capture(helper, { destination: id, link: { url: link() } }).expect(201);
 
     const profile = async (who: Person) =>
       (await request(server()).get(`/api/v1/people/${who.id}`).expect(200)).body.data;
@@ -315,7 +317,7 @@ describe("cobalt redesign contracts", () => {
     const make = async (title: string) => {
       const created = await capture(curator, {
         collectionTitle: title,
-        links: [{ url: link(), tags: [tag] }],
+        link: { url: link(), tags: [tag] },
       }).expect(201);
       return created.body.data.collectionId as string;
     };
@@ -378,7 +380,7 @@ describe("cobalt redesign contracts", () => {
     const saver = await person("public-saver");
     const created = await capture(owner, {
       collectionTitle: "Worth saving",
-      links: [{ url: link() }],
+      link: { url: link() },
     }).expect(201);
     const id = created.body.data.collectionId as string;
     await auth(request(server()).post(`/api/v1/collections/${id}/save`), saver).expect((r) =>
@@ -401,18 +403,18 @@ describe("cobalt redesign contracts", () => {
     const curator = await person("outline-owner");
     const first = await capture(curator, {
       collectionTitle: "First guide",
-      links: [{ url: link() }],
+      link: { url: link() },
     }).expect(201);
     const firstId = first.body.data.collectionId as string;
     const second = await capture(curator, {
       collectionTitle: "Second guide",
-      links: [{ url: link() }],
+      link: { url: link() },
     }).expect(201);
     const secondId = second.body.data.collectionId as string;
     const hidden = await capture(curator, {
       collectionTitle: "Private notes",
       published: false,
-      links: [{ url: link() }],
+      link: { url: link() },
     }).expect(201);
     const hiddenId = hidden.body.data.collectionId as string;
     const [firstItem] = await prisma.resource.findMany({ where: { collectionId: firstId } });
@@ -484,7 +486,7 @@ describe("cobalt redesign contracts", () => {
   it("counts the discussion and filters to answered questions", async () => {
     const created = await capture(owner, {
       collectionTitle: "Discussed guide",
-      links: [{ url: link() }],
+      link: { url: link() },
     }).expect(201);
     const id = created.body.data.collectionId as string;
     const ask = (who: Person, body: Record<string, unknown>) =>

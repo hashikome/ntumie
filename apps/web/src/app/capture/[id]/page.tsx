@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { CaptureForm } from "../../../components/capture-form";
+import { SaveLinkForm } from "../../../components/save-link-form";
 import { readDraft } from "../../../lib/capture-server";
-export const metadata: Metadata = { title: "Save your link" };
+export const metadata: Metadata = { title: "Save a link" };
 export const dynamic = "force-dynamic";
 export default async function Page({
   params,
@@ -21,5 +21,5 @@ export default async function Page({
         </a>
       </section>
     );
-  return <CaptureForm draft={draft} query={await searchParams} />;
+  return <SaveLinkForm draft={draft} query={await searchParams} />;
 }

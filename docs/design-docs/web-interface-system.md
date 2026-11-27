@@ -10,8 +10,9 @@ The [experience](web-product-experience.md) owns journeys and copy direction;
 ## Principles
 
 - **UX over compactness.** When a screen must fit, keep the readable layout and
-  show fewer items or disclose progressively (tags behind "Add tags", two links
-  per save); never crowd fields side by side or drop labels to save space.
+  show fewer items or disclose progressively (three collections, then "Show
+  all"; one link per save); never crowd fields side by side or drop labels to
+  save space.
 - **Copy scans at a glance.** Short paragraphs with clear space between them;
   emphasis is bold text, not extra panels competing with the actions.
 - **The wordmark is the logo.** Lowercase "ntumie." text only; no icon or mark.

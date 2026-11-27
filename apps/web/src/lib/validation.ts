@@ -1,10 +1,21 @@
-import { maxTagLength, maxTags } from "@ntumie/types";
+import { collectionAddress, isPublicLinkHost, maxTagLength, maxTags } from "@ntumie/types";
 
 // Browser-safe input checks shared by forms, form routes and client components.
 
 export const uuidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 export const isUuid = (value: unknown): value is string =>
   typeof value === "string" && uuidPattern.test(value);
+
+// A savable address on the public web (not localhost, a private or example
+// name, or an IP number). Half-typed hosts like "https://exa" fail it too, so
+// they are never sent for a title lookup.
+export function publicHref(value: string, origin: string) {
+  const href = captureUrl(value);
+  return href !== null &&
+    (collectionAddress(href, origin) || isPublicLinkHost(new URL(href).hostname))
+    ? href
+    : null;
+}
 
 // A savable link address: http(s), no credentials, no control characters,
 // at most 2048 characters. Returns the parsed href or null.

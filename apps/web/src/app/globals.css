@@ -802,255 +802,6 @@ main textarea::placeholder {
   background: var(--color-danger-soft);
   color: var(--color-danger);
 }
-/* Save a link: one row per link, title and tags side by side when there is room. */
-.capture-page {
-  max-width: 40rem;
-}
-.capture-links {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  align-self: stretch;
-}
-.capture-links > label {
-  font-weight: 550;
-  font-size: 0.9375rem;
-  margin-top: 0.75rem;
-}
-.capture-rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 1.25rem;
-  align-self: stretch;
-}
-.capture-row {
-  display: grid;
-  gap: 0.375rem;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
-}
-.capture-row > label {
-  font-weight: 550;
-  font-size: 0.9375rem;
-}
-.capture-row > label:not(:first-of-type) {
-  margin-top: 0.5rem;
-}
-.tag-field-plain {
-  display: grid;
-  gap: 0.375rem;
-  margin-top: 0.25rem;
-}
-.tag-field-plain > summary {
-  justify-self: start;
-  list-style: none;
-  cursor: pointer;
-}
-.tag-field-plain > summary::-webkit-details-marker {
-  display: none;
-}
-.tag-field-plain > label {
-  font-weight: 550;
-  font-size: 0.9375rem;
-}
-.tag-summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-}
-.tag-summary .tags {
-  margin: 0;
-}
-.tag-add {
-  font-size: var(--text-meta);
-}
-.capture-title {
-  margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 550;
-  color: var(--color-ink);
-  overflow-wrap: anywhere;
-}
-.capture-title.pending {
-  font-weight: 400;
-  color: var(--color-muted);
-}
-.capture-note {
-  margin: 0;
-  font-size: var(--text-meta);
-  color: var(--color-muted);
-}
-.capture-note.invalid {
-  color: var(--color-danger);
-}
-/* The link field reports what it found: accent when the page answered with a
-   title, danger when the address is unusable. Browser autofill keeps the
-   field's own background. */
-main .capture-row input[name="url"] {
-  transition:
-    border-color 160ms var(--ease-feedback),
-    box-shadow 160ms var(--ease-feedback);
-}
-main .capture-row input[name="url"]:autofill {
-  box-shadow: 0 0 0 100vmax var(--color-canvas) inset;
-  -webkit-text-fill-color: var(--color-ink);
-  caret-color: var(--color-ink);
-}
-main .capture-row input[name="url"][data-state="valid"] {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary);
-}
-main .capture-row input[name="url"][data-state="valid"]:autofill {
-  box-shadow:
-    0 0 0 100vmax var(--color-canvas) inset,
-    0 0 0 1px var(--color-primary);
-}
-main .capture-row input[name="url"][data-state="invalid"] {
-  border-color: var(--color-danger);
-  box-shadow: 0 0 0 1px var(--color-danger);
-}
-main .capture-row input[name="url"][data-state="invalid"]:autofill {
-  box-shadow:
-    0 0 0 100vmax var(--color-canvas) inset,
-    0 0 0 1px var(--color-danger);
-}
-.capture-url {
-  display: flex;
-  gap: 0.5rem;
-  align-items: stretch;
-}
-.capture-url > input {
-  flex: 1;
-}
-/* Remove sits beside its link field, sized like a control. */
-.capture-remove {
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: var(--control);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
-  transition:
-    color 160ms var(--ease-feedback),
-    border-color 160ms var(--ease-feedback);
-}
-.capture-remove:hover {
-  color: var(--color-danger);
-  border-color: var(--color-danger);
-}
-/* Adding rows needs JavaScript; without it the form saves its one row. */
-@media (scripting: none) {
-  .capture-add,
-  .capture-bulk {
-    display: none;
-  }
-}
-.capture-bulk {
-  display: grid;
-  gap: 0.375rem;
-  justify-items: start;
-}
-.capture-bulk-note {
-  margin: 0;
-  font-size: var(--text-meta);
-  color: var(--color-muted);
-}
-.capture-bulk-note:empty {
-  display: none;
-}
-.capture-help {
-  margin: 0;
-}
-/* Tags as chips inside one field-looking box (Save a link, collection edit). */
-.tag-note {
-  margin: 0;
-  font-size: var(--text-meta);
-  color: var(--color-danger);
-}
-.tag-input {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.375rem;
-  min-height: var(--control);
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-canvas);
-  cursor: text;
-}
-.tag-input:focus-within {
-  border-color: var(--color-focus);
-}
-main .tag-input input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]) {
-  flex: 1 1 8rem;
-  width: auto;
-  min-width: 8rem;
-  min-height: calc(var(--control) - 0.625rem);
-  padding: 0 0.375rem;
-  border: 0;
-  background: transparent;
-  outline: none;
-}
-.tag-chips {
-  display: contents;
-  list-style: none;
-}
-.tag-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.125rem;
-  padding: 0.125rem 0.25rem 0.125rem 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.375rem;
-  font-size: var(--text-meta);
-  color: var(--color-ink);
-}
-.tag-chip button {
-  display: inline-grid;
-  place-items: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  padding: 0;
-  border: 0;
-  border-radius: 0.25rem;
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
-}
-.tag-chip button:hover {
-  color: var(--color-ink);
-  background: var(--color-surface-hover, color-mix(in oklch, var(--color-ink) 8%, transparent));
-}
-.capture-new-name {
-  display: none;
-  gap: 0.375rem;
-  align-self: stretch;
-  margin-top: 0.75rem;
-}
-.capture-new-name label {
-  font-weight: 550;
-  font-size: 0.9375rem;
-}
-.capture-links:has(#destination option[value="new"]:checked) .capture-new-name {
-  display: grid;
-}
-.capture-links > .meta {
-  margin: 0;
-}
-.capture-submit {
-  margin-top: 0.75rem;
-}
 .action-form .form-notice {
   align-self: stretch;
   margin: 0;
@@ -6399,4 +6150,389 @@ body:has(.auth-stage):not(:has(.start-collection, .start-steps)) .session-nav .n
     position: absolute;
     inset: -0.5rem 0;
   }
+}
+
+/* Save a link (r2-save): a dialog over the page, a full-height sheet on
+   phones, and the /capture page. */
+.save-link-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(35rem, 100%);
+  margin: 2rem auto;
+  border-radius: 1.25rem;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  text-align: left;
+}
+section.save-link-panel {
+  border: 1px solid var(--color-divider);
+}
+.save-link-dialog {
+  max-height: calc(100dvh - 4rem);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px oklch(0.21 0.06 271 / 0.08),
+    0 20px 50px oklch(0.21 0.06 271 / 0.14);
+}
+.save-link-dialog:not([open]) {
+  display: none;
+}
+.save-link-dialog::backdrop {
+  background: var(--color-scrim);
+}
+.save-link-grab {
+  display: none;
+}
+.save-link-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 0.25rem;
+}
+.save-link-heading :is(h1, h2) {
+  margin: 0;
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+  letter-spacing: -0.02em;
+}
+.save-link-close {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: -0.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.save-link-close:hover {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.save-link-panel > .form-notice {
+  margin: 0.75rem 1.5rem 0;
+}
+.save-link-panel > .private-limit {
+  margin: 0 1.5rem 1.25rem;
+}
+.save-link-panel .save-link-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-height: 0;
+  margin: 0;
+}
+.save-link-fields {
+  display: grid;
+  gap: 1.125rem;
+  min-height: 0;
+  padding: 0.75rem 1.5rem 0.5rem;
+  overflow-y: auto;
+}
+.save-link-form .field > label,
+.save-link-form .visibility-choice > legend,
+.save-collection > legend {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.save-link-form .field {
+  gap: 0.375rem;
+}
+main .save-link-form :is(input:not([type="hidden"]):not([type="radio"]), select) {
+  min-height: 2.875rem;
+}
+main .save-link-form textarea {
+  min-height: 4.75rem;
+  resize: none;
+}
+.save-link-form .link-preview {
+  margin-top: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--radius-field);
+  font-size: 0.875rem;
+}
+.save-link-form .link-preview-mark {
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.5rem;
+  color: var(--color-muted);
+}
+.save-collection {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.save-collection > legend {
+  margin-bottom: 0.375rem;
+  padding: 0;
+}
+.save-choices {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.save-link-form .save-choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.875rem;
+  padding: 0 0.75rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-field);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.save-choice:hover {
+  background: var(--color-surface);
+}
+.save-choice:has(:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.save-choice:has(:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.save-choice > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.save-choice small {
+  flex: none;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.save-link-form :is(.save-choice, .choice-card) input[type="radio"] {
+  appearance: none;
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-canvas);
+}
+.save-link-form :is(.save-choice, .choice-card) input[type="radio"]:checked {
+  border: 5px solid var(--color-primary);
+}
+.save-link-form .choice-card input[type="radio"] {
+  margin-top: 0.125rem;
+}
+.save-link-form .choice-card input[type="radio"]:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.save-plus {
+  display: none;
+}
+.save-link-form .save-choice-new:not(:has(:checked)) {
+  color: var(--color-link);
+  font-weight: 600;
+}
+.save-choice-new:not(:has(:checked)) input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.save-choice-new:not(:has(:checked)) .save-plus {
+  display: block;
+  flex: none;
+}
+.save-more {
+  justify-self: start;
+  padding: 0.25rem 0.75rem;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.save-pick {
+  display: none;
+}
+.save-new {
+  display: none;
+  gap: 0.875rem;
+  padding: 0.25rem 0.75rem 0.75rem 2.625rem;
+}
+.save-new.only {
+  padding: 0;
+}
+.save-new .save-more {
+  margin-left: -2.625rem;
+  margin-top: 0.75rem;
+}
+.save-collection:has(.save-choice-new :checked) .save-new,
+.save-new.only {
+  display: grid;
+}
+/* With JavaScript, choosing "New collection" leaves only it in the list. */
+.save-collection.enhanced:has(.save-choice-new :checked)
+:is(.save-choices > li:not(:first-child), .save-collection > .save-more) {
+  display: none;
+}
+.save-link-form .visibility-choice {
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.save-link-form .visibility-choice > legend {
+  margin-bottom: 0.375rem;
+}
+.save-link-form .visibility-choice > .field-help {
+  grid-column: 1 / -1;
+}
+.save-link-form .choice-card {
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-field);
+  font-weight: 400;
+}
+.save-link-form .choice-card b {
+  font-size: 0.9375rem;
+}
+.save-link-form .choice-card small {
+  line-height: 1.4;
+}
+.save-placement {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+.save-link-footer {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--color-divider);
+}
+.save-link-footer .button {
+  min-height: 2.75rem;
+  padding-inline: 1.25rem;
+  font-size: 1rem;
+}
+.save-link-footer .button.quiet {
+  border-color: transparent;
+  background: transparent;
+}
+.save-link-footer .button.quiet:hover {
+  background: var(--color-surface);
+}
+@media (max-width: 40rem) {
+  .save-link-dialog {
+    width: 100%;
+    max-width: none;
+    height: calc(100dvh - 2.75rem);
+    max-height: none;
+    margin: auto 0 0;
+    border-radius: 1.375rem 1.375rem 0 0;
+  }
+  section.save-link-panel {
+    margin: 0 auto;
+    border: 0;
+  }
+  .save-link-grab {
+    display: block;
+    flex: none;
+    width: 2.5rem;
+    height: 0.3125rem;
+    margin: 0.625rem auto 0.125rem;
+    border-radius: 0.1875rem;
+    background: var(--color-divider);
+  }
+  .save-link-heading {
+    padding: 0.375rem 0.5rem 0.25rem 1.25rem;
+  }
+  section.save-link-panel .save-link-heading {
+    padding-inline: 0;
+  }
+  .save-link-heading :is(h1, h2) {
+    font-size: 1.25rem;
+  }
+  .save-link-close {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-right: 0;
+  }
+  .save-link-dialog .save-link-form {
+    flex: 1;
+  }
+  .save-link-fields {
+    flex: 1;
+    gap: 1rem;
+    align-content: start;
+    padding: 0.5rem 1.25rem 0.75rem;
+  }
+  section.save-link-panel .save-link-fields {
+    padding-inline: 0;
+  }
+  main .save-link-form :is(input:not([type="hidden"]):not([type="radio"]), select) {
+    min-height: 3rem;
+  }
+  .save-collection.enhanced .save-pick {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  main .save-link-form .save-pick select {
+    min-height: 3.25rem;
+    padding-right: 7.5rem;
+    font-weight: 600;
+  }
+  .save-pick small {
+    position: absolute;
+    right: 2.5rem;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    pointer-events: none;
+  }
+  .save-collection.enhanced :is(.save-choices, .save-collection > .save-more) {
+    display: none;
+  }
+  .save-new {
+    padding: 1rem 0 0;
+  }
+  .save-new .save-more {
+    margin-left: -0.75rem;
+  }
+  .save-link-form .visibility-choice {
+    grid-template-columns: 1fr;
+  }
+  .save-placement {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+  }
+  .save-link-footer {
+    display: grid;
+    gap: 0.375rem;
+    margin-top: 0;
+    padding: 0.75rem 1.25rem 1.25rem;
+  }
+  section.save-link-panel .save-link-footer {
+    padding-inline: 0;
+  }
+  .save-link-footer .button {
+    min-height: 3.125rem;
+  }
+}
+/* A new collection has no sections yet. */
+.save-link-fields:has(.save-choice-new :checked) .save-placement {
+  display: none;
 }

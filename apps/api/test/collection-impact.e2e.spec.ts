@@ -97,27 +97,22 @@ describe("owner collection reference lifecycle", () => {
       operationId: randomUUID(),
       startedAt: Date.now(),
       destination: source.id,
-      links: [{ url, tags: ["Reading"] }],
+      link: { url, tags: ["Reading"] },
     };
     const save = (input = body, token = owner.token) =>
       api().post("/api/v1/capture").auth(token, { type: "bearer" }).send(input);
     const result = (await save().expect(201)).body.data;
     expect((await save().expect(201)).body.data).toEqual(result);
-    const row = await db.resource.findUniqueOrThrow({ where: { id: result.resourceIds[0] } });
+    const row = await db.resource.findUniqueOrThrow({ where: { id: result.resourceId } });
     expect(row.kind).toBe("collection_link");
     expect(row.url).toBeNull();
     expect(row.linkedCollectionId).toBe(target.id);
     expect(await db.linkMetadata.findFirst({ where: { url } })).toBeNull();
-    const aliases = {
-      ...body,
-      operationId: randomUUID(),
-      links: [
-        { url: `${origin}/c/${target.id}/`, tags: [] },
-        { url, tags: [] },
-      ],
-    };
-    expect((await save(aliases).expect(201)).body.data).toEqual(result);
-    expect((await save(aliases).expect(201)).body.data).toEqual(result);
+    for (const alias of [`${origin}/c/${target.id}/`, url]) {
+      const again = { ...body, operationId: randomUUID(), link: { url: alias, tags: [] } };
+      expect((await save(again).expect(201)).body.data).toEqual(result);
+      expect((await save(again).expect(201)).body.data).toEqual(result);
+    }
     await db.collection.update({ where: { id: target.id }, data: { title: "Renamed target" } });
     const view = (
       await api()
@@ -139,12 +134,12 @@ describe("owner collection reference lifecycle", () => {
     const contributed = {
       ...body,
       operationId: randomUUID(),
-      links: [{ url: `${origin}/c/${second.id}`, tags: [] }],
+      link: { url: `${origin}/c/${second.id}`, tags: [] },
     };
     const contribution = (await save(contributed, other.token).expect(201)).body.data;
     expect((await save(contributed, other.token).expect(201)).body.data).toEqual(contribution);
     expect(
-      (await db.resource.findUniqueOrThrow({ where: { id: contribution.resourceIds[0] } })).kind,
+      (await db.resource.findUniqueOrThrow({ where: { id: contribution.resourceId } })).kind,
     ).toBe("collection_link");
     await db.collectionShare.delete({
       where: { collectionId_userId: { collectionId: source.id, userId: other.id } },

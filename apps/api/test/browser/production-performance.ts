@@ -137,7 +137,7 @@ export async function measureProduction({
                 transferBytes: r.transferSize,
                 encodedBytes: r.encodedBodySize,
               }));
-            const field = document.querySelector("#capture-url-0");
+            const field = document.querySelector("#capture-url");
             return {
               documentReplaced,
               actionToReadyMs: performance.timeOrigin + performance.now() - startedAt,
@@ -197,7 +197,7 @@ export async function measureProduction({
         await resetBudget();
         await page.goto(`${origin}/capture?collection=${sourceId}`);
         await page
-          .getByLabel("Link URL", { exact: true })
+          .getByLabel("Link", { exact: true })
           .fill(`https://fixture-links.dev/performance/${slow}/${repeat}`);
         await measure("save-link", "warm-browser", async (p) => {
           await Promise.all([

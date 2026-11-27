@@ -332,16 +332,21 @@ Existing collections retain their publication and sharing settings.
   (Published by default). Email and code follow as above. Starting always
   creates a new collection, for new and existing accounts alike, and lands in it
   with what to do next.
-- **Save a link (signed in):** always in the header. One or two links per save;
-  each address turns blue when it is a valid public link and red when it isn't,
-  and shows the page's title once found. Tags are optional, behind **Add
-  tags**, shown as pills. The destination is an existing collection (each shows
-  when it was last updated) or a new one, prefilled with a name that never
-  repeats; new collections default to published; existing destinations retain their sharing settings.
-  Repeats, non-addresses and domains that don't exist are refused before
-  saving; a real site with no title is still saved. The form fits a 14-inch
-  laptop screen in at most eight actions; more than two links is bulk work
-  (**Bulk import links**, §6.2).
+- **Save a link (signed in):** always in the header; it opens as a dialog over
+  the page (a full-height sheet on phones), and `/capture` is the same form as
+  a page. One link per save (owner, 27 November 2026); more is bulk work
+  (**Bulk import links**, §6.2). The link shows the page's title and site once
+  found; non-addresses, private or example addresses and domains that don't
+  exist are refused before saving, and a real site with no title is still
+  saved. The collection list starts with **New collection…**, then the
+  collection the person is on (preselected, "You are here") and their most
+  recent ones, with **Show all N collections**. A link lands at the end of the
+  chosen section (the last one by default; **No section** puts it before the
+  first). Tags and a note of up to 280 characters are optional. A new
+  collection is named in place, with an optional description and who can see
+  it; a blank name gets a dated default that never repeats, and the visibility
+  choice is remembered for the next new collection. Existing destinations keep
+  their sharing settings.
 - Both first-link and signed-in forms resolve the page title and validate the
   public address before saving. This is a lightweight title/status check;
   richer previews belong on collection items (§6.4), not in the add-link form.

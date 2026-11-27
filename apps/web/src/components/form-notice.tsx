@@ -38,12 +38,10 @@ const messages: Record<string, string> = {
   "note-saved": "Note saved.",
   "note-invalid": `Write a note of up to ${maxNoteLength} characters.`,
   "note-conflict": "This link changed elsewhere. Reload it and add your note again.",
-  "links-saved": "Links saved.",
   "link-not-public":
     "Use a public web address. Local, private and example addresses can't be opened by the people you share with.",
-  "too-many-links": "Save up to 2 links at a time.",
   "link-invalid":
-    "Check the links: each must be a full http:// or https:// address without a username or password.",
+    "Check the link: it must be a full http:// or https:// address without a username or password.",
   "choose-destination": "Choose where to save your link, or create a collection.",
   "save-failed": "We couldn't confirm the save. Your link is still here. Try saving it again.",
   "impact-changed":
@@ -96,7 +94,6 @@ const toasts = new Set([
   "link-saved",
   "collection-created",
   "note-saved",
-  "links-saved",
   "collection-saved",
   "profile-saved",
   "done",
@@ -113,7 +110,6 @@ const info = new Set(["invitation-accepted", "declined", "signin", "comments-off
 const errors = new Set([
   "link-invalid",
   "link-not-public",
-  "too-many-links",
   "save-failed",
   "profile-invalid",
   "handle-unavailable",

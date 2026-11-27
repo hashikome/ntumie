@@ -2,17 +2,34 @@
 import type { LinkPreview } from "@ntumie/types";
 import { useEffect, useRef, useState } from "react";
 import { browserRead } from "../lib/browser-api";
-import { captureUrl } from "../lib/validation";
-import { publicHref } from "./capture-links";
+import { captureUrl, publicHref } from "../lib/validation";
 
-// Start a collection's first link: the address, and under it the page title
-// and site as soon as they are found (never typed). Without JavaScript it is a
-// plain URL field.
-export function FirstLinkField({ initial, origin }: { initial?: string; origin: string }) {
+// A link to save: the address, and under it the page title and site as soon
+// as they are found (never typed). Without JavaScript it is a plain URL field.
+export function LinkField({
+  id,
+  label,
+  initial,
+  origin,
+}: {
+  id: string;
+  label: string;
+  initial?: string;
+  origin: string;
+}) {
   const [url, setUrl] = useState(initial ?? "");
   const [left, setLeft] = useState(Boolean(initial));
-  const [preview, setPreview] = useState<{ for: string; title: string | null; status: string }>();
+  const [preview, setPreview] = useState<{
+    for: string;
+    title: string | null;
+    status: string;
+    collection?: boolean;
+  }>();
   const field = useRef<HTMLInputElement>(null);
+  // An address typed before the page was ready is adopted, not reset.
+  useEffect(() => {
+    if (field.current?.value) setUrl(field.current.value);
+  }, []);
   const href = publicHref(url.trim(), origin);
   useEffect(() => {
     if (!href) return;
@@ -29,6 +46,7 @@ export function FirstLinkField({ initial, origin }: { initial?: string; origin: 
             for: href,
             title: result?.ok ? result.data.title : null,
             status: result?.ok ? result.data.status : "untitled",
+            collection: result?.ok && result.data.collectionHint,
           });
         });
     }, 400);
@@ -58,10 +76,10 @@ export function FirstLinkField({ initial, origin }: { initial?: string; origin: 
   const shown = preview?.for === href ? preview : undefined;
   return (
     <div className="field">
-      <label htmlFor="start-url">First link</label>
+      <label htmlFor={id}>{label}</label>
       <input
         ref={field}
-        id="start-url"
+        id={id}
         name="url"
         type="url"
         inputMode="url"
@@ -71,23 +89,27 @@ export function FirstLinkField({ initial, origin }: { initial?: string; origin: 
         placeholder="https://"
         defaultValue={initial}
         aria-invalid={message ? true : undefined}
-        aria-describedby={message ? "start-url-error" : shown ? "start-url-preview" : undefined}
+        aria-describedby={message ? `${id}-error` : shown ? `${id}-preview` : undefined}
         onChange={(event) => setUrl(event.target.value)}
         onBlur={() => setLeft(true)}
       />
       {message ? (
-        <p className="field-error" id="start-url-error" role="alert">
+        <p className="field-error" id={`${id}-error`} role="alert">
           {message}
         </p>
       ) : (
         href && (
-          <div className="link-preview" id="start-url-preview" aria-live="polite">
+          <div className="link-preview" id={`${id}-preview`} aria-live="polite">
             <span className="link-preview-mark" aria-hidden="true">
               {(shown?.title ?? site).charAt(0).toUpperCase()}
             </span>
             <span>
               <b>{shown ? (shown.title ?? site) : "Finding the title…"}</b>
-              {(!shown || shown.title) && <span>{site}</span>}
+              {shown?.collection ? (
+                <span>Collection</span>
+              ) : (
+                (!shown || shown.title) && <span>{site}</span>
+              )}
             </span>
           </div>
         )

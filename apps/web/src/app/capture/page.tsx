@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { CaptureForm } from "../../components/capture-form";
+import { SaveLinkForm } from "../../components/save-link-form";
 import { queryValue } from "../../lib/http";
 import { readSession } from "../../lib/session";
 export const metadata: Metadata = { title: "Save a link" };
@@ -16,5 +16,5 @@ export default async function Page({
     const title = queryValue(query.title, 255);
     redirect(title ? `/start?${new URLSearchParams({ title })}` : "/start");
   }
-  return <CaptureForm query={query} />;
+  return <SaveLinkForm query={query} />;
 }

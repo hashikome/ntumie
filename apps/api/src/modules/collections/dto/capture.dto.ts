@@ -2,9 +2,9 @@ import { type CaptureLink, type CaptureRequest, maxNoteLength } from "@ntumie/ty
 import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
-  ArrayMinSize,
   IsArray,
   IsBoolean,
+  IsDefined,
   IsInt,
   IsOptional,
   IsString,
@@ -50,13 +50,15 @@ export class CaptureDto implements CaptureRequest {
   @IsUUID()
   operationId: string;
 
-  @IsArray()
-  @ArrayMinSize(1)
-  // Saving is for one or two links copied by hand; more is what import is for.
-  @ArrayMaxSize(2)
-  @ValidateNested({ each: true })
+  // One link per save; many links are what import is for.
+  @IsDefined()
+  @ValidateNested()
   @Type(() => CaptureLinkDto)
-  links: CaptureLinkDto[];
+  link: CaptureLinkDto;
+
+  @IsOptional()
+  @IsUUID()
+  sectionId?: string;
 
   @IsString()
   @MaxLength(36)
@@ -67,4 +69,9 @@ export class CaptureDto implements CaptureRequest {
   @MinLength(1)
   @MaxLength(255)
   collectionTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  collectionDescription?: string;
 }

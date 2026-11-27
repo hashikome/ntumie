@@ -1,15 +1,19 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { recoveryPayloadLimit } from "@ntumie/config/action-recovery";
-import { type CaptureLink, maxCaptureLinks } from "@ntumie/types";
+import { type CaptureLink, maxNoteLength } from "@ntumie/types";
 import { captureUrl, isUuid } from "./validation";
 
 export const draftTtl = 1800;
+export const maxDescriptionLength = 5000;
 export interface CaptureDraft {
   id: string;
   operationId: string;
-  links: CaptureLink[];
+  link: CaptureLink;
   destination: string;
+  /** A heading of the destination; the link lands at the end of its section. */
+  sectionId?: string;
   collectionTitle?: string;
+  collectionDescription?: string;
   published?: boolean;
   /** Started from Start a collection (lives at /start/<id>, lands as created). */
   start?: boolean;
@@ -52,15 +56,18 @@ export function openDraft(
     if (
       draft.id !== id ||
       !isUuid(draft.operationId) ||
-      !Array.isArray(draft.links) ||
-      draft.links.length < 1 ||
-      draft.links.length > maxCaptureLinks ||
-      !draft.links.every(
-        (link: CaptureLink) =>
-          captureUrl(link?.url) &&
-          (link.tags === undefined ||
-            (Array.isArray(link.tags) && link.tags.every((tag) => typeof tag === "string"))),
-      ) ||
+      !captureUrl(draft.link?.url) ||
+      (draft.link.tags !== undefined &&
+        !(
+          Array.isArray(draft.link.tags) &&
+          draft.link.tags.every((tag: unknown) => typeof tag === "string")
+        )) ||
+      (draft.link.note !== undefined &&
+        (typeof draft.link.note !== "string" || draft.link.note.length > maxNoteLength)) ||
+      (draft.sectionId !== undefined && !isUuid(draft.sectionId)) ||
+      (draft.collectionDescription !== undefined &&
+        (typeof draft.collectionDescription !== "string" ||
+          draft.collectionDescription.length > maxDescriptionLength)) ||
       (draft.published !== undefined && typeof draft.published !== "boolean") ||
       (draft.start !== undefined && draft.start !== true) ||
       (draft.collectionTitle !== undefined &&

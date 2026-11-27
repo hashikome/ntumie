@@ -169,7 +169,23 @@ communities (opt-in), and private-collection allowances (monetization).
 - [ ] Search plan (own milestone): the Discover search results board (hubs and
   collections for a query, tag filters, best match, no-results state) has no
   backend; write the ExecPlan before building.
-- [ ] M6 Save a link dialog and the Edit workspace.
+- [ ] M6 Save a link dialog and the Edit workspace, as two slices.
+  - [x] M6a Save a link (`ref/boards/render/r2-save.png`, `r2-save-phone.png`):
+    one link per save (owner, 27 November 2026: as the board shows; two-link
+    saves are removed), a dialog on desktop and a full-height sheet on phones,
+    the same form as a page at `/capture` without JavaScript. Link with title
+    preview; Collection as "New collection…" first, then choices with "You are
+    here" for the current one and "Show all N collections"; Section and Tags;
+    Note. A new collection adds Name, Description and Who can see it. API: the
+    capture request takes `sectionId` (the link lands at the end of that
+    section) and `collectionDescription`. Done 27 November 2026: the header
+    opens it as an intercepting-route dialog with the current collection
+    preselected; a save without a section lands before the first section, so
+    "No section" means what it says (the form preselects the last section,
+    keeping "add at the end" the default). Open for the owner: the phone
+    board's new-collection state shows no Description field and no preview
+    card; both are kept so the phone, desktop and no-JS forms match.
+  - [ ] M6b Edit workspace (`r2-edit.png`).
 - [ ] M7 Audit, browser acceptance, docs and release (push only here).
 
 ## Surprises & Discoveries

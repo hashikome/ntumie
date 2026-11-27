@@ -173,12 +173,14 @@ tags and item tags ([ADR-0074](../engineering-decisions/0074-search-in-postgres.
 ## First-link capture command
 
 `POST /api/v1/capture` resolves the session owner's immutable hub and atomically
-saves 1–2 links (each with optional tags, never a title; canonicalised and
-deduplicated, appended in order; links already in the collection are kept
-as they are) plus a user-scoped operation receipt, returning the collection
-and the resource IDs in input order. A collection it creates takes
-`collectionTitle`, or a default "Saved links, <date>" suffixed so it never
-repeats a hub title. `GET /api/v1/link-preview?url=` (public, no account required,
+saves one link (`link`: the address with optional tags and note, never a
+title; canonicalised; a link already in the collection is kept as it is) plus a
+user-scoped operation receipt, returning `collectionId` and `resourceId`. An
+optional `sectionId` must be one of the destination's headings: the link lands
+at the end of that section; without one it lands before the first section. A
+collection it creates takes `collectionTitle` (or a default "Saved links,
+<date>" suffixed so it never repeats a hub title) and an optional
+`collectionDescription`. `GET /api/v1/link-preview?url=` (public, no account required,
 own source-based "lookup" budget of 30/min) returns a canonical URL and looked-up title
 and validation status for the save form, before and after sign-in. The form shows
 only the title and address feedback; richer previews belong on saved collection

@@ -4,8 +4,8 @@ import { maxNoteLength } from "@ntumie/types";
 import type { CaptureDraft } from "../lib/capture-draft";
 import { queryValue } from "../lib/http";
 import { readSession } from "../lib/session";
-import { FirstLinkField } from "./first-link-field";
 import { FormNotice } from "./form-notice";
+import { LinkField } from "./link-field";
 import { NativeForm } from "./native-form";
 import {
   PrivateLimitHelp,
@@ -27,7 +27,7 @@ export async function StartCollection({
 }) {
   const [session, allowance] = await Promise.all([readSession(), readPrivateAllowance()]);
   const id = draft?.id ?? randomUUID();
-  const first = draft?.links[0];
+  const first = draft?.link;
   // At the limit Private can't be chosen (the API would refuse it anyway).
   const full = Boolean(session) && privateLeft(allowance) === 0;
   const published = full || (draft?.published ?? session?.newCollectionPublished ?? true);
@@ -57,7 +57,12 @@ export async function StartCollection({
             One idea, in a few words. You can rename it later.
           </p>
         </div>
-        <FirstLinkField initial={first?.url} origin={webServerConfig().publicOrigin} />
+        <LinkField
+          id="start-url"
+          label="First link"
+          initial={first?.url}
+          origin={webServerConfig().publicOrigin}
+        />
         <div className="field">
           <label htmlFor="start-note">
             Note <span className="optional">(optional)</span>

@@ -11,7 +11,7 @@ describe("private capture drafts", () => {
     const draft = {
       id,
       operationId: randomUUID(),
-      links: [{ url: `https://fixture-links.dev/${"a".repeat(2022)}` }],
+      link: { url: `https://fixture-links.dev/${"a".repeat(2022)}` },
       issued,
       destination: "first",
     };
@@ -24,21 +24,24 @@ describe("private capture drafts", () => {
     expect(openDraft(sealed, id, secret, issued + 1800000)).toBeNull();
     expect(openDraft(sealed, id, secret, issued - 1)).toBeNull();
   });
-  it("keeps every tag of a large draft: the browser holds only a reference", () => {
+  it("keeps every tag, the note and the new collection of a large draft: the browser holds only a reference", () => {
     const id = randomUUID();
     const draft = {
       id,
       operationId: randomUUID(),
-      links: Array.from({ length: 2 }, (_, n) => ({
-        url: `https://fixture-links.dev/${n}/${"a".repeat(600)}`,
+      link: {
+        url: `https://fixture-links.dev/${"a".repeat(600)}`,
         tags: Array.from({ length: 30 }, (_, t) => `tag-${t}-${"b".repeat(30)}`),
-      })),
+        note: "Read the second part first.",
+      },
+      sectionId: randomUUID(),
       collectionTitle: "Reading list",
+      collectionDescription: "What a reader will understand by the end",
       issued: Date.now(),
       destination: "new",
     };
     const opened = openDraft(sealDraft(draft, secret), id, secret);
-    expect(opened?.links).toEqual(draft.links);
+    expect(opened).toEqual(draft);
     expect(opened?.collectionTitle).toBe("Reading list");
     expect(parseTags(" video, , Beginner ,")).toEqual(["video", "Beginner"]);
   });

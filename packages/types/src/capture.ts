@@ -9,15 +9,19 @@ export interface CaptureRequest {
   startedAt: number;
   /** "first", "new", or the id of a collection to save into. */
   destination: string;
-  links: CaptureLink[];
+  link: CaptureLink;
+  /** A section (heading) of the destination collection; the link lands at its end. */
+  sectionId?: string;
   /** Name for a collection created by this save ("new" or a first capture); blank uses the dated default. */
   collectionTitle?: string;
+  /** Description for a collection created by this save. */
+  collectionDescription?: string;
   /** Visibility of a collection created by this save; remembered for the next one. */
   published?: boolean;
 }
 export interface CaptureResult {
   collectionId: string;
-  resourceIds: string[];
+  resourceId: string;
 }
 /** The name a new collection gets when none is typed. */
 export interface CollectionNameSuggestion {
@@ -33,8 +37,6 @@ export interface LinkPreview {
   status: "found" | "untitled" | "no_domain";
 }
 
-// Saving takes one or two links copied by hand; more is what import is for.
-export const maxCaptureLinks = 2;
 // Tags on links and collections: at most 30, each up to 80 characters.
 export const maxTags = 30;
 export const maxTagLength = 80;

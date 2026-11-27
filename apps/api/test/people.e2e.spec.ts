@@ -301,7 +301,7 @@ describe("people and optional hubs", () => {
       .post("/api/v1/capture")
       .auth(fresh.token, { type: "bearer" })
       .send({
-        links: [{ url: "https://fixture-links.dev/missing-target" }],
+        link: { url: "https://fixture-links.dev/missing-target" },
         destination: randomUUID(),
         operationId: randomUUID(),
         startedAt: Date.now(),
@@ -309,7 +309,7 @@ describe("people and optional hubs", () => {
       .expect(404);
     expect(await db.hub.count({ where: { ownerUserId: fresh.id } })).toBe(0);
     const body = {
-      links: [{ url: "https://fixture-links.dev/first" }],
+      link: { url: "https://fixture-links.dev/first" },
       destination: "first",
       operationId: randomUUID(),
       startedAt: Date.now(),

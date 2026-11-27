@@ -4036,7 +4036,7 @@ it("[critical] saves a first private link through email, preserves retries, then
         .getByRole("link", { name: "Edit", exact: true })
         .click();
       await page.getByRole("link", { name: "Add a link", exact: true }).click();
-      await page.getByLabel("Link URL", { exact: true }).fill("https://fixture-links.dev/second");
+      await page.getByLabel("Link", { exact: true }).fill("https://fixture-links.dev/second");
       if (js) {
         await page.waitForTimeout(2100);
         await prisma.session.updateMany({
@@ -4115,133 +4115,186 @@ it("[critical] saves a first private link through email, preserves retries, then
   }
 }, 60000);
 
-it("saves several links with tags into a newly named collection, typing no titles", async () => {
+it("saves a link from the header into a section, and starts a collection in place", async () => {
   await prisma.requestBudget.deleteMany();
+  const email = `save-dialog-${crypto.randomUUID()}@example.com`;
+  const signed = await signInHubOwner(app.getHttpServer(), { email });
+  const token = signed.headers["set-auth-token"];
+  const api = () => request(app.getHttpServer());
+  const create = async (title: string) =>
+    (
+      await api()
+        .post("/api/v1/collections")
+        .auth(token, { type: "bearer" })
+        .send({ title, published: true })
+        .expect(201)
+    ).body.data.id as string;
+  for (const title of ["Accessibility from the start", "How the web reaches you", "Old notes"])
+    await create(title);
+  const id = await create("Backend building blocks");
+  const section = async (title: string, url: string, position: number) => {
+    const item = (
+      await api()
+        .post(`/api/v1/collections/${id}/resources/external`)
+        .auth(token, { type: "bearer" })
+        .send({ url, position })
+        .expect(201)
+    ).body.data;
+    return (
+      await api()
+        .post(`/api/v1/collections/${id}/resources/heading`)
+        .auth(token, { type: "bearer" })
+        .send({ title, firstItemId: item.id, firstItemVersion: item.version })
+        .expect(201)
+    ).body.data.id as string;
+  };
+  const storing = await section("Storing data", "https://fixture-links.dev/storing", 0);
+  await section("Caching", "https://fixture-links.dev/caching", 2);
+  const review = process.env.SAVE_REVIEW_DIR;
   const { page, close } = await freshPage();
   try {
-    const email = `multi-${crypto.randomUUID()}@example.com`;
-    const signed = await signInHubOwner(app.getHttpServer(), { email });
-    const token = signed.headers["set-auth-token"];
-    await request(app.getHttpServer())
-      .post("/api/v1/collections")
-      .auth(token, { type: "bearer" })
-      .send({ published: false, title: "Existing shelf" })
-      .expect(201);
-    await browserSignIn(page, email, "/hub");
-    await browserExpect(page.getByLabel("Account menu", { exact: true })).toBeVisible();
-    await ready(page, "/capture");
-    await browserExpect(page.locator("h1")).toHaveText("Save a link");
-    const rows = page.locator(".capture-row");
-    const first = rows.first().getByLabel("Link URL", { exact: true });
-    // Something that is not an address turns the field red once left.
-    await first.fill("example dot com");
-    await first.blur();
-    await browserExpect(first).toHaveAttribute("data-state", "invalid");
-    await browserExpect(rows.first().locator(".capture-note.invalid")).toContainText("https://");
-    // An address others can't open (local or example) is refused and blocks saving.
-    await first.fill("http://localhost:8085/notebook/");
-    await browserExpect(rows.first().locator(".capture-note.invalid")).toContainText(
-      "public web address",
-    );
-    expect(await first.evaluate((el: HTMLInputElement) => el.validity.valid)).toBe(false);
-    await rows
-      .first()
-      .getByLabel("Link URL", { exact: true })
-      .fill("https://fixture-links.dev/one");
-    await browserExpect(page.getByLabel("Title", { exact: true })).toHaveCount(0);
-    // Tags are optional: the field appears on request, focused, and tags
-    // become chips as they are typed (Enter or a comma adds one).
-    await browserExpect(rows.first().getByLabel("Tags", { exact: true })).toHaveCount(0);
-    await rows.first().getByRole("button", { name: "Add tags", exact: true }).click();
-    const tags = rows.first().getByLabel("Tags", { exact: true });
-    await browserExpect(tags).toBeFocused();
-    await tags.fill("video");
-    await tags.press("Enter");
-    await tags.pressSequentially("Beginner,");
-    await tags.pressSequentially("draft");
-    await browserExpect(rows.first().locator(".tag-chip")).toHaveText(["video×", "Beginner×"]);
-    await rows.first().getByRole("button", { name: "Remove tag Beginner", exact: true }).click();
-    await browserExpect(rows.first().locator('input[name="tags"]')).toHaveValue("video, draft");
-    await page.getByRole("button", { name: "Add another link", exact: true }).click();
-    await browserExpect(rows).toHaveCount(2);
-    // Leaving the field shows the tags as on a collection, with "Add tags" after them.
-    await browserExpect(rows.first().locator(".tag-summary .tags li")).toHaveText([
-      "video",
-      "draft",
-    ]);
+    await browserSignIn(page, email, `/c/${id}`);
+    await browserExpect(page.locator("h1")).toHaveText("Backend building blocks");
+    // The header's Save a link opens over the collection, which it preselects.
+    await page.getByRole("banner").getByRole("link", { name: "Save a link", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Save a link" });
+    await browserExpect(dialog).toBeVisible();
+    await page.waitForURL(new RegExp(`/capture\\?collection=${id}`));
+    await browserExpect(page.locator("main h1")).toHaveText("Backend building blocks");
+    const link = dialog.getByLabel("Link", { exact: true });
+    // Something that is not an address, or one others can't open, is refused.
+    await link.fill("example dot com");
+    await link.blur();
+    await browserExpect(dialog.locator(".field-error")).toContainText("https://");
+    await link.fill("http://localhost:8085/notebook/");
+    await browserExpect(dialog.locator(".field-error")).toContainText("public web address");
+    expect(await link.evaluate((el: HTMLInputElement) => el.validity.valid)).toBe(false);
+    await link.fill("https://fixture-links.dev/one");
+    await browserExpect(dialog.locator(".link-preview")).toContainText("fixture-links.dev");
+    await browserExpect(dialog.getByLabel("Title", { exact: true })).toHaveCount(0);
+    const here = dialog.getByRole("radio", { name: /Backend building blocks/ });
+    await browserExpect(here).toBeChecked();
     await browserExpect(
-      rows.first().getByRole("button", { name: "Add tags", exact: true }),
-    ).toBeVisible();
-    await browserExpect(rows.nth(1).getByLabel("Link URL", { exact: true })).toBeFocused();
-    // Two links is the most per save; bulk import takes the place of adding more.
-    await browserExpect(
-      page.getByRole("button", { name: "Add another link", exact: true }),
-    ).toHaveCount(0);
-    await browserExpect(
-      page.getByRole("link", { name: "Bulk import links", exact: true }),
-    ).toHaveAttribute("href", "/manage/import-export");
-    // The same link twice is flagged and blocks saving.
-    await rows
-      .nth(1)
-      .getByLabel("Link URL", { exact: true })
-      .fill("https://fixture-links.dev/one/");
-    await browserExpect(rows.nth(1).locator(".capture-note.invalid")).toContainText(
-      "already in the list",
-    );
-    expect(
-      await rows
-        .nth(1)
-        .getByLabel("Link URL", { exact: true })
-        .evaluate((el: HTMLInputElement) => el.validity.valid),
-    ).toBe(false);
-    // The same page with tracking added is the same link once the preview's
-    // canonical address is back (the API drops utm_ parameters).
-    await rows
-      .nth(1)
-      .getByLabel("Link URL", { exact: true })
-      .fill("https://fixture-links.dev/one?utm_source=newsletter");
-    await browserExpect(rows.nth(1).locator(".capture-note.invalid")).toContainText(
-      "already in the list",
-    );
-    await page.getByRole("button", { name: "Remove link 2", exact: true }).click();
-    await browserExpect(rows).toHaveCount(1);
-    await page.getByRole("button", { name: "Add another link", exact: true }).click();
-    await rows.nth(1).getByLabel("Link URL", { exact: true }).fill("https://fixture-links.dev/two");
-    // Save stays reachable without scrolling on a 14-inch laptop viewport.
-    await page.getByLabel("Save to", { exact: true }).selectOption({ index: 2 });
-    await page.setViewportSize({ width: 1440, height: 790 });
-    const save = page.getByRole("button", { name: "Save 2 links", exact: true });
-    const box = await save.boundingBox();
-    expect((box?.y ?? 9999) + (box?.height ?? 0)).toBeLessThanOrEqual(790);
-    const name = page.getByLabel("Name for the new collection", { exact: true });
-    await browserExpect(name).toBeHidden();
-    await page.getByLabel("Save to", { exact: true }).selectOption("new");
-    await browserExpect(name).toBeVisible();
-    await browserExpect(name).toHaveValue(/^Saved links, /);
-    await name.fill("Trading videos");
-    for (const width of [390, 1280]) {
-      await page.setViewportSize({ width, height: 900 });
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-        true,
-      );
-      await page.screenshot({ path: `/tmp/capture-several-${width}.png`, fullPage: true });
+      dialog.locator(".save-choice").filter({ hasText: "Backend building blocks" }),
+    ).toContainText("You are here");
+    // Three collections show at first, then all of them on request.
+    await browserExpect(dialog.locator(".save-choice:not(.save-choice-new)")).toHaveCount(3);
+    await dialog.getByRole("link", { name: "Show all 4 collections", exact: true }).click();
+    await browserExpect(dialog.locator(".save-choice:not(.save-choice-new)")).toHaveCount(4);
+    // The link lands at the end of the last section unless another is chosen.
+    const sectionField = dialog.getByLabel("Section", { exact: true });
+    await browserExpect(sectionField.locator("option:checked")).toHaveText("Caching");
+    await sectionField.selectOption({ label: "Storing data" });
+    await dialog.getByLabel("Tags (optional)", { exact: true }).fill("sql, Video");
+    await dialog.getByLabel("Note (optional)", { exact: true }).fill("Read the index chapter.");
+    if (review) {
+      await mkdir(review, { recursive: true });
+      for (const scheme of ["light", "dark"] as const) {
+        await page.emulateMedia({ colorScheme: scheme });
+        // Field colours ease over 160 ms; let them settle before each picture.
+        await page.waitForTimeout(300);
+        for (const width of [1280, 390]) {
+          await page.setViewportSize({ width, height: width < 640 ? 844 : 1000 });
+          await page.screenshot({ path: join(review, `save-${scheme}-${width}.png`) });
+        }
+      }
+      await page.emulateMedia({ colorScheme: "light" });
     }
-    await page.getByRole("button", { name: "Save 2 links", exact: true }).click();
-    await browserExpect(page.locator("h1")).toHaveText("Trading videos");
-    await browserExpect(page.locator(".toast")).toContainText("Links saved");
-    await browserExpect(page.locator(".resource-row")).toHaveCount(2);
-    await browserExpect(page.locator(".resource-row").first()).toContainText(
-      "fixture-links.dev/one",
+    // On a phone the collection is picked from a list; it carries the same choice.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await browserExpect(dialog.locator(".save-choices")).toBeHidden();
+    await browserExpect(dialog.getByLabel("Collection", { exact: true })).toHaveValue(id);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
     );
-    await browserExpect(page.locator(".resource-row").first()).toContainText("video");
-    await browserExpect(page.locator(".resource-row").first()).toContainText("draft");
-    await browserExpect(page.locator(".resource-row").nth(1)).toContainText(
-      "fixture-links.dev/two",
-    );
+    await browserExpect(dialog.getByRole("button", { name: "Save link" })).toBeInViewport();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await dialog.getByRole("button", { name: "Save link", exact: true }).click();
+    await browserExpect(dialog).toHaveCount(0);
+    await page.waitForURL(new RegExp(`/c/${id}\\?`));
+    await browserExpect(page.locator(".toast")).toContainText("Link saved");
+    const rows = await prisma.resource.findMany({
+      where: { collectionId: id },
+      orderBy: { position: "asc" },
+      include: { tags: { include: { tag: true } } },
+    });
+    const saved = rows.findIndex((row) => row.url === "https://fixture-links.dev/one");
+    expect(rows[saved - 2].id).toBe(storing);
+    expect(rows[saved].note).toBe("Read the index chapter.");
+    expect(rows[saved].tags.map(({ tag }) => tag.name).sort()).toEqual(["sql", "video"]);
+    // Choosing "New collection" names it in place; nothing else changes.
+    await page.getByRole("banner").getByRole("link", { name: "Save a link", exact: true }).click();
+    await browserExpect(dialog).toBeVisible();
+    await dialog.getByLabel("Link", { exact: true }).fill("https://fixture-links.dev/two");
+    await dialog.locator(".save-choice-new").click();
+    for (const choice of await dialog.locator(".save-choice:not(.save-choice-new)").all())
+      await browserExpect(choice).toBeHidden();
+    await browserExpect(dialog.getByLabel("Section", { exact: true })).toBeHidden();
+    const name = dialog.getByLabel("Name", { exact: true });
+    await browserExpect(name).toHaveValue("");
+    await browserExpect(name).toHaveAttribute("placeholder", /^Saved links, /);
+    await dialog
+      .getByRole("button", { name: "Choose an existing collection instead", exact: true })
+      .click();
+    await browserExpect(here).toBeChecked();
+    await dialog.locator(".save-choice-new").click();
+    await name.fill("Database performance");
+    await dialog.getByLabel("Description (optional)", { exact: true }).fill("Faster queries.");
+    if (review) {
+      for (const scheme of ["light", "dark"] as const) {
+        await page.emulateMedia({ colorScheme: scheme });
+        // Field colours ease over 160 ms; let them settle before each picture.
+        await page.waitForTimeout(300);
+        for (const width of [1280, 390]) {
+          await page.setViewportSize({ width, height: width < 640 ? 844 : 1000 });
+          await page.screenshot({ path: join(review, `save-new-${scheme}-${width}.png`) });
+        }
+      }
+      await page.emulateMedia({ colorScheme: "light" });
+      await page.setViewportSize({ width: 1280, height: 900 });
+    }
+    await dialog.getByRole("button", { name: "Create and save", exact: true }).click();
+    await browserExpect(page.locator("h1")).toHaveText("Database performance");
+    await browserExpect(page.locator(".reader-description")).toHaveText("Faster queries.");
+    await browserExpect(page.locator(".resource-row")).toContainText("fixture-links.dev/two");
+    // Escape closes the dialog and returns to the page it was opened from.
+    await page.getByRole("banner").getByRole("link", { name: "Save a link", exact: true }).click();
+    await browserExpect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await browserExpect(dialog).toHaveCount(0);
+    await browserExpect(page.locator("h1")).toHaveText("Database performance");
   } finally {
     await close();
   }
-}, 30000);
+  // Without JavaScript /capture is the same form as a page, and the section
+  // goes with the collection it was listed for.
+  const plain = await freshPage(false);
+  try {
+    for (const raw of signed.headers["set-cookie"] as unknown as string[]) {
+      const [cookie, ...value] = raw.split(";")[0].split("=");
+      await plain.page
+        .context()
+        .addCookies([{ name: cookie, value: value.join("="), url: origin }]);
+    }
+    await ready(plain.page, `/capture?collection=${id}&all=1`);
+    await browserExpect(plain.page.locator("h1")).toHaveText("Save a link");
+    await plain.page.getByLabel("Link", { exact: true }).fill("https://fixture-links.dev/three");
+    await plain.page.getByLabel("Section", { exact: true }).selectOption({ label: "Storing data" });
+    await plain.page.getByRole("radio", { name: "How the web reaches you" }).check();
+    if (review)
+      for (const width of [1280, 390]) {
+        await plain.page.setViewportSize({ width, height: 900 });
+        await plain.page.screenshot({
+          path: join(review, `save-plain-${width}.png`),
+          fullPage: true,
+        });
+      }
+    await plain.page.getByRole("button", { name: "Save link", exact: true }).click();
+    await browserExpect(plain.page.locator("h1")).toHaveText("How the web reaches you");
+  } finally {
+    await plain.close();
+  }
+}, 60000);
 
 it("shows collection descriptions and hub attribution without repeated separators or a nested main scroller", async () => {
   const { page, close } = await freshPage();
@@ -4629,7 +4682,7 @@ it("discusses an item from the reader: attached item, its section, the Answered 
       startedAt: Date.now(),
       destination: "new",
       collectionTitle: "Talking guide",
-      links: [{ url: `https://fixture-links.dev/${crypto.randomUUID()}` }],
+      link: { url: `https://fixture-links.dev/${crypto.randomUUID()}` },
     })
     .expect(201);
   const id = created.body.data.collectionId as string;
@@ -4862,7 +4915,7 @@ it("ships the designed Discover, hub and profile in full, with fake doors that r
       startedAt: Date.now(),
       destination: "new",
       collectionTitle: "Doors worth opening",
-      links: [{ url: `https://fixture-links.dev/${crypto.randomUUID()}`, tags: [tag] }],
+      link: { url: `https://fixture-links.dev/${crypto.randomUUID()}`, tags: [tag] },
     })
     .expect(201);
   const id = created.body.data.collectionId as string;
@@ -8890,10 +8943,12 @@ it("saves collection URLs through Add a link for owners and contributors with an
         for (const [index, destination] of [target, foreign].entries()) {
           await ready(page, `/c/${source.id}/edit`);
           await page.getByRole("link", { name: "Add a link", exact: true }).click();
-          await browserExpect(page.getByLabel("Save to", { exact: true })).toHaveValue(source.id);
-          await page.getByLabel("Link URL", { exact: true }).fill(`${origin}/c/${destination.id}`);
+          await browserExpect(
+            page.getByRole("radio", { name: /^Software Engineering/ }),
+          ).toBeChecked();
+          await page.getByLabel("Link", { exact: true }).fill(`${origin}/c/${destination.id}`);
           if (javascript)
-            await browserExpect(page.locator(".capture-title")).toHaveText("Collection");
+            await browserExpect(page.locator(".link-preview")).toContainText("Collection");
           await page.getByRole("button", { name: "Save link", exact: true }).click();
           await page.waitForURL(new RegExp(`/c/${source.id}`));
           const rows = await prisma.resource.findMany({
@@ -9628,16 +9683,11 @@ it("preserves capture input typed before hydration through preview and native sa
     try {
       await page.goto(`${origin}/capture?collection=${collectionId}`, { waitUntil: "commit" });
       const url = `${origin}/c/${destination.id}`;
-      const field = page.getByLabel("Link URL", { exact: true });
+      const field = page.getByLabel("Link", { exact: true });
       await field.fill(url);
-      await page.locator(".tag-field-plain summary").click();
-      await page
-        .getByLabel("Tags", { exact: true })
-        .fill(hydrate ? "first, par" : "early, preserved");
-      await browserExpect(page.getByRole("button", { name: "Add another link" })).toBeDisabled();
-      await page
-        .getByLabel("Tags", { exact: true })
-        .evaluate((el) => (el as HTMLInputElement).setSelectionRange(2, 5));
+      const tags = page.getByLabel("Tags (optional)", { exact: true });
+      await tags.fill(hydrate ? "first, par" : "early, preserved");
+      await tags.evaluate((el) => (el as HTMLInputElement).setSelectionRange(2, 5));
       expect(blocked).toBeGreaterThan(0);
       // Held scripts prove these are native fields, before any React handlers.
       expect(
@@ -9645,10 +9695,8 @@ it("preserves capture input typed before hydration through preview and native sa
       ).toBe(false);
       if (hydrate) {
         release();
-        await browserExpect(page.locator(".capture-title")).toHaveText("Collection");
+        await browserExpect(page.locator(".link-preview")).toContainText("Collection");
         await browserExpect(field).toHaveValue(url);
-        await browserExpect(page.getByRole("button", { name: "Add another link" })).toBeEnabled();
-        const tags = page.getByLabel("Tags", { exact: true });
         await browserExpect(tags).toBeFocused();
         expect(
           await tags.evaluate((el) => [
@@ -9659,20 +9707,6 @@ it("preserves capture input typed before hydration through preview and native sa
         await tags.press("End");
         await tags.pressSequentially("tial");
         await browserExpect(tags).toHaveValue("first, partial");
-        await browserExpect(page.locator('input[type="hidden"][name="tags"]')).toHaveValue(
-          "first, partial",
-        );
-        await tags.press(",");
-        await browserExpect(tags).toHaveValue("");
-        await browserExpect(
-          page.getByRole("button", { name: "Remove tag partial", exact: true }),
-        ).toBeVisible();
-        await tags.pressSequentially("third,");
-        await browserExpect(tags).toHaveValue("");
-        for (const width of [390, 768, 1280, 1440]) {
-          await page.setViewportSize({ width, height: 900 });
-          await page.screenshot({ path: `/tmp/capture-early-${width}.png`, fullPage: true });
-        }
       }
       await page
         .getByRole("button", { name: "Save link", exact: true })
@@ -9685,7 +9719,7 @@ it("preserves capture input typed before hydration through preview and native sa
       expect(resources).toHaveLength(1);
       expect(resources[0].linkedCollectionId).toBe(destination.id);
       expect(resources[0].tags.map((entry) => entry.tag.name).sort()).toEqual(
-        hydrate ? ["first", "partial", "third"] : ["early", "preserved"],
+        hydrate ? ["first", "partial"] : ["early", "preserved"],
       );
     } finally {
       release();

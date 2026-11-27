@@ -15,7 +15,7 @@ const id = "0199c3f2-7b1a-7c3d-8e4f-0123456789ab";
 describe("edge cache eligibility", () => {
   it("never treats a top-level static route as a public profile", () => {
     const routes = readdirSync(join(import.meta.dir, "../src/app"), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && !/^[[(]/.test(entry.name))
+      .filter((entry) => entry.isDirectory() && !/^[[(@]/.test(entry.name))
       .map((entry) => entry.name);
     expect(routes.length).toBeGreaterThan(10);
     for (const route of routes)

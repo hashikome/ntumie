@@ -66,10 +66,12 @@ export async function saveDraft(
   const body = {
     operationId: draft.operationId,
     startedAt: draft.issued,
-    links: draft.links,
+    link: draft.link,
     destination: draft.destination,
     published: draft.published ?? true,
+    ...(draft.sectionId ? { sectionId: draft.sectionId } : {}),
     ...(draft.collectionTitle ? { collectionTitle: draft.collectionTitle } : {}),
+    ...(draft.collectionDescription ? { collectionDescription: draft.collectionDescription } : {}),
   } satisfies CaptureRequest;
   const result = await formPost<CaptureResult>(request, "/api/v1/capture", body);
   if (result.ok)
@@ -77,10 +79,10 @@ export async function saveDraft(
       // A started collection lands with its first link open and says so.
       draft.start
         ? `/c/${result.data.collectionId}?${new URLSearchParams({
-            ...(result.data.resourceIds[0] ? { item: result.data.resourceIds[0] } : {}),
+            item: result.data.resourceId,
             notice: "collection-created",
           })}`
-        : `/c/${result.data.collectionId}?notice=${result.data.resourceIds.length > 1 ? "links-saved" : "link-saved"}`,
+        : `/c/${result.data.collectionId}?notice=link-saved`,
       // The collection is saved; a failed cleanup only leaves a draft that expires.
       [
         ...extraCookies,

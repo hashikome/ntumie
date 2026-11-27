@@ -9,6 +9,14 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- Save a link is one link per save, opened from the header as a dialog over the page
+  (a full-height sheet on phones), with the collection you are on preselected ("You
+  are here"), three recent collections and "Show all", the section it goes into,
+  tags and a note. "New collection…" names a collection in place with a
+  description and who can see it. `/capture` is the same form as a page without
+  JavaScript. The API takes `link`, `sectionId` and `collectionDescription` and
+  returns one `resourceId`; a link saved without a section lands before the first
+  section. The two-link form, "Add another link" and the chip tag field are gone.
 - Focus rings come back whenever focus moves without a mouse or touch press, so
   screen readers and dialogs that move focus show where it went.
 - Save a link: the suggested name for a new collection comes from the API and never

@@ -82,7 +82,7 @@ describe("Private collection allowance (e2e)", () => {
     const capture = await as
       .post("/api/v1/capture", {
         operationId: randomUUID(),
-        links: [{ url: `https://fixture-links.dev/${randomUUID()}` }],
+        link: { url: `https://fixture-links.dev/${randomUUID()}` },
         destination: "new",
         collectionTitle: "Fourth private",
         published: false,

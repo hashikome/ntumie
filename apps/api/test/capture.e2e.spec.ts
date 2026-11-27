@@ -16,11 +16,11 @@ describe("atomic link capture", () => {
     request(app.getHttpServer()).post("/api/v1/capture").auth(token, { type: "bearer" }).send(body);
   const input = (destination = "first") => ({
     operationId: randomUUID(),
-    links: [{ url: `https://fixture-links.dev/${randomUUID()}` }],
+    link: { url: `https://fixture-links.dev/${randomUUID()}` },
     destination,
     startedAt: Date.now(),
   });
-  const link = (url: string) => ({ links: [{ url }] });
+  const link = (url: string) => ({ link: { url } });
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = module.createNestApplication({ bodyParser: false });
@@ -68,9 +68,9 @@ describe("atomic link capture", () => {
     const id = created.body.data.collectionId;
     const again = await send({
       ...input(id),
-      ...link(`${a.links[0].url}?utm_source=test`),
+      ...link(`${a.link.url}?utm_source=test`),
     }).expect(201);
-    expect(again.body.data.resourceIds).toEqual(created.body.data.resourceIds);
+    expect(again.body.data.resourceId).toBe(created.body.data.resourceId);
     await prisma.collection.update({ where: { id }, data: { published: true } });
     await send({
       ...input(id),
@@ -95,43 +95,32 @@ describe("atomic link capture", () => {
     await send(body).expect(201);
     expect(await prisma.collection.count({ where: { hubId: hub.id } })).toBe(before + 1);
   });
-  it("saves several links in order with tags, ignores typed titles, and names new collections", async () => {
-    const urls = [0, 1].map(() => `https://fixture-links.dev/${randomUUID()}`);
+  it("saves one link with tags and a note, ignores typed titles, and names new collections", async () => {
+    const url = `https://fixture-links.dev/${randomUUID()}`;
     const body = {
       ...input("new"),
-      links: [
-        { url: urls[0], tags: ["Guide", "guide"] },
-        { url: urls[1], tags: ["video"] },
-      ],
+      link: { url, tags: ["Guide", "guide"], note: " Read first " },
+      collectionDescription: " Links worth keeping ",
     };
     const saved = await send(body).expect(201);
-    const { collectionId, resourceIds } = saved.body.data;
-    expect(resourceIds).toHaveLength(2);
-    const rows = await prisma.resource.findMany({
-      where: { collectionId },
-      include: { tags: { include: { tag: true }, orderBy: { position: "asc" } } },
-      orderBy: { position: "asc" },
+    const { collectionId, resourceId } = saved.body.data;
+    const row = await prisma.resource.findUniqueOrThrow({
+      where: { id: resourceId },
+      include: { tags: { include: { tag: true } } },
     });
-    expect(
-      rows.map((row) => [row.url, row.titleOverride, row.tags.map(({ tag }) => tag.name)]),
-    ).toEqual([
-      [urls[0], null, ["guide"]],
-      [urls[1], null, ["video"]],
+    expect([row.url, row.titleOverride, row.tags.map(({ tag }) => tag.name)]).toEqual([
+      url,
+      null,
+      ["guide"],
     ]);
-    // Each address has a pending metadata lookup, requested in the same save.
     expect(
-      (await prisma.linkMetadata.findMany({ where: { url: { in: urls } } })).map((m) => m.state),
-    ).toEqual(["pending", "pending"]);
-    // The same address twice in one save is saved once.
-    const twice = await send({
-      ...input(collectionId),
-      links: [{ url: urls[0] }, { url: `${urls[0]}?utm_source=dup` }],
-    }).expect(201);
-    expect(twice.body.data.resourceIds).toEqual([resourceIds[0]]);
-    expect(rows.map((row) => row.id)).toEqual(resourceIds);
+      (await prisma.collection.findUniqueOrThrow({ where: { id: collectionId } })).description,
+    ).toBe("Links worth keeping");
+    // The address has a pending metadata lookup, requested in the same save.
+    expect((await prisma.linkMetadata.findUniqueOrThrow({ where: { url } })).state).toBe("pending");
     expect((await send(body).expect(201)).body.data).toEqual(saved.body.data);
     // A title is never an input; it is resolved from the page.
-    await send({ ...input("new"), links: [{ url: urls[0], title: "Typed" }] }).expect(400);
+    await send({ ...input("new"), link: { url, title: "Typed" } }).expect(400);
 
     // A default name never repeats one already in the hub; a typed name is kept.
     const first = await prisma.collection.findUniqueOrThrow({ where: { id: collectionId } });
@@ -154,13 +143,55 @@ describe("atomic link capture", () => {
       (await prisma.collection.findUniqueOrThrow({ where: { id: named.body.data.collectionId } }))
         .title,
     ).toBe("Reading list");
-    await send({ ...input("new"), links: [] }).expect(400);
+    await send({ ...input("new"), link: undefined }).expect(400);
     await send({
       ...input("new"),
-      links: Array.from({ length: 3 }, () => ({
-        url: `https://fixture-links.dev/${randomUUID()}`,
-      })),
+      link: undefined,
+      links: [{ url: `https://fixture-links.dev/${randomUUID()}` }],
     }).expect(400);
+  });
+  it("places a link at the end of its section, or before the first one, and refuses sections from elsewhere", async () => {
+    const first = (await send(input("new")).expect(201)).body.data;
+    const id = first.collectionId;
+    const second = (await send(input(id)).expect(201)).body.data;
+    const heading = async (title: string, itemId: string) => {
+      const item = await prisma.resource.findUniqueOrThrow({ where: { id: itemId } });
+      return (
+        await request(app.getHttpServer())
+          .post(`/api/v1/collections/${id}/resources/heading`)
+          .auth(owner.token, { type: "bearer" })
+          .send({ title, firstItemId: item.id, firstItemVersion: Number(item.version) })
+          .expect(201)
+      ).body.data.id as string;
+    };
+    const one = await heading("One", first.resourceId);
+    const two = await heading("Two", second.resourceId);
+    const order = async () =>
+      (
+        await prisma.resource.findMany({
+          where: { collectionId: id },
+          orderBy: { position: "asc" },
+          select: { id: true },
+        })
+      ).map((row) => row.id);
+    const inOne = (await send({ ...input(id), sectionId: one }).expect(201)).body.data.resourceId;
+    const inTwo = (await send({ ...input(id), sectionId: two }).expect(201)).body.data.resourceId;
+    // Without a section it joins the links before the first section.
+    const loose = (await send(input(id)).expect(201)).body.data.resourceId;
+    expect(await order()).toEqual([
+      loose,
+      one,
+      first.resourceId,
+      inOne,
+      two,
+      second.resourceId,
+      inTwo,
+    ]);
+    // A section is one of this collection's headings, never a link or another collection's.
+    await send({ ...input(id), sectionId: first.resourceId }).expect(400);
+    const elsewhere = (await send(input("new")).expect(201)).body.data;
+    await send({ ...input(elsewhere.collectionId), sectionId: one }).expect(400);
+    await send({ ...input(id), sectionId: "not-an-id" }).expect(400);
   });
   it("validates usable public links before sign-in and still requires a session to save", async () => {
     const preview = (url: string) =>
@@ -232,15 +263,11 @@ describe("atomic link capture", () => {
     });
     const body = {
       ...input("new"),
-      links: [
-        {
-          url: `${publicOrigins(process.env).webOrigin}/c/${collection.id}?item=01990000-0000-7000-8000-000000000001`,
-        },
-        { url: `${publicOrigins(process.env).webOrigin}/c/${collection.id}` },
-      ],
+      link: {
+        url: `${publicOrigins(process.env).webOrigin}/c/${collection.id}?item=01990000-0000-7000-8000-000000000001`,
+      },
     };
     const saved = (await send(body).expect(201)).body.data;
-    expect(saved.resourceIds).toHaveLength(1);
     await prisma.collection.update({
       where: { id: collection.id },
       data: { title: "Renamed collection" },
@@ -251,26 +278,24 @@ describe("atomic link capture", () => {
       data: { handle: `renamed-${randomUUID()}` },
     });
     expect((await send(body).expect(201)).body.data).toEqual(saved);
-    await prisma.resource.delete({ where: { id: saved.resourceIds[0] } });
+    await prisma.resource.delete({ where: { id: saved.resourceId } });
     await send(body).expect(404);
   });
   it("replays pre-removal reference receipts without accepting retired URLs for new saves", async () => {
     const target = (await send(input("new")).expect(201)).body.data;
     const body = {
       ...input("new"),
-      links: [{ url: `${publicOrigins(process.env).webOrigin}/c/${target.collectionId}` }],
+      link: { url: `${publicOrigins(process.env).webOrigin}/c/${target.collectionId}` },
     };
     const saved = (await send(body).expect(201)).body.data;
     const oldBody = {
       ...body,
-      links: [{ url: `${publicOrigins(process.env).webOrigin}/@retired/old-guide` }],
+      link: { url: `${publicOrigins(process.env).webOrigin}/@retired/old-guide` },
     };
     // Simulate an already-completed pre-removal operation. Its saved IDs are the
     // authority for replay, not a new lookup of the retired address.
     const fingerprint = createHash("sha256")
-      .update(
-        JSON.stringify([oldBody.links.map((link) => ({ url: link.url, tags: [] })), "new", null]),
-      )
+      .update(JSON.stringify([{ url: oldBody.link.url, tags: [] }, "new", null, null, null]))
       .digest("hex");
     await prisma.captureReceipt.update({
       where: { userId_operationId: { userId: owner.id, operationId: body.operationId } },
@@ -278,26 +303,10 @@ describe("atomic link capture", () => {
     });
     expect((await send(oldBody).expect(201)).body.data).toEqual(saved);
     await send({ ...oldBody, operationId: randomUUID() }).expect(400);
-    await prisma.resource.delete({ where: { id: saved.resourceIds[0] } });
+    await prisma.resource.delete({ where: { id: saved.resourceId } });
     await send(oldBody).expect(404);
   });
 
-  it("upgrades a legacy receipt on a resolvable retry", async () => {
-    const body = input("new"),
-      saved = (await send(body).expect(201)).body.data;
-    await prisma.captureReceipt.update({
-      where: { userId_operationId: { userId: owner.id, operationId: body.operationId } },
-      data: { resourceIds: [] },
-    });
-    expect((await send(body).expect(201)).body.data).toEqual(saved);
-    expect(
-      (
-        await prisma.captureReceipt.findUniqueOrThrow({
-          where: { userId_operationId: { userId: owner.id, operationId: body.operationId } },
-        })
-      ).resourceIds,
-    ).toEqual(saved.resourceIds);
-  });
   it("rejects malicious URLs, missing sessions and replay after deletion", async () => {
     for (const url of [
       "javascript:alert(1)",
@@ -333,7 +342,7 @@ it("accepts an unpublished creation choice while ordinary creation defaults to p
           startedAt: Date.now(),
           destination: "first",
           published: false,
-          links: [{ url: `https://fixture-links.dev/${randomUUID()}` }],
+          link: { url: `https://fixture-links.dev/${randomUUID()}` },
         })
         .expect(201)
     ).body.data;
