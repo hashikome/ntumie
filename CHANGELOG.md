@@ -9,6 +9,9 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- The release job's migration credential names Postgres by its current host, `infra-postgres`
+  (`ntumie_migration_database_url_20261127_v2`); the old one named a host that no longer exists,
+  so the next release with a migration would have been refused.
 - Save a link is one link per save, opened from the header as a dialog over the page
   (a full-height sheet on phones), with the collection you are on preselected ("You
   are here"), three recent collections and "Show all", the section it goes into,
