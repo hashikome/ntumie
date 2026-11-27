@@ -143,6 +143,11 @@ export async function readJson<T>(
   }
 }
 
+/** Adds a query string to a path that may already have one. */
+export function withQuery(path: string, query: string) {
+  return `${path}${path.includes("?") ? "&" : "?"}${query}`;
+}
+
 export function withCursor(path: ApiPath, cursor?: string | null): ApiPath {
   const url = new URL(path, "http://internal.invalid");
   url.searchParams.set("limit", "20");

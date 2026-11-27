@@ -2,7 +2,7 @@ import "server-only";
 import { webServerConfig } from "@ntumie/config/web-server";
 import { type ImportDraftView, type ImportSelectionResult, importRowStatuses } from "@ntumie/types";
 import { redirectResponse } from "./form-server";
-import { type ApiPath, sessionCookie } from "./http";
+import { type ApiPath, sessionCookie, withQuery } from "./http";
 import { parseImportTags } from "./import-tags";
 import { pendingActionCookie, readLastAccount } from "./pending-action";
 
@@ -64,8 +64,7 @@ export async function importForm(action: string, request: Request, form: URLSear
     action === "import-discard"
       ? `${home}?tab=review`
       : `${here}${collectionQuery || status ? "?" : ""}${[collectionQuery, status ? `status=${status}` : ""].filter(Boolean).join("&")}`;
-  const withNotice = (value: string) =>
-    `${target}${target.includes("?") ? "&" : "?"}notice=${value}`;
+  const withNotice = (value: string) => withQuery(target, `notice=${value}`);
   if (action === "import-row") {
     if (!isUuid(rowId)) return redirectResponse(`${here}?notice=import-invalid`);
     path = `${path}/rows/${rowId}`;

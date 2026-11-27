@@ -28,7 +28,11 @@ the only blocker is a change to behaviour, business workflow or UX.)
   (`lock` by default, `read-only`, `after-parse`, `owns-transaction`) replaces the
   method exceptions, the two metadata keys, the upload subclass and the
   `/operations` path regex; `recheckSession` is shared with `OperationsService`.
-- [ ] M4 Forms route as an action table with one status-to-notice mapping.
+- [x] (2026-11-27) M4 Forms route as an action table: `formHandlers` maps each
+  action to a named handler (comment actions share one by prefix), `noticeFor`
+  maps failed API results to notices (an action's own statuses, then `limited`
+  for 429, else `unavailable`), and `withQuery` in `lib/http.ts` joins query
+  strings. Code verification keeps its own mapping (4xx means a wrong code).
 - [ ] M5 Save a link drafts in Redis (cookie holds only the draft id).
 - [ ] M6 Smaller consolidations (DNS once, canonical duplicate check, shared
   helpers, API-suggested collection name).
