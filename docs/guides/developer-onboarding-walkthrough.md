@@ -12,7 +12,7 @@ answer in your own words before continuing. Reading the whole file in one go
 is the failure mode this structure exists to prevent. Every file is a
 clickable link.
 
-**Pin:** verified against commit `022a713ff83422d9971c45a7652b7e23a9146392`. This is enforced, not honor
+**Pin:** verified against commit `ccaab81278b9edace6660ea14acde40ccbae363e`. This is enforced, not honor
 system: `check:guide-pin` (part of `bun run verify`) fails when any file this
 guide links changes after the pinned commit. To clear it, reread the affected
 sessions, fix any drift, and move the pin to the latest commit — in a
@@ -340,8 +340,8 @@ Read:
    Production uses shared product PostgreSQL/queue Redis with scoped roles/ACLs;
    migration and grant verification precede application promotion. Ordinary
    settings arrive as environment variables and sensitive ones as Docker secrets
-   (`_FILE` inputs); the application starts from those two alone. Local development and production are the permanent
-   environments; same-host PR previews remain planned. [Engineering decisions](../engineering-decisions/README.md)
+   (`_FILE` inputs); the application starts from those two alone. Local development and production are the only
+   environments. [Engineering decisions](../engineering-decisions/README.md)
    owns settled rationale; [PRODUCT.md §11](../../PRODUCT.md#11-delivery)
    owns delivery status and order.
 
