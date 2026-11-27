@@ -35,9 +35,7 @@ Topology files have one purpose each; a suffix names a different shape, never an
 
 Service keys carry the product (`ntumie-api`, `ntumie-web`, `ntumie-worker`, `ntumie-migration`),
 because a key is also its hostname on a shared network. Local development and production are the
-only permanent environments; same-host previews remain a planned direction
-([tech-debt tracker](../exec-plans/tech-debt-tracker.md#same-host-pull-request-previews)), and no
-staging server is planned.
+only permanent environments: there are no pull requests, previews or staging server.
 
 ## Topology
 

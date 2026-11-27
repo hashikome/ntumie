@@ -9,6 +9,8 @@ summary of what changed after completed work has been promoted out of `ref/`.
 
 ## Unreleased
 
+- No pull requests: verification no longer runs on them, and the same-host pull-request
+  previews direction is dropped.
 - Releases are pulled by infra's deploy agent on hs: a push records a GitHub release
   (`ntumie-<commit>`), and the agent migrates, then applies it; rolling back is
   marking an earlier release latest. The release runbook, the infrastructure design,

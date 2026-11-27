@@ -119,12 +119,3 @@ before designing the table. Historical rows cannot acquire changes that were
 never captured. General content snapshots require an explicit revision of the
 current bounded-evidence contract. Preserve existing recording and attribution
 while this work is deferred; do not suppress reads merely to make the UI quieter.
-
-## Same-host pull-request previews
-
-Owner-selected direction, not deployed: local development and production are the
-only permanent environments. Prepare temporary previews of the multi-service
-stack on the same host when capacity allows. Preserve GitHub verification/
-image builds and immutable promotion. Require isolated preview database roles/data,
-queue namespaces/ACLs, capture-only mail, restricted secrets, a bounded preview
-count and teardown on PR closure. Production setup does not wait for this work.
